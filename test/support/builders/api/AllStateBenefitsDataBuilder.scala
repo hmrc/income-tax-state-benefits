@@ -14,9 +14,16 @@
  * limitations under the License.
  */
 
-package models.requests
+package support.builders.api
 
-import models.User
-import play.api.mvc.{Request, WrappedRequest}
+import models.api.AllStateBenefitsData
+import support.builders.api.CustomerAddedStateBenefitsDataBuilder.aCustomerAddedStateBenefitsData
+import support.builders.api.StateBenefitsDataBuilder.aStateBenefitsData
 
-case class AuthorisationRequest[T](user: User, request: Request[T]) extends WrappedRequest[T](request)
+object AllStateBenefitsDataBuilder {
+
+  val anAllStateBenefitsData: AllStateBenefitsData = AllStateBenefitsData(
+    stateBenefitsData = aStateBenefitsData,
+    customerAddedStateBenefitsData = Some(aCustomerAddedStateBenefitsData)
+  )
+}

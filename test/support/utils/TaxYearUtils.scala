@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-package models.requests
+package support.utils
 
-import models.User
-import play.api.mvc.{Request, WrappedRequest}
+import java.time.LocalDate
 
-case class AuthorisationRequest[T](user: User, request: Request[T]) extends WrappedRequest[T](request)
+object TaxYearUtils {
+
+  private val dateNow: LocalDate = LocalDate.now()
+  private val taxYearCutoffDate: LocalDate = LocalDate.parse(s"${dateNow.getYear}-04-05")
+
+  val taxYear: Int = if (dateNow.isAfter(taxYearCutoffDate)) LocalDate.now().getYear + 1 else LocalDate.now().getYear
+  val taxYearEOY: Int = taxYear - 1
+}

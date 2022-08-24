@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-package models.authorisation
+package support.providers
 
-sealed class EnrolmentPair(val key: String, val value: String)
+import support.utils.TaxYearUtils
 
-case object IndividualEnrolment extends EnrolmentPair(key = "HMRC-MTD-IT", value = "MTDITID")
-case object AgentEnrolment extends EnrolmentPair(key = "HMRC-AS-AGENT", value = "AgentReferenceNumber")
-case object NinoEnrolment extends EnrolmentPair(key = "HMRC-NI", value = "NINO")
+trait TaxYearProvider {
+
+  protected val taxYear: Int = TaxYearUtils.taxYear
+  protected val taxYearEOY: Int = TaxYearUtils.taxYearEOY
+
+  protected val taxYearEndOfYearMinusOne: Int = taxYearEOY - 1
+
+  protected val validTaxYearListSingle: Seq[Int] = Seq(taxYear)
+  protected val validTaxYearList: Seq[Int] = Seq(taxYearEndOfYearMinusOne, taxYearEOY, taxYear)
+}

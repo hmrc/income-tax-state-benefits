@@ -23,40 +23,40 @@ import support.providers.AppConfigStubProvider
 import uk.gov.hmrc.http.HeaderNames._
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, SessionId}
 
-class DesConnectorSpec extends UnitTest
+class IFConnectorSpec extends UnitTest
   with MockFactory
   with AppConfigStubProvider {
 
-  private val underTest = new DesConnector {
+  private val underTest = new IFConnector {
     override protected val appConfig: AppConfig = appConfigStub
   }
 
   ".base" should {
     "return the app config value" in {
-      underTest.baseUrl shouldBe appConfigStub.desBaseUrl
+      underTest.baseUrl shouldBe appConfigStub.ifBaseUrl
     }
   }
 
-  ".desHeaderCarrier" should {
+  ".ifHeaderCarrier" should {
     "return correct HeaderCarrier when internal host" in {
       val internalHost = "http://localhost"
 
-      val result = underTest.desHeaderCarrier(internalHost)(HeaderCarrier())
+      val result = underTest.ifHeaderCarrier(internalHost, "some-api-version")(HeaderCarrier())
 
-      result.authorization shouldBe Some(Authorization(s"Bearer ${appConfigStub.authorisationToken}"))
-      result.extraHeaders shouldBe Seq("Environment" -> appConfigStub.environment)
+      result.authorization shouldBe Some(Authorization(s"Bearer ${appConfigStub.authorisationTokenFor("some-api-version")}"))
+      result.extraHeaders shouldBe Seq("Environment" -> appConfigStub.ifEnvironment)
     }
 
     "return correct HeaderCarrier when external host" in {
       val externalHost = "http://127.0.0.1"
       val hc = HeaderCarrier(sessionId = Some(SessionId("sessionIdHeaderValue")))
 
-      val result = underTest.desHeaderCarrier(externalHost)(hc)
+      val result = underTest.ifHeaderCarrier(externalHost, "some-api-version")(hc)
 
       result.extraHeaders.size shouldBe 4
       result.extraHeaders.contains(xSessionId -> "sessionIdHeaderValue") shouldBe true
-      result.extraHeaders.contains(authorisation -> s"Bearer ${appConfigStub.authorisationToken}") shouldBe true
-      result.extraHeaders.contains("Environment" -> appConfigStub.environment) shouldBe true
+      result.extraHeaders.contains(authorisation -> s"Bearer ${appConfigStub.authorisationTokenFor("some-api-version")}") shouldBe true
+      result.extraHeaders.contains("Environment" -> appConfigStub.ifEnvironment) shouldBe true
       result.extraHeaders.exists(x => x._1.equalsIgnoreCase(xRequestChain)) shouldBe true
     }
   }
