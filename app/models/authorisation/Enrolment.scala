@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package models.requests
+package models.authorisation
 
-import models.User
-import play.api.mvc.{Request, WrappedRequest}
+sealed abstract class Enrolment(val key: String, val value: String)
 
-case class AuthorisationRequest[T](user: User, request: Request[T]) extends WrappedRequest[T](request)
+object Enrolment {
+  case object Individual extends Enrolment(key = "HMRC-MTD-IT", value = "MTDITID")
+  case object Agent extends Enrolment(key = "HMRC-AS-AGENT", value = "AgentReferenceNumber")
+  case object Nino extends Enrolment(key = "HMRC-NI", value = "NINO")
+}

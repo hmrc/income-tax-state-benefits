@@ -14,14 +14,21 @@
  * limitations under the License.
  */
 
-package connectors.errors
+package models.api
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{Json, OFormat}
 
-case class DesError(status: Int, body: DesErrorBody) {
+import java.time.{Instant, LocalDate}
+import java.util.UUID
 
-  def toJson: JsValue = body match {
-    case error: DesSingleErrorBody => Json.toJson(error)
-    case errors: DesMultiErrorsBody => Json.toJson(errors)
-  }
+case class StateBenefit(dateIgnored: Option[Instant] = None,
+                        submittedOn: Option[Instant] = None,
+                        benefitId: UUID,
+                        startDate: LocalDate,
+                        endDate: Option[LocalDate] = None,
+                        amount: Option[BigDecimal] = None,
+                        taxPaid: Option[BigDecimal] = None)
+
+object StateBenefit {
+  implicit val format: OFormat[StateBenefit] = Json.format[StateBenefit]
 }

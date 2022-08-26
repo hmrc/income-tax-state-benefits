@@ -17,7 +17,7 @@
 package actions
 
 import models.User
-import models.authorisation.{AgentEnrolment, IndividualEnrolment, NinoEnrolment}
+import models.authorisation.Enrolment.{Agent, Individual, Nino}
 import models.requests.AuthorisationRequest
 import play.api.Logger
 import play.api.mvc.Results.Unauthorized
@@ -67,14 +67,14 @@ class AuthorisedAction @Inject()(defaultActionBuilder: DefaultActionBuilder,
                                                   (implicit request: Request[A], hc: HeaderCarrier): Future[Result] = {
     authorised.retrieve(allEnrolments and confidenceLevel) {
       case enrolments ~ userConfidence if userConfidence.level >= minimumConfidenceLevel =>
-        val optionalMtdItId: Option[String] = enrolmentGetIdentifierValue(IndividualEnrolment.key, IndividualEnrolment.value, enrolments)
-        val optionalNino: Option[String] = enrolmentGetIdentifierValue(NinoEnrolment.key, NinoEnrolment.value, enrolments)
+        val optionalMtdItId: Option[String] = enrolmentGetIdentifierValue(Individual.key, Individual.value, enrolments)
+        val optionalNino: Option[String] = enrolmentGetIdentifierValue(Nino.key, Nino.value, enrolments)
 
         (optionalMtdItId, optionalNino) match {
           case (Some(authMTDITID), Some(_)) =>
             enrolments.enrolments.collectFirst {
-              case Enrolment(IndividualEnrolment.key, enrolmentIdentifiers, _, _)
-                if enrolmentIdentifiers.exists(identifier => identifier.key == IndividualEnrolment.value && identifier.value == requestMtdItId) =>
+              case Enrolment(Individual.key, enrolmentIdentifiers, _, _)
+                if enrolmentIdentifiers.exists(identifier => identifier.key == Individual.value && identifier.value == requestMtdItId) =>
                 block(AuthorisationRequest(User(requestMtdItId, None), request))
             } getOrElse {
               logger.info(s"[AuthorisedAction][individualAuthentication] Non-agent with an invalid MTDITID. " +
@@ -97,13 +97,13 @@ class AuthorisedAction @Inject()(defaultActionBuilder: DefaultActionBuilder,
   private[actions] def agentAuthentication[A](block: AuthorisationRequest[A] => Future[Result], mtdItId: String)
                                              (implicit request: Request[A], hc: HeaderCarrier): Future[Result] = {
     lazy val agentAuthPredicate: String => Enrolment = identifierId =>
-      Enrolment(IndividualEnrolment.key)
-        .withIdentifier(IndividualEnrolment.value, identifierId)
+      Enrolment(Individual.key)
+        .withIdentifier(Individual.value, identifierId)
         .withDelegatedAuthRule(agentDelegatedAuthRuleKey)
 
     authorised(agentAuthPredicate(mtdItId))
       .retrieve(allEnrolments) { enrolments =>
-        enrolmentGetIdentifierValue(AgentEnrolment.key, AgentEnrolment.value, enrolments) match {
+        enrolmentGetIdentifierValue(Agent.key, Agent.value, enrolments) match {
           case Some(arn) =>
             block(AuthorisationRequest(User(mtdItId, Some(arn)), request))
           case None =>

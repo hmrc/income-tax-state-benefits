@@ -14,24 +14,22 @@
  * limitations under the License.
  */
 
-package utils
+package models.api
 
+import models.api.BenefitType._
 import support.UnitTest
-import uk.gov.hmrc.http.HttpResponse
 
-class PagerDutyHelperSpec extends UnitTest {
+class BenefitTypeSpec extends UnitTest {
 
-  private val status = 200
-
-  "PagerDutyHelper" should {
-    "return string containing correlationId when response contains correlationId" in {
-      val result = PagerDutyHelper.getCorrelationId(HttpResponse(status, "", Map("CorrelationId" -> Seq("some_correlation_id"))))
-      result shouldBe " CorrelationId: some_correlation_id"
-    }
-
-    "return empty string when response does not contain correlationId" in {
-      val result = PagerDutyHelper.getCorrelationId(HttpResponse(status, ""))
-      result shouldBe ""
+  "BenefitType objects" should {
+    "have correct type names" in {
+      IncapacityBenefit.typeName shouldBe "incapacityBenefit"
+      StatePension.typeName shouldBe "statePension"
+      StatePensionLumpSum.typeName shouldBe "statePensionLumpSum"
+      EmploymentSupportAllowance.typeName shouldBe "employmentSupportAllowance"
+      JobSeekersAllowance.typeName shouldBe "jobSeekersAllowance"
+      BereavementAllowance.typeName shouldBe "bereavementAllowance"
+      OtherStateBenefits.typeName shouldBe "otherStateBenefits"
     }
   }
 }

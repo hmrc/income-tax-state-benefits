@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package models.requests
+package utils
 
-import models.User
-import play.api.mvc.{Request, WrappedRequest}
+import play.api.libs.json.{JsNull, JsObject, Json}
 
-case class AuthorisationRequest[T](user: User, request: Request[T]) extends WrappedRequest[T](request)
+object JsonUtils {
+
+  def jsonObjNoNulls(fields: (String, Json.JsValueWrapper)*): JsObject =
+    JsObject(Json.obj(fields: _*).fields.filterNot(_._2 == JsNull).filterNot(_._2 == Json.obj()))
+}
