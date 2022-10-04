@@ -42,10 +42,10 @@ class StateBenefitSpec extends UnitTest {
             |""".stripMargin)
 
         val underTest = aStateBenefit
-          .copy(dateIgnored = Some(Instant.parse("2019-07-08T05:23:00Z")))
-          .copy(submittedOn = Some(Instant.parse("2020-03-13T19:23:00Z")))
           .copy(startDate = LocalDate.parse("2019-04-23"))
           .copy(endDate = Some(LocalDate.parse("2020-08-13")))
+          .copy(submittedOn = Some(Instant.parse("2020-03-13T19:23:00Z")))
+          .copy(dateIgnored = Some(Instant.parse("2019-07-08T05:23:00Z")))
 
         Json.toJson(underTest) shouldBe json
       }

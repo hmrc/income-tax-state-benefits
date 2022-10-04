@@ -52,7 +52,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
   }
 
   private def callGetStateBenefits(taxYear: Int, nino: String)
-                          (implicit hc: HeaderCarrier): Future[GetStateBenefitsResponse] = {
+                                  (implicit hc: HeaderCarrier): Future[GetStateBenefitsResponse] = {
     httpClient.GET[GetStateBenefitsResponse](getStateBenefitsUrl(taxYear, nino))
   }
 }

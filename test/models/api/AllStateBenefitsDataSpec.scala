@@ -30,10 +30,10 @@ import java.util.UUID
 class AllStateBenefitsDataSpec extends UnitTest {
 
   private val stateBenefit = aStateBenefit
-    .copy(dateIgnored = Some(Instant.parse("2019-07-08T05:23:00Z")))
-    .copy(submittedOn = Some(Instant.parse("2020-09-11T17:23:00Z")))
     .copy(startDate = LocalDate.parse("2019-04-23"))
     .copy(endDate = Some(LocalDate.parse("2020-08-13")))
+    .copy(dateIgnored = Some(Instant.parse("2019-07-08T05:23:00Z")))
+    .copy(submittedOn = Some(Instant.parse("2020-09-11T17:23:00Z")))
 
   private val stateBenefitsData = aStateBenefitsData
     .copy(incapacityBenefits = Some(Set(stateBenefit.copy(benefitId = UUID.fromString("a1e8057e-fbbc-47a8-a8b4-78d9f015c934")))))

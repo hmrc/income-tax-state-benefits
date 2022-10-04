@@ -20,6 +20,7 @@ import config.AppConfig
 import org.scalamock.scalatest.MockFactory
 import support.UnitTest
 import support.providers.AppConfigStubProvider
+import support.stubs.AppConfigStub
 import uk.gov.hmrc.http.HeaderNames._
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, SessionId}
 
@@ -28,11 +29,23 @@ class IFConnectorSpec extends UnitTest
   with AppConfigStubProvider {
 
   private val underTest = new IFConnector {
-    override protected val appConfig: AppConfig = appConfigStub
+    override protected val appConfig: AppConfig = new AppConfigStub().config()
   }
 
-  ".base" should {
-    "return the app config value" in {
+  ".baseUrl" should {
+    "return the app config + '/if' value when environment is test" in {
+      val underTest = new IFConnector {
+        override protected val appConfig: AppConfig = new AppConfigStub().config("test")
+      }
+
+      underTest.baseUrl shouldBe appConfigStub.ifBaseUrl + "/if"
+    }
+
+    "return the app config value when environment is not test" in {
+      val underTest = new IFConnector {
+        override protected val appConfig: AppConfig = new AppConfigStub().config("not-test")
+      }
+
       underTest.baseUrl shouldBe appConfigStub.ifBaseUrl
     }
   }
