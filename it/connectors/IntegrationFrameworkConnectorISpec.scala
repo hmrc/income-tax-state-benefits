@@ -40,7 +40,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
   def getUrl(taxYear: Int, nino: String): String = {
     val taxYearParameter = s"${taxYear - 1}-${taxYear.toString takeRight 2}"
-    s"/income-tax/income/state-benefits/$nino/$taxYearParameter"
+    s"/if/income-tax/income/state-benefits/$nino/$taxYearParameter"
   }
 
   ".getAllStateBenefitsData" should {
