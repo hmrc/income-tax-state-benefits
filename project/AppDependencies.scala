@@ -20,13 +20,13 @@ import sbt._
 
 object AppDependencies {
 
-  private val bootstrapBackendPlay28Version = "7.1.0"
-  private val hmrcMongoPlay28Version = "0.71.0"
+  private val bootstrapBackendPlay28Version = "7.7.0"
+  private val hmrcMongoPlay28Version = "0.73.0"
 
   val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"                   %% "bootstrap-backend-play-28"  % bootstrapBackendPlay28Version,
     "uk.gov.hmrc.mongo"             %% "hmrc-mongo-play-28"         % hmrcMongoPlay28Version,
-    "com.fasterxml.jackson.module"  %% "jackson-module-scala"       % "2.13.3"
+    "com.fasterxml.jackson.module"  %% "jackson-module-scala"       % "2.13.4"
   )
 
   val test: Seq[ModuleID] = Seq(
@@ -34,8 +34,8 @@ object AppDependencies {
     "com.typesafe.play"       %% "play-test"                  % current                       % Test,
     "uk.gov.hmrc.mongo"       %% "hmrc-mongo-test-play-28"    % hmrcMongoPlay28Version        % Test,
     "org.scalamock"           %% "scalamock"                  % "5.2.0"                       % Test,
-    "org.scalatest"           %% "scalatest"                  % "3.2.13"                      % Test,
+    "org.scalatest"           %% "scalatest"                  % "3.2.14"                      % Test,
     "com.vladsch.flexmark"    %  "flexmark-all"               % "0.62.2"                      % "test, it",
-    "com.github.tomakehurst"  %  "wiremock-jre8"              % "2.33.2"                      % "test, it"
+    "com.github.tomakehurst"  %  "wiremock-jre8"              % "2.34.0"                      % "test, it"
   )
 }
