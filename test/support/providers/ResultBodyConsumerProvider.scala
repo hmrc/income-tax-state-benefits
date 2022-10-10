@@ -16,12 +16,17 @@
 
 package support.providers
 
-import play.api.mvc.AnyContentAsEmpty
-import play.api.test.FakeRequest
+import akka.actor.ActorSystem
+import play.api.mvc.Result
+import play.api.test.DefaultAwaitTimeout
+import play.api.test.Helpers.await
 
-trait FakeRequestProvider {
+import scala.concurrent.ExecutionContext.Implicits.global
 
-  protected val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+trait ResultBodyConsumerProvider extends DefaultAwaitTimeout {
 
-  protected val fakeGetRequest = FakeRequest("GET", "/").withHeaders("MTDITID" -> "1234567890")
+  private implicit val actorSystem: ActorSystem = ActorSystem()
+
+  def consumeBody(result: Result): String =
+    await(result.body.consumeData.map(_.utf8String))
 }

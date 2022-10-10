@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package config
+package services
 
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import connectors.IntegrationFrameworkConnector
+import connectors.errors.ApiError
+import models.api.AllStateBenefitsData
+import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future
 
 @Singleton
-class AppConfig @Inject()(servicesConfig: ServicesConfig) {
+class StateBenefitsService @Inject()(integrationFrameworkConnector: IntegrationFrameworkConnector) {
 
-  private lazy val authorisationTokenKey: String = "microservice.services.integration-framework.authorisation-token"
-
-  lazy val ifBaseUrl: String = servicesConfig.baseUrl(serviceName = "integration-framework")
-  lazy val ifEnvironment: String = servicesConfig.getString(key = "microservice.services.integration-framework.environment")
-
-  def authorisationTokenFor(apiVersion: String): String = servicesConfig.getString(authorisationTokenKey + s".$apiVersion")
+  def getAllStateBenefitsData(taxYear: Int, nino: String)
+                             (implicit hc: HeaderCarrier): Future[Either[ApiError, Option[AllStateBenefitsData]]] = {
+    integrationFrameworkConnector.getAllStateBenefitsData(taxYear, nino)
+  }
 }
