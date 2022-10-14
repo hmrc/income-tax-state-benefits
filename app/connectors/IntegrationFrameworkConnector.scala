@@ -19,7 +19,6 @@ package connectors
 import config.AppConfig
 import connectors.errors.ApiError
 import connectors.responses.GetStateBenefitsResponse
-import connectors.responses.GetStateBenefitsResponse.getStateBenefitsResponseReads
 import models.api.AllStateBenefitsData
 import services.PagerDutyLoggerService
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}

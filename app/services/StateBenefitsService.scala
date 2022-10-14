@@ -16,8 +16,9 @@
 
 package services
 
-import connectors.IntegrationFrameworkConnector
 import connectors.errors.ApiError
+import connectors.{IntegrationFrameworkConnector, SubmissionConnector}
+import models.{IncomeTaxUserData, User}
 import models.api.AllStateBenefitsData
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -25,10 +26,16 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
 
 @Singleton
-class StateBenefitsService @Inject()(integrationFrameworkConnector: IntegrationFrameworkConnector) {
+class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
+                                     integrationFrameworkConnector: IntegrationFrameworkConnector) {
 
   def getAllStateBenefitsData(taxYear: Int, nino: String)
                              (implicit hc: HeaderCarrier): Future[Either[ApiError, Option[AllStateBenefitsData]]] = {
     integrationFrameworkConnector.getAllStateBenefitsData(taxYear, nino)
+  }
+
+  def getPriorData(taxYear: Int, nino: String, mtdtid: String)
+                  (implicit hc: HeaderCarrier): Future[Either[ApiError, IncomeTaxUserData]] = {
+    submissionConnector.getIncomeTaxUserData(taxYear, nino, mtdtid)
   }
 }

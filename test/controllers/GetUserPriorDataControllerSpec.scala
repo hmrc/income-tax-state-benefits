@@ -17,17 +17,20 @@
 package controllers
 
 import connectors.errors.{ApiError, SingleErrorBody}
-import play.api.http.Status.{BAD_REQUEST, NO_CONTENT, OK}
+import models.IncomeTaxUserData
+import play.api.http.Status.{BAD_REQUEST, NOT_FOUND, OK}
 import play.api.libs.json.Json
 import play.api.test.Helpers.{status, stubMessagesControllerComponents}
 import support.UnitTest
+import support.builders.IncomeTaxUserDataBuilder.anIncomeTaxUserData
+import support.builders.UserBuilder.aUser
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
 import support.mocks.{MockAuthorisedAction, MockStateBenefitsService}
 import support.providers.{FakeRequestProvider, ResultBodyConsumerProvider}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class GetStateBenefitsControllerSpec extends UnitTest
+class GetUserPriorDataControllerSpec extends UnitTest
   with MockStateBenefitsService
   with MockAuthorisedAction
   with FakeRequestProvider
@@ -35,39 +38,39 @@ class GetStateBenefitsControllerSpec extends UnitTest
 
   private val anyYear = 2022
 
-  private val underTest = new GetStateBenefitsController(
+  private val underTest = new GetUserPriorDataController(
     mockStateBenefitsService,
     mockAuthorisedAction,
     stubMessagesControllerComponents()
   )
 
-  ".getAllStateBenefitsData" should {
-    "return NoContent when stateBenefitsService returns Right(None)" in {
+  ".getPriorData" should {
+    "return NotFound when stateBenefitsService.getPriorData(...) returns Right(IncomeTaxUserData(None))" in {
       mockAsync()
-      mockGetAllStateBenefitsData(anyYear, "some-nino", Right(None))
+      mockGetPriorData(anyYear, "some-nino", aUser.mtditid, Right(IncomeTaxUserData(None)))
 
-      val result = underTest.getAllStateBenefitsData("some-nino", anyYear)(fakeGetRequest)
+      val result = underTest.getPriorData(nino = "some-nino", anyYear)(fakeGetRequest)
 
-      status(result) shouldBe NO_CONTENT
+      status(result) shouldBe NOT_FOUND
     }
 
-    "return allStateBenefitsData when stateBenefitsService returns Right(allStateBenefitsData)" in {
+    "return allStateBenefitsData when stateBenefitsService.getPriorData(...) returns Right(anIncomeTaxUserData)" in {
       mockAsync()
-      mockGetAllStateBenefitsData(anyYear, "some-nino", Right(Some(anAllStateBenefitsData)))
+      mockGetPriorData(anyYear, nino = "some-nino", aUser.mtditid, Right(anIncomeTaxUserData))
 
-      val result = await(underTest.getAllStateBenefitsData("some-nino", anyYear)(fakeGetRequest))
+      val result = await(underTest.getPriorData(nino = "some-nino", anyYear)(fakeGetRequest))
 
       result.header.status shouldBe OK
       Json.parse(consumeBody(result)) shouldBe Json.toJson(anAllStateBenefitsData)
     }
 
-    "return error when stateBenefitsService returns Left(errorModel)" in {
+    "return error when stateBenefitsService.getPriorData(...) returns Left(errorModel)" in {
       val error = ApiError(status = BAD_REQUEST, body = SingleErrorBody("some-code", "some-reason"))
 
       mockAsync()
-      mockGetAllStateBenefitsData(anyYear, "some-nino", Left(error))
+      mockGetPriorData(anyYear, nino = "some-nino", aUser.mtditid, Left(error))
 
-      val result = await(underTest.getAllStateBenefitsData("some-nino", anyYear)(fakeGetRequest))
+      val result = await(underTest.getPriorData(nino = "some-nino", anyYear)(fakeGetRequest))
 
       result.header.status shouldBe BAD_REQUEST
       Json.parse(consumeBody(result)) shouldBe error.toJson

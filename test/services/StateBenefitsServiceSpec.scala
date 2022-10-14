@@ -17,26 +17,38 @@
 package services
 
 import support.UnitTest
+import support.builders.IncomeTaxUserDataBuilder.anIncomeTaxUserData
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
-import support.mocks.MockIntegrationFrameworkConnector
+import support.mocks.{MockIntegrationFrameworkConnector, MockSubmissionConnector}
 import uk.gov.hmrc.http.HeaderCarrier
 
 class StateBenefitsServiceSpec extends UnitTest
+  with MockSubmissionConnector
   with MockIntegrationFrameworkConnector {
 
   private implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
 
   private val anyTaxYear = 2022
 
-  private val underTest = new StateBenefitsService(mockIntegrationFrameworkConnector)
+  private val underTest = new StateBenefitsService(mockSubmissionConnector, mockIntegrationFrameworkConnector)
 
-  "getAllStateBenefitsData" should {
+  ".getAllStateBenefitsData" should {
     "delegate to integrationFrameworkConnector and return the result" in {
       val result = Right(Some(anAllStateBenefitsData))
 
       mockGetAllStateBenefitsData(anyTaxYear, "any-nino", result)
 
       underTest.getAllStateBenefitsData(anyTaxYear, "any-nino")
+    }
+  }
+
+  ".getPriorData" should {
+    "delegate to submissionConnector and return the result" in {
+      val result = Right(anIncomeTaxUserData)
+
+      mockGetIncomeTaxUserData(anyTaxYear, nino = "any-nino", mtditid = "any-mtditid", result)
+
+      underTest.getPriorData(anyTaxYear, "any-nino", "any-mtditid")
     }
   }
 }

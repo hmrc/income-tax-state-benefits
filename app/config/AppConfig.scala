@@ -28,5 +28,7 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   lazy val ifBaseUrl: String = servicesConfig.baseUrl(serviceName = "integration-framework")
   lazy val ifEnvironment: String = servicesConfig.getString(key = "microservice.services.integration-framework.environment")
 
+  lazy val submissionBaseUrl: String = s"${servicesConfig.baseUrl(serviceName = "income-tax-submission")}/income-tax-submission-service"
+
   def authorisationTokenFor(apiVersion: String): String = servicesConfig.getString(authorisationTokenKey + s".$apiVersion")
 }
