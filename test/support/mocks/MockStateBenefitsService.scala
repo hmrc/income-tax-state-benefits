@@ -17,8 +17,9 @@
 package support.mocks
 
 import connectors.errors.ApiError
+import models.IncomeTaxUserData
 import models.api.AllStateBenefitsData
-import org.scalamock.handlers.CallHandler3
+import org.scalamock.handlers.{CallHandler3, CallHandler4}
 import org.scalamock.scalatest.MockFactory
 import services.StateBenefitsService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -35,6 +36,16 @@ trait MockStateBenefitsService extends MockFactory {
                                  ): CallHandler3[Int, String, HeaderCarrier, Future[Either[ApiError, Option[AllStateBenefitsData]]]] = {
     (mockStateBenefitsService.getAllStateBenefitsData(_: Int, _: String)(_: HeaderCarrier))
       .expects(taxYear, nino, *)
+      .returning(Future.successful(result))
+  }
+
+  def mockGetPriorData(taxYear: Int,
+                       nino: String,
+                       mtditid: String,
+                       result: Either[ApiError, IncomeTaxUserData]
+                      ): CallHandler4[Int, String, String, HeaderCarrier, Future[Either[ApiError, IncomeTaxUserData]]] = {
+    (mockStateBenefitsService.getPriorData(_: Int, _: String, _: String)(_: HeaderCarrier))
+      .expects(taxYear, nino, mtditid, *)
       .returning(Future.successful(result))
   }
 }

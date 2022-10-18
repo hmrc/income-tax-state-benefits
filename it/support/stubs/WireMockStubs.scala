@@ -26,9 +26,9 @@ import uk.gov.hmrc.http.HttpResponse
 
 trait WireMockStubs {
 
-  def stubGetStateBenefits(url: String,
-                           httpResponse: HttpResponse,
-                           requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
+  def stubHttpClientCall(url: String,
+                         httpResponse: HttpResponse,
+                         requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
     val responseBuilder = aResponse()
       .withStatus(httpResponse.status)
       .withBody(httpResponse.body)
