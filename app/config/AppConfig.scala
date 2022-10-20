@@ -19,6 +19,7 @@ package config
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.Duration
 
 @Singleton
 class AppConfig @Inject()(servicesConfig: ServicesConfig) {
@@ -29,6 +30,12 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   lazy val ifEnvironment: String = servicesConfig.getString(key = "microservice.services.integration-framework.environment")
 
   lazy val submissionBaseUrl: String = s"${servicesConfig.baseUrl(serviceName = "income-tax-submission")}/income-tax-submission-service"
+
+  //Mongo config
+  lazy val encryptionKey: String = servicesConfig.getString("mongodb.encryption.key")
+  lazy val mongoTTL: Int = Duration(servicesConfig.getString("mongodb.timeToLive")).toMinutes.toInt
+
+  lazy val useEncryption: Boolean = servicesConfig.getBoolean("useEncryption")
 
   def authorisationTokenFor(apiVersion: String): String = servicesConfig.getString(authorisationTokenKey + s".$apiVersion")
 }

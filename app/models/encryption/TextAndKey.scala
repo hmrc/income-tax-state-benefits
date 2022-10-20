@@ -14,17 +14,6 @@
  * limitations under the License.
  */
 
-package config
+package models.encryption
 
-import com.google.inject.AbstractModule
-import repositories.{StateBenefitsUserDataRepository, StateBenefitsUserDataRepositoryImpl}
-import utils.StartUpLogging
-
-class Module extends AbstractModule {
-
-  override def configure(): Unit = {
-    bind(classOf[AppConfig]).asEagerSingleton()
-    bind(classOf[StateBenefitsUserDataRepository]).to(classOf[StateBenefitsUserDataRepositoryImpl]).asEagerSingleton()
-    bind(classOf[StartUpLogging]).asEagerSingleton()
-  }
-}
+case class TextAndKey(associatedText: String, aesKey: String)

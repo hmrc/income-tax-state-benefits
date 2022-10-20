@@ -20,18 +20,22 @@ import support.UnitTest
 import support.builders.IncomeTaxUserDataBuilder.anIncomeTaxUserData
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
-import support.mocks.{MockIntegrationFrameworkConnector, MockSubmissionConnector}
+import support.mocks.{MockIntegrationFrameworkConnector, MockStateBenefitsUserDataRepository, MockSubmissionConnector}
 import uk.gov.hmrc.http.HeaderCarrier
+
+import java.util.UUID
 
 class StateBenefitsServiceSpec extends UnitTest
   with MockSubmissionConnector
-  with MockIntegrationFrameworkConnector {
+  with MockIntegrationFrameworkConnector
+  with MockStateBenefitsUserDataRepository {
 
   private implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
 
   private val anyTaxYear = 2022
+  private val sessionDataId = UUID.randomUUID()
 
-  private val underTest = new StateBenefitsService(mockSubmissionConnector, mockIntegrationFrameworkConnector)
+  private val underTest = new StateBenefitsService(mockSubmissionConnector, mockIntegrationFrameworkConnector, mockStateBenefitsUserDataRepository)
 
   ".getAllStateBenefitsData" should {
     "delegate to integrationFrameworkConnector and return the result" in {
@@ -45,33 +49,25 @@ class StateBenefitsServiceSpec extends UnitTest
 
   ".getPriorData" should {
     "delegate to submissionConnector and return the result" in {
-      val result = Right(anIncomeTaxUserData)
-
-      mockGetIncomeTaxUserData(anyTaxYear, nino = "any-nino", mtditid = "any-mtditid", result)
+      mockGetIncomeTaxUserData(anyTaxYear, nino = "any-nino", mtditid = "any-mtditid", Right(anIncomeTaxUserData))
 
       underTest.getPriorData(anyTaxYear, "any-nino", "any-mtditid")
     }
   }
 
   ".getStateBenefitsUserData" should {
-    "return data with given sessionDataId" in {
-      val sessionDataId = underTest.createOrUpdateStateBenefitsUserData(aStateBenefitsUserData)
+    "delegate to stateBenefitsUserDataRepository and return the result" in {
+      mockFind(sessionDataId, Right(aStateBenefitsUserData))
 
-      underTest.getStateBenefitsUserData(sessionDataId) shouldBe Some(aStateBenefitsUserData)
+      underTest.getStateBenefitsUserData(sessionDataId)
     }
   }
 
   ".createOrUpdateStateBenefitsUserData" should {
-    "create data when no sessionDataId provided" in {
-      val sessionDataId = underTest.createOrUpdateStateBenefitsUserData(aStateBenefitsUserData.copy(id = None))
+    "delegate to stateBenefitsUserDataRepository and return the result" in {
+      mockCreateOrUpdate(aStateBenefitsUserData, Right(sessionDataId))
 
-      underTest.getStateBenefitsUserData(sessionDataId) shouldBe Some(aStateBenefitsUserData.copy(id = Some(sessionDataId)))
-    }
-
-    "create data when sessionDataId provided" in {
-      val sessionDataId = underTest.createOrUpdateStateBenefitsUserData(aStateBenefitsUserData)
-
-      underTest.getStateBenefitsUserData(sessionDataId) shouldBe Some(aStateBenefitsUserData)
+      await(underTest.createOrUpdateStateBenefitsUserData(aStateBenefitsUserData)) shouldBe Right(sessionDataId)
     }
   }
 }
