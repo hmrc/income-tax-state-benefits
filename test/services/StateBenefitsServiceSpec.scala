@@ -19,6 +19,7 @@ package services
 import support.UnitTest
 import support.builders.IncomeTaxUserDataBuilder.anIncomeTaxUserData
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
+import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
 import support.mocks.{MockIntegrationFrameworkConnector, MockSubmissionConnector}
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -49,6 +50,28 @@ class StateBenefitsServiceSpec extends UnitTest
       mockGetIncomeTaxUserData(anyTaxYear, nino = "any-nino", mtditid = "any-mtditid", result)
 
       underTest.getPriorData(anyTaxYear, "any-nino", "any-mtditid")
+    }
+  }
+
+  ".getStateBenefitsUserData" should {
+    "return data with given sessionDataId" in {
+      val sessionDataId = underTest.createOrUpdateStateBenefitsUserData(aStateBenefitsUserData)
+
+      underTest.getStateBenefitsUserData(sessionDataId) shouldBe Some(aStateBenefitsUserData)
+    }
+  }
+
+  ".createOrUpdateStateBenefitsUserData" should {
+    "create data when no sessionDataId provided" in {
+      val sessionDataId = underTest.createOrUpdateStateBenefitsUserData(aStateBenefitsUserData.copy(id = None))
+
+      underTest.getStateBenefitsUserData(sessionDataId) shouldBe Some(aStateBenefitsUserData.copy(id = Some(sessionDataId)))
+    }
+
+    "create data when sessionDataId provided" in {
+      val sessionDataId = underTest.createOrUpdateStateBenefitsUserData(aStateBenefitsUserData)
+
+      underTest.getStateBenefitsUserData(sessionDataId) shouldBe Some(aStateBenefitsUserData)
     }
   }
 }

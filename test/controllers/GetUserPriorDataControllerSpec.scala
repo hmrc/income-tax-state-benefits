@@ -20,33 +20,32 @@ import connectors.errors.{ApiError, SingleErrorBody}
 import models.IncomeTaxUserData
 import play.api.http.Status.{BAD_REQUEST, NOT_FOUND, OK}
 import play.api.libs.json.Json
-import play.api.test.Helpers.{status, stubMessagesControllerComponents}
-import support.UnitTest
+import play.api.test.Helpers.status
+import support.ControllerUnitTest
 import support.builders.IncomeTaxUserDataBuilder.anIncomeTaxUserData
 import support.builders.UserBuilder.aUser
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
 import support.mocks.{MockAuthorisedAction, MockStateBenefitsService}
-import support.providers.{FakeRequestProvider, ResultBodyConsumerProvider}
+import support.providers.FakeRequestProvider
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class GetUserPriorDataControllerSpec extends UnitTest
+class GetUserPriorDataControllerSpec extends ControllerUnitTest
   with MockStateBenefitsService
   with MockAuthorisedAction
-  with FakeRequestProvider
-  with ResultBodyConsumerProvider {
+  with FakeRequestProvider {
 
   private val anyYear = 2022
 
   private val underTest = new GetUserPriorDataController(
     mockStateBenefitsService,
     mockAuthorisedAction,
-    stubMessagesControllerComponents()
+    cc
   )
 
   ".getPriorData" should {
     "return NotFound when stateBenefitsService.getPriorData(...) returns Right(IncomeTaxUserData(None))" in {
-      mockAsync()
+      mockAuthorisation()
       mockGetPriorData(anyYear, "some-nino", aUser.mtditid, Right(IncomeTaxUserData(None)))
 
       val result = underTest.getPriorData(nino = "some-nino", anyYear)(fakeGetRequest)
@@ -55,7 +54,7 @@ class GetUserPriorDataControllerSpec extends UnitTest
     }
 
     "return allStateBenefitsData when stateBenefitsService.getPriorData(...) returns Right(anIncomeTaxUserData)" in {
-      mockAsync()
+      mockAuthorisation()
       mockGetPriorData(anyYear, nino = "some-nino", aUser.mtditid, Right(anIncomeTaxUserData))
 
       val result = await(underTest.getPriorData(nino = "some-nino", anyYear)(fakeGetRequest))
@@ -67,7 +66,7 @@ class GetUserPriorDataControllerSpec extends UnitTest
     "return error when stateBenefitsService.getPriorData(...) returns Left(errorModel)" in {
       val error = ApiError(status = BAD_REQUEST, body = SingleErrorBody("some-code", "some-reason"))
 
-      mockAsync()
+      mockAuthorisation()
       mockGetPriorData(anyYear, nino = "some-nino", aUser.mtditid, Left(error))
 
       val result = await(underTest.getPriorData(nino = "some-nino", anyYear)(fakeGetRequest))

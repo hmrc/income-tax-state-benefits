@@ -23,12 +23,10 @@ class BenefitTypeSpec extends UnitTest {
 
   "BenefitType objects" should {
     "have correct type names" in {
-      IncapacityBenefit.typeName shouldBe "incapacityBenefit"
       StatePension.typeName shouldBe "statePension"
       StatePensionLumpSum.typeName shouldBe "statePensionLumpSum"
       EmploymentSupportAllowance.typeName shouldBe "employmentSupportAllowance"
       JobSeekersAllowance.typeName shouldBe "jobSeekersAllowance"
-      BereavementAllowance.typeName shouldBe "bereavementAllowance"
       OtherStateBenefits.typeName shouldBe "otherStateBenefits"
     }
   }
