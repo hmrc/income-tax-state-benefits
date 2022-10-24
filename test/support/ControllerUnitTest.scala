@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package support.providers
+package support
 
-import play.api.mvc.AnyContentAsEmpty
-import play.api.test.FakeRequest
+import play.api.mvc.ControllerComponents
+import play.api.test.Helpers.stubControllerComponents
+import support.providers.ResultBodyConsumerProvider
 
-trait FakeRequestProvider {
+trait ControllerUnitTest extends UnitTest
+  with ResultBodyConsumerProvider {
 
-  protected val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-
-  protected val fakeGetRequest: FakeRequest[AnyContentAsEmpty.type] = fakeRequest.withMethod(newMethod = "GET").withHeaders("MTDITID" -> "1234567890")
-
-  protected val fakePostRequest: FakeRequest[AnyContentAsEmpty.type] = fakeRequest.withMethod(newMethod = "POST").withHeaders("MTDITID" -> "1234567890")
+  protected val cc: ControllerComponents = stubControllerComponents()
 }

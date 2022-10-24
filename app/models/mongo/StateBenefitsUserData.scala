@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
-package support.providers
+package models.mongo
 
-import play.api.mvc.AnyContentAsEmpty
-import play.api.test.FakeRequest
+import play.api.libs.json.{Json, OFormat}
 
-trait FakeRequestProvider {
+import java.util.UUID
 
-  protected val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+case class StateBenefitsUserData(id: Option[UUID] = None,
+                                 sessionId: String,
+                                 mtdItId: String,
+                                 nino: String,
+                                 taxYear: Int,
+                                 isPriorSubmission: Boolean,
+                                 claim: Option[ClaimCYAModel])
 
-  protected val fakeGetRequest: FakeRequest[AnyContentAsEmpty.type] = fakeRequest.withMethod(newMethod = "GET").withHeaders("MTDITID" -> "1234567890")
-
-  protected val fakePostRequest: FakeRequest[AnyContentAsEmpty.type] = fakeRequest.withMethod(newMethod = "POST").withHeaders("MTDITID" -> "1234567890")
+object StateBenefitsUserData {
+  implicit val format: OFormat[StateBenefitsUserData] = Json.format[StateBenefitsUserData]
 }

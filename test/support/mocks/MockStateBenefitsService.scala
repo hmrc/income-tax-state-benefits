@@ -19,11 +19,13 @@ package support.mocks
 import connectors.errors.ApiError
 import models.IncomeTaxUserData
 import models.api.AllStateBenefitsData
-import org.scalamock.handlers.{CallHandler3, CallHandler4}
+import models.mongo.StateBenefitsUserData
+import org.scalamock.handlers.{CallHandler1, CallHandler3, CallHandler4}
 import org.scalamock.scalatest.MockFactory
 import services.StateBenefitsService
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.util.UUID
 import scala.concurrent.Future
 
 trait MockStateBenefitsService extends MockFactory {
@@ -47,5 +49,19 @@ trait MockStateBenefitsService extends MockFactory {
     (mockStateBenefitsService.getPriorData(_: Int, _: String, _: String)(_: HeaderCarrier))
       .expects(taxYear, nino, mtditid, *)
       .returning(Future.successful(result))
+  }
+
+  def mockGetStateBenefitsUserData(sessionDataId: UUID,
+                                   result: Option[StateBenefitsUserData]): CallHandler1[UUID, Option[StateBenefitsUserData]] = {
+    (mockStateBenefitsService.getStateBenefitsUserData(_: UUID))
+      .expects(sessionDataId)
+      .returning(result)
+  }
+
+  def mockCreateOrUpdateStateBenefitsUserData(stateBenefitsUserData: StateBenefitsUserData,
+                                              result: UUID): CallHandler1[StateBenefitsUserData, UUID] = {
+    (mockStateBenefitsService.createOrUpdateStateBenefitsUserData(_: StateBenefitsUserData))
+      .expects(stateBenefitsUserData)
+      .returning(result)
   }
 }

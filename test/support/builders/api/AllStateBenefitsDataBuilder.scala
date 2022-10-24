@@ -17,8 +17,8 @@
 package support.builders.api
 
 import models.api.AllStateBenefitsData
-import support.builders.api.CustomerAddedStateBenefitsDataBuilder.aCustomerAddedStateBenefitsData
-import support.builders.api.StateBenefitsDataBuilder.aStateBenefitsData
+import CustomerAddedStateBenefitsDataBuilder.aCustomerAddedStateBenefitsData
+import StateBenefitsDataBuilder.aStateBenefitsData
 
 object AllStateBenefitsDataBuilder {
 

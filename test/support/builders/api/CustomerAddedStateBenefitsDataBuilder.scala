@@ -18,7 +18,7 @@ package support.builders.api
 
 import models.api.CustomerAddedStateBenefitsData
 import play.api.libs.json.{JsValue, Json}
-import support.builders.api.CustomerAddedStateBenefitBuilder.aCustomerAddedStateBenefit
+import CustomerAddedStateBenefitBuilder.aCustomerAddedStateBenefit
 
 object CustomerAddedStateBenefitsDataBuilder {
 

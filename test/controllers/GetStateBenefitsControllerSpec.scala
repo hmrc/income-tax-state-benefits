@@ -19,31 +19,30 @@ package controllers
 import connectors.errors.{ApiError, SingleErrorBody}
 import play.api.http.Status.{BAD_REQUEST, NO_CONTENT, OK}
 import play.api.libs.json.Json
-import play.api.test.Helpers.{status, stubMessagesControllerComponents}
-import support.UnitTest
+import play.api.test.Helpers.status
+import support.ControllerUnitTest
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
 import support.mocks.{MockAuthorisedAction, MockStateBenefitsService}
-import support.providers.{FakeRequestProvider, ResultBodyConsumerProvider}
+import support.providers.FakeRequestProvider
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class GetStateBenefitsControllerSpec extends UnitTest
+class GetStateBenefitsControllerSpec extends ControllerUnitTest
   with MockStateBenefitsService
   with MockAuthorisedAction
-  with FakeRequestProvider
-  with ResultBodyConsumerProvider {
+  with FakeRequestProvider {
 
   private val anyYear = 2022
 
   private val underTest = new GetStateBenefitsController(
     mockStateBenefitsService,
     mockAuthorisedAction,
-    stubMessagesControllerComponents()
+    cc
   )
 
   ".getAllStateBenefitsData" should {
     "return NoContent when stateBenefitsService returns Right(None)" in {
-      mockAsync()
+      mockAuthorisation()
       mockGetAllStateBenefitsData(anyYear, "some-nino", Right(None))
 
       val result = underTest.getAllStateBenefitsData("some-nino", anyYear)(fakeGetRequest)
@@ -52,7 +51,7 @@ class GetStateBenefitsControllerSpec extends UnitTest
     }
 
     "return allStateBenefitsData when stateBenefitsService returns Right(allStateBenefitsData)" in {
-      mockAsync()
+      mockAuthorisation()
       mockGetAllStateBenefitsData(anyYear, "some-nino", Right(Some(anAllStateBenefitsData)))
 
       val result = await(underTest.getAllStateBenefitsData("some-nino", anyYear)(fakeGetRequest))
@@ -64,7 +63,7 @@ class GetStateBenefitsControllerSpec extends UnitTest
     "return error when stateBenefitsService returns Left(errorModel)" in {
       val error = ApiError(status = BAD_REQUEST, body = SingleErrorBody("some-code", "some-reason"))
 
-      mockAsync()
+      mockAuthorisation()
       mockGetAllStateBenefitsData(anyYear, "some-nino", Left(error))
 
       val result = await(underTest.getAllStateBenefitsData("some-nino", anyYear)(fakeGetRequest))
