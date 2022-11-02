@@ -44,7 +44,7 @@ class SubmissionConnectorISpec extends ConnectorIntegrationTest
     "return correct data when correct parameters are passed" in {
       val httpResponse = HttpResponse(OK, Json.toJson(anIncomeTaxUserData).toString())
 
-      stubHttpClientCall(s"/income-tax/nino/$nino/sources/session\\?taxYear=$taxYear", httpResponse)
+      stubGetHttpClientCall(s"/income-tax/nino/$nino/sources/session\\?taxYear=$taxYear", httpResponse)
 
       await(underTest.getIncomeTaxUserData(taxYear, nino, mtditid)(hc)) shouldBe Right(anIncomeTaxUserData)
     }
@@ -54,7 +54,7 @@ class SubmissionConnectorISpec extends ConnectorIntegrationTest
 
       (pagerDutyLoggerService.pagerDutyLog _).expects(*, "GetIncomeTaxUserDataResponse")
 
-      stubHttpClientCall(s"/income-tax/nino/$nino/sources/session\\?taxYear=$taxYear", httpResponse)
+      stubGetHttpClientCall(s"/income-tax/nino/$nino/sources/session\\?taxYear=$taxYear", httpResponse)
 
       await(underTest.getIncomeTaxUserData(taxYear, nino, mtditid)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))

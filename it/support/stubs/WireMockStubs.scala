@@ -26,9 +26,9 @@ import uk.gov.hmrc.http.HttpResponse
 
 trait WireMockStubs {
 
-  def stubHttpClientCall(url: String,
-                         httpResponse: HttpResponse,
-                         requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
+  def stubGetHttpClientCall(url: String,
+                            httpResponse: HttpResponse,
+                            requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
     val responseBuilder = aResponse()
       .withStatus(httpResponse.status)
       .withBody(httpResponse.body)
@@ -36,6 +36,21 @@ trait WireMockStubs {
 
     val mappingBuilderWithHeaders: MappingBuilder = requestHeaders
       .foldLeft(get(urlMatching(url)))((result, nxt) => result.withHeader(nxt.key(), equalTo(nxt.firstValue())))
+
+    stubFor(mappingBuilderWithHeaders.willReturn(responseBuilder))
+  }
+
+  def stubPostHttpClientCall(url: String,
+                             httpRequestBodyJson: String,
+                             httpResponse: HttpResponse,
+                             requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
+    val responseBuilder = aResponse()
+      .withStatus(httpResponse.status)
+      .withBody(httpResponse.body)
+      .withHeader(CONTENT_TYPE, JSON)
+
+    val mappingBuilderWithHeaders: MappingBuilder = requestHeaders
+      .foldLeft(post(urlMatching(url)).withRequestBody(equalToJson(httpRequestBodyJson)))((result, nxt) => result.withHeader(nxt.key(), equalTo(nxt.firstValue())))
 
     stubFor(mappingBuilderWithHeaders.willReturn(responseBuilder))
   }
