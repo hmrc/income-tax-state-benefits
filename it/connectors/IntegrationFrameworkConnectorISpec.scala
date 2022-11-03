@@ -18,20 +18,23 @@ package connectors
 
 import connectors.errors.{ApiError, SingleErrorBody}
 import org.scalamock.scalatest.MockFactory
-import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
+import play.api.http.Status.{INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import services.PagerDutyLoggerService
 import support.ConnectorIntegrationTest
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
+import support.builders.api.StateBenefitDetailOverrideBuilder.aStateBenefitDetailOverride
 import support.providers.TaxYearProvider
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
   with MockFactory
   with TaxYearProvider {
 
+  private val benefitId = UUID.randomUUID()
   private val nino = "some-nino"
   private val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId("sessionIdValue")))
 
@@ -43,11 +46,16 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     s"/if/income-tax/income/state-benefits/$nino/$taxYearParameter"
   }
 
+  def createOrUpdateUrl(taxYear: Int, nino: String, benefitId: UUID): String = {
+    val taxYearParameter = s"${taxYear - 1}-${taxYear.toString takeRight 2}"
+    s"/if/income-tax/income/state-benefits/$nino/$taxYearParameter/$benefitId"
+  }
+
   ".getAllStateBenefitsData" should {
     "return correct IF data when correct parameters are passed" in {
       val httpResponse = HttpResponse(OK, Json.toJson(anAllStateBenefitsData).toString())
 
-      stubHttpClientCall(getUrl(taxYear, nino), httpResponse)
+      stubGetHttpClientCall(getUrl(taxYear, nino), httpResponse)
 
       await(underTest.getAllStateBenefitsData(taxYear, nino)(hc)) shouldBe Right(Some(anAllStateBenefitsData))
     }
@@ -57,9 +65,32 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       (pagerDutyLoggerService.pagerDutyLog _).expects(*, "GetStateBenefitsResponse")
 
-      stubHttpClientCall(getUrl(taxYear, nino), httpResponse)
+      stubGetHttpClientCall(getUrl(taxYear, nino), httpResponse)
 
       await(underTest.getAllStateBenefitsData(taxYear, nino)(hc)) shouldBe
+        Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+    }
+  }
+
+  ".createOrUpdateStateBenefits" should {
+    "return correct IF data when correct parameters are passed" in {
+      val jsValue = Json.toJson(aStateBenefitDetailOverride)
+      val httpResponse = HttpResponse(NO_CONTENT, jsValue.toString())
+
+      stubPostHttpClientCall(createOrUpdateUrl(taxYear, nino, benefitId), jsValue.toString(), httpResponse)
+
+      await(underTest.createOrUpdateStateBenefits(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe Right(())
+    }
+
+    "return IF error and perform a pagerDutyLog when Left is returned" in {
+      val jsValue = Json.toJson(aStateBenefitDetailOverride)
+      val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
+
+      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "CreateOrUpdateStateBenefitResponse")
+
+      stubPostHttpClientCall(createOrUpdateUrl(taxYear, nino, benefitId), jsValue.toString(), httpResponse)
+
+      await(underTest.createOrUpdateStateBenefits(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
     }
   }
