@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package config
+package utils
 
-import com.google.inject.AbstractModule
-import repositories.{StateBenefitsUserDataRepository, StateBenefitsUserDataRepositoryImpl}
-import utils.StartUpLogging
+import repositories.StateBenefitsUserDataRepository
 
-class Module extends AbstractModule {
+import javax.inject.Inject
 
-  override def configure(): Unit = {
-    bind(classOf[AppConfig]).asEagerSingleton()
-    bind(classOf[StateBenefitsUserDataRepository]).to(classOf[StateBenefitsUserDataRepositoryImpl]).asEagerSingleton()
-    bind(classOf[StartUpLogging]).asEagerSingleton()
-  }
+class StartUpLogging @Inject()(repository: StateBenefitsUserDataRepository) {
+
+  repository.logOutIndexes()
 }

@@ -16,19 +16,63 @@
 
 package models.mongo
 
+import models.encryption.TextAndKey
 import play.api.libs.json.{Json, OFormat}
+import utils.DecryptableSyntax.DecryptableOps
+import utils.DecryptorInstances.{bigDecimalDecryptor, booleanDecryptor, instantDateDecryptor, localDateDecryptor, uuidDecryptor}
+import utils.EncryptableSyntax.EncryptableOps
+import utils.EncryptorInstances.{bigDecimalEncryptor, booleanEncryptor, instantEncryptor, localDateEncryptor, uuidEncryptor}
+import utils.{EncryptedValue, SecureGCMCipher}
 
 import java.time.{Instant, LocalDate}
 import java.util.UUID
 
 case class ClaimCYAModel(benefitId: Option[UUID] = None,
                          startDate: LocalDate,
+                         endDateQuestion: Option[Boolean] = None,
                          endDate: Option[LocalDate] = None,
                          dateIgnored: Option[Instant] = None,
                          submittedOn: Option[Instant] = None,
                          amount: Option[BigDecimal] = None,
-                         taxPaid: Option[BigDecimal] = None)
+                         taxPaid: Option[BigDecimal] = None) {
+
+  def encrypted()(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedClaimCYAModel = EncryptedClaimCYAModel(
+    benefitId = benefitId.map(_.encrypted),
+    startDate = startDate.encrypted,
+    endDateQuestion = endDateQuestion.map(_.encrypted),
+    endDate = endDate.map(_.encrypted),
+    dateIgnored = dateIgnored.map(_.encrypted),
+    submittedOn = submittedOn.map(_.encrypted),
+    amount = amount.map(_.encrypted),
+    taxPaid = taxPaid.map(_.encrypted)
+  )
+}
 
 object ClaimCYAModel {
   implicit val format: OFormat[ClaimCYAModel] = Json.format[ClaimCYAModel]
+}
+
+case class EncryptedClaimCYAModel(benefitId: Option[EncryptedValue],
+                                  startDate: EncryptedValue,
+                                  endDateQuestion: Option[EncryptedValue] = None,
+                                  endDate: Option[EncryptedValue] = None,
+                                  dateIgnored: Option[EncryptedValue] = None,
+                                  submittedOn: Option[EncryptedValue] = None,
+                                  amount: Option[EncryptedValue] = None,
+                                  taxPaid: Option[EncryptedValue] = None) {
+
+  def decrypted()(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): ClaimCYAModel = ClaimCYAModel(
+    benefitId = benefitId.map(_.decrypted[UUID]),
+    startDate = startDate.decrypted[LocalDate],
+    endDateQuestion = endDateQuestion.map(_.decrypted[Boolean]),
+    endDate = endDate.map(_.decrypted[LocalDate]),
+    dateIgnored = dateIgnored.map(_.decrypted[Instant]),
+    submittedOn = submittedOn.map(_.decrypted[Instant]),
+    amount = amount.map(_.decrypted[BigDecimal]),
+    taxPaid = taxPaid.map(_.decrypted[BigDecimal])
+  )
+}
+
+object EncryptedClaimCYAModel {
+  implicit val format: OFormat[EncryptedClaimCYAModel] = Json.format[EncryptedClaimCYAModel]
 }

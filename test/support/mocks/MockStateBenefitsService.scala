@@ -19,6 +19,7 @@ package support.mocks
 import connectors.errors.ApiError
 import models.IncomeTaxUserData
 import models.api.AllStateBenefitsData
+import models.errors.ServiceError
 import models.mongo.StateBenefitsUserData
 import org.scalamock.handlers.{CallHandler1, CallHandler3, CallHandler4}
 import org.scalamock.scalatest.MockFactory
@@ -52,16 +53,17 @@ trait MockStateBenefitsService extends MockFactory {
   }
 
   def mockGetStateBenefitsUserData(sessionDataId: UUID,
-                                   result: Option[StateBenefitsUserData]): CallHandler1[UUID, Option[StateBenefitsUserData]] = {
+                                   result: Either[ServiceError, StateBenefitsUserData]
+                                  ): CallHandler1[UUID, Future[Either[ServiceError, StateBenefitsUserData]]] = {
     (mockStateBenefitsService.getStateBenefitsUserData(_: UUID))
       .expects(sessionDataId)
-      .returning(result)
+      .returning(Future.successful(result))
   }
 
   def mockCreateOrUpdateStateBenefitsUserData(stateBenefitsUserData: StateBenefitsUserData,
-                                              result: UUID): CallHandler1[StateBenefitsUserData, UUID] = {
+                                              result: Either[ServiceError, UUID]): CallHandler1[StateBenefitsUserData, Future[Either[ServiceError, UUID]]] = {
     (mockStateBenefitsService.createOrUpdateStateBenefitsUserData(_: StateBenefitsUserData))
       .expects(stateBenefitsUserData)
-      .returning(result)
+      .returning(Future.successful(result))
   }
 }

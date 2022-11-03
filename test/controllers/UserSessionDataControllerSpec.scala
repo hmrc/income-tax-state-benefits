@@ -16,7 +16,8 @@
 
 package controllers
 
-import play.api.http.Status.{BAD_REQUEST, NOT_FOUND, OK}
+import models.errors.{DataNotFoundError, DataNotUpdatedError}
+import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
 import play.api.libs.json.Json
 import play.api.test.Helpers.status
 import support.ControllerUnitTest
@@ -25,6 +26,7 @@ import support.mocks.{MockAuthorisedAction, MockStateBenefitsService}
 import support.providers.FakeRequestProvider
 
 import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class UserSessionDataControllerSpec extends ControllerUnitTest
   with MockAuthorisedAction
@@ -40,18 +42,27 @@ class UserSessionDataControllerSpec extends ControllerUnitTest
   )
 
   ".getStateBenefitsUserData" should {
-    "return NotFound when data with given UUID does not exist" in {
+    "return InternalServerError when stateBenefitsService returns DatabaseError different than DataNotFoundError" in {
       mockAuthorisation()
-      mockGetStateBenefitsUserData(sessionDataId, None)
+      mockGetStateBenefitsUserData(sessionDataId, Left(DataNotUpdatedError))
+
+      val result = underTest.getStateBenefitsUserData(sessionDataId)(fakeGetRequest)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return NotFound when data with given stateBenefitsService returns DataNotFoundError" in {
+      mockAuthorisation()
+      mockGetStateBenefitsUserData(sessionDataId, Left(DataNotFoundError))
 
       val result = underTest.getStateBenefitsUserData(sessionDataId)(fakeGetRequest)
 
       status(result) shouldBe NOT_FOUND
     }
 
-    "return StateBenefitsUserData when data with given UUID exists" in {
+    "return StateBenefitsUserData when stateBenefitsService returns data" in {
       mockAuthorisation()
-      mockGetStateBenefitsUserData(sessionDataId, Some(aStateBenefitsUserData))
+      mockGetStateBenefitsUserData(sessionDataId, Right(aStateBenefitsUserData))
 
       val result = await(underTest.getStateBenefitsUserData(sessionDataId)(fakeGetRequest))
 
@@ -64,19 +75,28 @@ class UserSessionDataControllerSpec extends ControllerUnitTest
     "return BadRequest when data received is in invalid format" in {
       mockAuthorisation()
 
-      val result = underTest.createOrUpdate()(fakeGetRequest)
+      val result = underTest.createOrUpdate()(fakePostRequest.withJsonBody(Json.parse("""{"wrongFormat": "wrong-value"}""")))
 
       status(result) shouldBe BAD_REQUEST
     }
 
-    "return UUID when data received is in valid format" in {
+    "return UUID when data received is in valid format and successful response" in {
       mockAuthorisation()
-      mockCreateOrUpdateStateBenefitsUserData(aStateBenefitsUserData, sessionDataId)
+      mockCreateOrUpdateStateBenefitsUserData(aStateBenefitsUserData, Right(sessionDataId))
 
       val result = await(underTest.createOrUpdate()(fakePostRequest.withJsonBody(Json.toJson(aStateBenefitsUserData))))
 
       result.header.status shouldBe OK
       Json.parse(consumeBody(result)) shouldBe Json.toJson(sessionDataId)
+    }
+
+    "return INTERNAL_SERVER_ERROR when createOrUpdateStateBenefitsUserData returns an error" in {
+      mockAuthorisation()
+      mockCreateOrUpdateStateBenefitsUserData(aStateBenefitsUserData, Left(DataNotUpdatedError))
+
+      val result = underTest.createOrUpdate()(fakePostRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 }

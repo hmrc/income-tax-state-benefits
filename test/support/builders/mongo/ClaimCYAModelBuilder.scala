@@ -17,6 +17,7 @@
 package support.builders.mongo
 
 import models.mongo.ClaimCYAModel
+import play.api.libs.json.{JsObject, Json}
 import support.utils.TaxYearUtils.taxYearEOY
 
 import java.time.{Instant, LocalDate}
@@ -27,10 +28,22 @@ object ClaimCYAModelBuilder {
   val aClaimCYAModel: ClaimCYAModel = ClaimCYAModel(
     benefitId = Some(UUID.fromString("e80d4871-ede8-4b81-93b1-b73ad4fbfd42")),
     startDate = LocalDate.parse(s"${taxYearEOY - 1}-04-23"),
+    endDateQuestion = Some(true),
     endDate = Some(LocalDate.parse(s"$taxYearEOY-08-13")),
     dateIgnored = Some(Instant.parse(s"${taxYearEOY - 1}-07-08T05:23:00Z")),
     submittedOn = Some(Instant.parse(s"$taxYearEOY-03-13T19:23:00Z")),
     amount = Some(300.00),
     taxPaid = Some(400.00)
+  )
+
+  val aClaimCYAModelJson: JsObject = Json.obj(
+    "benefitId" -> aClaimCYAModel.benefitId,
+    "startDate" -> aClaimCYAModel.startDate,
+    "endDateQuestion" -> aClaimCYAModel.endDateQuestion,
+    "endDate" -> aClaimCYAModel.endDate.get,
+    "dateIgnored" -> aClaimCYAModel.dateIgnored,
+    "submittedOn" -> aClaimCYAModel.submittedOn,
+    "amount" -> aClaimCYAModel.amount,
+    "taxPaid" -> aClaimCYAModel.taxPaid
   )
 }

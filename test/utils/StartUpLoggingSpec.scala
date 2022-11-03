@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package config
+package utils
 
-import com.google.inject.AbstractModule
-import repositories.{StateBenefitsUserDataRepository, StateBenefitsUserDataRepositoryImpl}
-import utils.StartUpLogging
+import support.UnitTest
+import support.mocks.MockStateBenefitsUserDataRepository
 
-class Module extends AbstractModule {
+class StartUpLoggingSpec extends UnitTest
+  with MockStateBenefitsUserDataRepository {
 
-  override def configure(): Unit = {
-    bind(classOf[AppConfig]).asEagerSingleton()
-    bind(classOf[StateBenefitsUserDataRepository]).to(classOf[StateBenefitsUserDataRepositoryImpl]).asEagerSingleton()
-    bind(classOf[StartUpLogging]).asEagerSingleton()
+  "StartUpLogging" should {
+    "execute repository.logOutIndexes" in {
+      (() => mockStateBenefitsUserDataRepository.logOutIndexes())
+        .expects()
+        .once()
+
+      new StartUpLogging(mockStateBenefitsUserDataRepository)
+    }
   }
 }

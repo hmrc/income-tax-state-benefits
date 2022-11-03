@@ -17,6 +17,7 @@
 package controllers
 
 import actions.AuthorisedAction
+import models.errors.DataNotFoundError
 import models.mongo.StateBenefitsUserData
 import play.api.Logging
 import play.api.libs.json.{JsSuccess, Json}
@@ -26,30 +27,35 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.util.UUID
 import javax.inject.Inject
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class UserSessionDataController @Inject()(authorisedAction: AuthorisedAction,
                                           stateBenefitsService: StateBenefitsService,
-                                          cc: ControllerComponents) extends BackendController(cc) with Logging {
+                                          cc: ControllerComponents)
+                                         (implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
   def getStateBenefitsUserData(sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { _ =>
-    stateBenefitsService.getStateBenefitsUserData(sessionDataId) match {
-      case Some(data) => Future.successful(Ok(Json.toJson(data)))
-      case None => Future.successful(NotFound)
+    stateBenefitsService.getStateBenefitsUserData(sessionDataId).map {
+      case Right(data) => Ok(Json.toJson(data))
+      case Left(DataNotFoundError) => NotFound
+      case Left(_) => InternalServerError
     }
   }
 
   def createOrUpdate(): Action[AnyContent] = authorisedAction.async { implicit authRequest =>
     authRequest.request.body.asJson.map(_.validate[StateBenefitsUserData]) match {
       case Some(data: JsSuccess[StateBenefitsUserData]) => responseHandler(data.value)
-      case error =>
-        logger.warn("[UserSessionDataController][createOrUpdate] Create update state benefits request is invalid" + error)
+      case _ =>
+        val logMessage = "[UserSessionDataController][createOrUpdate] Create update state benefits request is invalid"
+        logger.warn(logMessage)
         Future.successful(BadRequest)
     }
   }
 
   private def responseHandler(stateBenefitsUserData: StateBenefitsUserData): Future[Result] = {
-    val result: UUID = stateBenefitsService.createOrUpdateStateBenefitsUserData(stateBenefitsUserData)
-    Future.successful(Ok(Json.toJson(result)))
+    stateBenefitsService.createOrUpdateStateBenefitsUserData(stateBenefitsUserData).map {
+      case Left(_) => InternalServerError
+      case Right(uuid) => Ok(Json.toJson(uuid))
+    }
   }
 }

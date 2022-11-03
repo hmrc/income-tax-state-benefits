@@ -17,21 +17,37 @@
 package support.builders.mongo
 
 import models.mongo.StateBenefitsUserData
+import play.api.libs.json.{Format, JsObject, Json}
 import support.builders.UserBuilder.aUser
-import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
+import support.builders.mongo.ClaimCYAModelBuilder.{aClaimCYAModel, aClaimCYAModelJson}
 import support.utils.TaxYearUtils.taxYear
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 object StateBenefitsUserDataBuilder {
 
   val aStateBenefitsUserData: StateBenefitsUserData = StateBenefitsUserData(
-    id = Some(UUID.fromString("558238ef-d2ff-4839-bd6d-307324d6fe37")),
+    sessionDataId = Some(UUID.fromString("558238ef-d2ff-4839-bd6d-307324d6fe37")),
     sessionId = "sessionId-eb3158c2-0aff-4ce8-8d1b-f2208ace52fe",
     mtdItId = aUser.mtditid,
     nino = "AA123456A",
     taxYear = taxYear,
     isPriorSubmission = false,
     claim = Some(aClaimCYAModel)
+  )
+
+  implicit val mongoLocalDateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+
+  val aStateBenefitsUserDataJson: JsObject = Json.obj(
+    "sessionDataId" -> aStateBenefitsUserData.sessionDataId,
+    "sessionId" -> aStateBenefitsUserData.sessionId,
+    "mtdItId" -> aStateBenefitsUserData.mtdItId,
+    "nino" -> aStateBenefitsUserData.nino,
+    "taxYear" -> aStateBenefitsUserData.taxYear,
+    "isPriorSubmission" -> aStateBenefitsUserData.isPriorSubmission,
+    "claim" -> aClaimCYAModelJson,
+    "lastUpdated" -> Json.toJson(aStateBenefitsUserData.lastUpdated)
   )
 }

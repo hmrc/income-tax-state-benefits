@@ -44,7 +44,8 @@ class AuthorisedAction @Inject()(defaultActionBuilder: DefaultActionBuilder,
 
   def async(block: AuthorisationRequest[AnyContent] => Future[Result]): Action[AnyContent] = defaultActionBuilder.async { implicit request =>
     request.headers.get("mtditid").fold {
-      logger.warn("[AuthorisedAction][async] - No MTDITID in the header. Returning unauthorised.")
+      val logMessage = "[AuthorisedAction][async] - No MTDITID in the header. Returning unauthorised."
+      logger.warn(logMessage)
       unauthorized
     } {
       mtdItId =>
@@ -54,10 +55,12 @@ class AuthorisedAction @Inject()(defaultActionBuilder: DefaultActionBuilder,
           case _ => individualAuthentication(block, mtdItId)(request, headerCarrier)
         } recover {
           case _: NoActiveSession =>
-            logger.info(s"[AuthorisedAction][async] - No active session.")
+            val logMessage = s"[AuthorisedAction][async] - No active session."
+            logger.info(logMessage)
             Unauthorized
           case _: AuthorisationException =>
-            logger.info(s"[AuthorisedAction][async] - User failed to authenticate")
+            val logMessage = s"[AuthorisedAction][async] - User failed to authenticate"
+            logger.info(logMessage)
             Unauthorized
         }
     }
@@ -77,19 +80,23 @@ class AuthorisedAction @Inject()(defaultActionBuilder: DefaultActionBuilder,
                 if enrolmentIdentifiers.exists(identifier => identifier.key == Individual.value && identifier.value == requestMtdItId) =>
                 block(AuthorisationRequest(User(requestMtdItId, None), request))
             } getOrElse {
-              logger.info(s"[AuthorisedAction][individualAuthentication] Non-agent with an invalid MTDITID. " +
-                s"MTDITID in auth matches MTDITID in request: ${authMTDITID == requestMtdItId}")
+              val logMessage = s"[AuthorisedAction][individualAuthentication] Non-agent with an invalid MTDITID. " +
+                s"MTDITID in auth matches MTDITID in request: ${authMTDITID == requestMtdItId}"
+              logger.info(logMessage)
               unauthorized
             }
           case (_, None) =>
-            logger.info(s"[AuthorisedAction][individualAuthentication] - User has no nino.")
+            val logMessage = s"[AuthorisedAction][individualAuthentication] - User has no nino."
+            logger.info(logMessage)
             unauthorized
           case (None, _) =>
-            logger.info(s"[AuthorisedAction][individualAuthentication] - User has no MTD IT enrolment.")
+            val logMessage = s"[AuthorisedAction][individualAuthentication] - User has no MTD IT enrolment."
+            logger.info(logMessage)
             unauthorized
         }
       case _ =>
-        logger.info("[AuthorisedAction][individualAuthentication] User has confidence level below 200.")
+        val logMessage = "[AuthorisedAction][individualAuthentication] User has confidence level below 200."
+        logger.info(logMessage)
         unauthorized
     }
   }
@@ -107,15 +114,18 @@ class AuthorisedAction @Inject()(defaultActionBuilder: DefaultActionBuilder,
           case Some(arn) =>
             block(AuthorisationRequest(User(mtdItId, Some(arn)), request))
           case None =>
-            logger.info("[AuthorisedAction][agentAuthentication] Agent with no HMRC-AS-AGENT enrolment.")
+            val logMessage = "[AuthorisedAction][agentAuthentication] Agent with no HMRC-AS-AGENT enrolment."
+            logger.info(logMessage)
             unauthorized
         }
       } recover {
       case _: NoActiveSession =>
-        logger.info(s"[AuthorisedAction][agentAuthentication] - No active session.")
+        val logMessage = s"[AuthorisedAction][agentAuthentication] - No active session."
+        logger.info(logMessage)
         Unauthorized
       case _: AuthorisationException =>
-        logger.info(s"[AuthorisedAction][agentAuthentication] - Agent does not have delegated authority for Client.")
+        val logMessage = s"[AuthorisedAction][agentAuthentication] - Agent does not have delegated authority for Client."
+        logger.info(logMessage)
         Unauthorized
     }
   }

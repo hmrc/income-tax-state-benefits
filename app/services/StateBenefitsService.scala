@@ -20,20 +20,19 @@ import connectors.errors.ApiError
 import connectors.{IntegrationFrameworkConnector, SubmissionConnector}
 import models.IncomeTaxUserData
 import models.api.AllStateBenefitsData
+import models.errors.ServiceError
 import models.mongo.StateBenefitsUserData
+import repositories.StateBenefitsUserDataRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.collection.mutable
 import scala.concurrent.Future
 
 @Singleton
 class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
-                                     integrationFrameworkConnector: IntegrationFrameworkConnector) {
-
-
-  private val repository: mutable.Map[UUID, StateBenefitsUserData] = scala.collection.mutable.Map[UUID, StateBenefitsUserData]()
+                                     integrationFrameworkConnector: IntegrationFrameworkConnector,
+                                     stateBenefitsUserDataRepository: StateBenefitsUserDataRepository) {
 
   def getAllStateBenefitsData(taxYear: Int, nino: String)
                              (implicit hc: HeaderCarrier): Future[Either[ApiError, Option[AllStateBenefitsData]]] = {
@@ -45,18 +44,11 @@ class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
     submissionConnector.getIncomeTaxUserData(taxYear, nino, mtdtid)
   }
 
-  def getStateBenefitsUserData(sessionDataId: UUID): Option[StateBenefitsUserData] = {
-    repository.get(sessionDataId)
+  def getStateBenefitsUserData(sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]] = {
+    stateBenefitsUserDataRepository.find(sessionDataId)
   }
 
-  def createOrUpdateStateBenefitsUserData(stateBenefitsUserData: StateBenefitsUserData): UUID = {
-    if (stateBenefitsUserData.id.isDefined) {
-      repository.put(stateBenefitsUserData.id.get, stateBenefitsUserData)
-      stateBenefitsUserData.id.get
-    } else {
-      val id = UUID.randomUUID()
-      repository.put(id, stateBenefitsUserData.copy(id = Some(id)))
-      id
-    }
+  def createOrUpdateStateBenefitsUserData(stateBenefitsUserData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] = {
+    stateBenefitsUserDataRepository.createOrUpdate(stateBenefitsUserData)
   }
 }
