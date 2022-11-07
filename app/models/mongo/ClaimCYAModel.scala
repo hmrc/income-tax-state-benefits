@@ -34,6 +34,7 @@ case class ClaimCYAModel(benefitId: Option[UUID] = None,
                          dateIgnored: Option[Instant] = None,
                          submittedOn: Option[Instant] = None,
                          amount: Option[BigDecimal] = None,
+                         taxPaidQuestion: Option[Boolean] = None,
                          taxPaid: Option[BigDecimal] = None) {
 
   def encrypted()(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedClaimCYAModel = EncryptedClaimCYAModel(
@@ -44,6 +45,7 @@ case class ClaimCYAModel(benefitId: Option[UUID] = None,
     dateIgnored = dateIgnored.map(_.encrypted),
     submittedOn = submittedOn.map(_.encrypted),
     amount = amount.map(_.encrypted),
+    taxPaidQuestion = taxPaidQuestion.map(_.encrypted),
     taxPaid = taxPaid.map(_.encrypted)
   )
 }
@@ -59,6 +61,7 @@ case class EncryptedClaimCYAModel(benefitId: Option[EncryptedValue],
                                   dateIgnored: Option[EncryptedValue] = None,
                                   submittedOn: Option[EncryptedValue] = None,
                                   amount: Option[EncryptedValue] = None,
+                                  taxPaidQuestion: Option[EncryptedValue] = None,
                                   taxPaid: Option[EncryptedValue] = None) {
 
   def decrypted()(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): ClaimCYAModel = ClaimCYAModel(
@@ -69,6 +72,7 @@ case class EncryptedClaimCYAModel(benefitId: Option[EncryptedValue],
     dateIgnored = dateIgnored.map(_.decrypted[Instant]),
     submittedOn = submittedOn.map(_.decrypted[Instant]),
     amount = amount.map(_.decrypted[BigDecimal]),
+    taxPaidQuestion = taxPaidQuestion.map(_.decrypted[Boolean]),
     taxPaid = taxPaid.map(_.decrypted[BigDecimal])
   )
 }

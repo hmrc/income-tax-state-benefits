@@ -40,6 +40,7 @@ class ClaimCYAModelSpec extends UnitTest
   private val encryptedDateIgnored = EncryptedValue("encryptedDateIgnored", "some-nonce")
   private val encryptedSubmittedOn = EncryptedValue("encryptedSubmittedOn", "some-nonce")
   private val encryptedAmount = EncryptedValue("encryptedAmount", "some-nonce")
+  private val encryptedTaxPaidQuestion = EncryptedValue("encryptedTaxPaidQuestion", "some-nonce")
   private val encryptedTaxPaid = EncryptedValue("encryptedTaxPaid", "some-nonce")
 
   "ClaimCYAModel.format" should {
@@ -63,6 +64,7 @@ class ClaimCYAModelSpec extends UnitTest
       (secureGCMCipher.encrypt(_: Instant)(_: TextAndKey)).expects(aClaimCYAModel.dateIgnored.get, textAndKey).returning(encryptedDateIgnored)
       (secureGCMCipher.encrypt(_: Instant)(_: TextAndKey)).expects(aClaimCYAModel.submittedOn.get, textAndKey).returning(encryptedSubmittedOn)
       (secureGCMCipher.encrypt(_: BigDecimal)(_: TextAndKey)).expects(aClaimCYAModel.amount.get, textAndKey).returning(encryptedAmount)
+      (secureGCMCipher.encrypt(_: Boolean)(_: TextAndKey)).expects(aClaimCYAModel.taxPaidQuestion.get, textAndKey).returning(encryptedTaxPaidQuestion)
       (secureGCMCipher.encrypt(_: BigDecimal)(_: TextAndKey)).expects(aClaimCYAModel.taxPaid.get, textAndKey).returning(encryptedTaxPaid)
 
       aClaimCYAModel.encrypted shouldBe EncryptedClaimCYAModel(
@@ -73,6 +75,7 @@ class ClaimCYAModelSpec extends UnitTest
         dateIgnored = Some(encryptedDateIgnored),
         submittedOn = Some(encryptedSubmittedOn),
         amount = Some(encryptedAmount),
+        taxPaidQuestion = Some(encryptedTaxPaidQuestion),
         taxPaid = Some(encryptedTaxPaid)
       )
     }
@@ -94,6 +97,8 @@ class ClaimCYAModelSpec extends UnitTest
         .expects(encryptedSubmittedOn.value, encryptedSubmittedOn.nonce, textAndKey, *).returning(aClaimCYAModel.submittedOn.get)
       (secureGCMCipher.decrypt[BigDecimal](_: String, _: String)(_: TextAndKey, _: Converter[BigDecimal]))
         .expects(encryptedAmount.value, encryptedAmount.nonce, textAndKey, *).returning(aClaimCYAModel.amount.get)
+      (secureGCMCipher.decrypt[Boolean](_: String, _: String)(_: TextAndKey, _: Converter[Boolean]))
+        .expects(encryptedTaxPaidQuestion.value, encryptedTaxPaidQuestion.nonce, textAndKey, *).returning(aClaimCYAModel.taxPaidQuestion.get)
       (secureGCMCipher.decrypt[BigDecimal](_: String, _: String)(_: TextAndKey, _: Converter[BigDecimal]))
         .expects(encryptedTaxPaid.value, encryptedTaxPaid.nonce, textAndKey, *).returning(aClaimCYAModel.taxPaid.get)
 
@@ -105,6 +110,7 @@ class ClaimCYAModelSpec extends UnitTest
         dateIgnored = Some(encryptedDateIgnored),
         submittedOn = Some(encryptedSubmittedOn),
         amount = Some(encryptedAmount),
+        taxPaidQuestion = Some(encryptedTaxPaidQuestion),
         taxPaid = Some(encryptedTaxPaid)
       )
 
@@ -116,6 +122,7 @@ class ClaimCYAModelSpec extends UnitTest
         dateIgnored = aClaimCYAModel.dateIgnored,
         submittedOn = aClaimCYAModel.submittedOn,
         amount = aClaimCYAModel.amount,
+        taxPaidQuestion = aClaimCYAModel.taxPaidQuestion,
         taxPaid = aClaimCYAModel.taxPaid
       )
     }
