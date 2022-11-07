@@ -32,7 +32,7 @@ object GetIncomeTaxUserDataResponse {
 
     override def read(method: String, url: String, response: HttpResponse): GetIncomeTaxUserDataResponse = response.status match {
       case OK => GetIncomeTaxUserDataResponse(response, extractResult(response))
-      case NOT_FOUND => GetIncomeTaxUserDataResponse(response, Right(IncomeTaxUserData(None)))
+      case NOT_FOUND | NO_CONTENT => GetIncomeTaxUserDataResponse(response, Right(IncomeTaxUserData(None)))
       case INTERNAL_SERVER_ERROR | SERVICE_UNAVAILABLE | BAD_REQUEST | UNPROCESSABLE_ENTITY =>
         GetIncomeTaxUserDataResponse(response, handleError(response, response.status))
       case _ => GetIncomeTaxUserDataResponse(response, handleError(response, INTERNAL_SERVER_ERROR))
