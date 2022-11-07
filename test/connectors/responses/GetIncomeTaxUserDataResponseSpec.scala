@@ -78,6 +78,15 @@ class GetIncomeTaxUserDataResponseSpec extends UnitTest {
         )
       }
 
+      "status is NO_CONTENT and empty body" in {
+        val httpResponse: HttpResponse = HttpResponse.apply(NO_CONTENT, "", anyHeaders)
+
+        underTest.read(anyMethod, anyUrl, httpResponse) shouldBe GetIncomeTaxUserDataResponse(
+          httpResponse,
+          Right(IncomeTaxUserData(None))
+        )
+      }
+
       "status is INTERNAL_SERVER_ERROR and jsValue for error" in {
         val jsValue: JsValue = Json.toJson(SingleErrorBody("some-code", "some-reason"))
 
