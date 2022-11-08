@@ -26,7 +26,8 @@ import java.util.concurrent.TimeUnit
 private[repositories] object StateBenefitsUserDataIndexes {
 
   private val lookUpIndex: Bson = compoundIndex(
-    ascending("sessionDataId")
+    ascending("sessionDataId"),
+    ascending("nino")
   )
 
   def indexes(appConfig: AppConfig): Seq[IndexModel] = Seq(

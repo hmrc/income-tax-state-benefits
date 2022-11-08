@@ -1,8 +1,8 @@
 # microservice specific routes
 
-GET     /income-tax/nino/:nino/tax-year/:taxYear            controllers.GetStateBenefitsController.getAllStateBenefitsData(nino: String, taxYear: Int)
+GET     /income-tax/nino/:nino/tax-year/:taxYear                controllers.GetStateBenefitsController.getAllStateBenefitsData(nino: String, taxYear: Int)
 
-GET     /prior-data/nino/:nino/tax-year/:taxYear            controllers.GetUserPriorDataController.getPriorData(nino: String, taxYear: Int)
+GET     /prior-data/nino/:nino/tax-year/:taxYear                controllers.GetUserPriorDataController.getPriorData(nino: String, taxYear: Int)
 
-GET     /session-data/:sessionDataId                        controllers.UserSessionDataController.getStateBenefitsUserData(sessionDataId: java.util.UUID)
-POST    /session-data                                       controllers.UserSessionDataController.createOrUpdate()
+GET     /session-data/nino/:nino/session/:sessionDataId         controllers.UserSessionDataController.getStateBenefitsUserData(nino: String, sessionDataId: java.util.UUID)
+POST    /session-data                                           controllers.UserSessionDataController.createOrUpdate()

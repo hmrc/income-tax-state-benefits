@@ -38,6 +38,8 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
 
   protected implicit val secureGCMCipher: SecureGCMCipher = app.injector.instanceOf[SecureGCMCipher]
 
+  private val nino = "AA123456A"
+
   private val repoWithInvalidEncryption = GuiceApplicationBuilder().configure(config + ("mongodb.encryption.key" -> "key")).build()
     .injector.instanceOf[StateBenefitsUserDataRepositoryImpl]
 
@@ -65,7 +67,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
       count() shouldBe 0
       await(repoWithInvalidEncryption.collection.insertOne(aStateBenefitsUserData.encrypted).toFuture())
       count() shouldBe 1
-      await(repoWithInvalidEncryption.find(aStateBenefitsUserData.sessionDataId.get)) shouldBe Left(EncryptionDecryptionError(
+      await(repoWithInvalidEncryption.find(nino, aStateBenefitsUserData.sessionDataId.get)) shouldBe Left(EncryptionDecryptionError(
         "Key being used is not valid. It could be due to invalid encoding, wrong length or uninitialized for decrypt Invalid AES key length: 2 bytes"
       ))
     }
@@ -110,7 +112,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
 
       await(underTest.createOrUpdate(updatedCisUserData)) shouldBe Right(aStateBenefitsUserData.sessionDataId.get)
       count shouldBe 1
-      await(underTest.find(updatedCisUserData.sessionDataId.get)).right.get.claim shouldBe None
+      await(underTest.find(nino, updatedCisUserData.sessionDataId.get)).right.get.claim shouldBe None
     }
   }
 
@@ -122,14 +124,14 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
       await(underTest.createOrUpdate(data))
       count shouldBe 1
 
-      private val result = await(underTest.find(data.sessionDataId.get))
+      private val result = await(underTest.find(nino, data.sessionDataId.get))
 
       result.right.map(_.copy(lastUpdated = data.lastUpdated)) shouldBe Right(data)
       result.right.get.lastUpdated.isAfter(data.lastUpdated) shouldBe true
     }
 
     "return DataNotFoundError when find operation did not find data for the given inputs" in new EmptyDatabase {
-      await(underTest.find(UUID.randomUUID())) shouldBe Left(DataNotFoundError)
+      await(underTest.find(nino, UUID.randomUUID())) shouldBe Left(DataNotFoundError)
     }
   }
 

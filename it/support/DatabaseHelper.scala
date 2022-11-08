@@ -36,8 +36,8 @@ trait DatabaseHelper {
     await(stateBenefitsDatabase.createOrUpdate(stateBenefitsUserData))
   }
 
-  def findSessionData(sessionDataId: UUID): Option[StateBenefitsUserData] = {
-    await(stateBenefitsDatabase.find(sessionDataId).map {
+  def findSessionData(nino: String, sessionDataId: UUID): Option[StateBenefitsUserData] = {
+    await(stateBenefitsDatabase.find(nino, sessionDataId).map {
       case Left(_) => None
       case Right(userData) => Some(userData)
     })

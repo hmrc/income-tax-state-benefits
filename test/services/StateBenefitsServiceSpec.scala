@@ -57,9 +57,9 @@ class StateBenefitsServiceSpec extends UnitTest
 
   ".getStateBenefitsUserData" should {
     "delegate to stateBenefitsUserDataRepository and return the result" in {
-      mockFind(sessionDataId, Right(aStateBenefitsUserData))
+      mockFind("any-nino", sessionDataId, Right(aStateBenefitsUserData))
 
-      underTest.getStateBenefitsUserData(sessionDataId)
+      underTest.getStateBenefitsUserData("any-nino", sessionDataId)
     }
   }
 

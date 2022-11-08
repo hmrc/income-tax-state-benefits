@@ -44,8 +44,8 @@ class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
     submissionConnector.getIncomeTaxUserData(taxYear, nino, mtdtid)
   }
 
-  def getStateBenefitsUserData(sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]] = {
-    stateBenefitsUserDataRepository.find(sessionDataId)
+  def getStateBenefitsUserData(nino: String, sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]] = {
+    stateBenefitsUserDataRepository.find(nino, sessionDataId)
   }
 
   def createOrUpdateStateBenefitsUserData(stateBenefitsUserData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] = {
