@@ -27,8 +27,10 @@ import utils.PagerDutyHelper.pagerDutyLog
 import java.util.UUID
 
 trait Repository {
-  def filter(sessionDataId: UUID): Bson = and(
-    equal("sessionDataId", toBson(Some(sessionDataId)))
+
+  def filter(nino: String, sessionDataId: UUID): Bson = and(
+    equal("sessionDataId", toBson(Some(sessionDataId))),
+    equal("nino", toBson(nino))
   )
 
   def handleEncryptionDecryptionException[T](exception: Exception, startOfMessage: String): Left[ServiceError, T] = {

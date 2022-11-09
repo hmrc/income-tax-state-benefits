@@ -69,15 +69,15 @@ class StateBenefitsUserDataRepositoryImpl @Inject()(mongo: MongoComponent, appCo
     }
   }
 
-  override def find(sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]] = {
-    findBy(sessionDataId).map {
+  override def find(nino: String, sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]] = {
+    findBy(sessionDataId, nino).map {
       case Left(error) => Left(error)
       case Right(encryptedData) => decryptedFrom(encryptedData)
     }
   }
 
   private def createOrUpdateFrom(encryptedData: EncryptedStateBenefitsUserData): Future[Either[ServiceError, UUID]] = {
-    val queryFilter: Bson = filter(encryptedData.sessionDataId.get)
+    val queryFilter: Bson = filter(encryptedData.nino, encryptedData.sessionDataId.get)
     val options = FindOneAndReplaceOptions().upsert(true).returnDocument(ReturnDocument.AFTER)
     collection.findOneAndReplace(queryFilter, encryptedData, options).toFutureOption().map {
       case Some(data) => Right(data.sessionDataId.get)
@@ -91,10 +91,10 @@ class StateBenefitsUserDataRepositoryImpl @Inject()(mongo: MongoComponent, appCo
     }
   }
 
-  private def findBy(sessionDataId: UUID): Future[Either[ServiceError, EncryptedStateBenefitsUserData]] = {
+  private def findBy(sessionDataId: UUID, nino: String): Future[Either[ServiceError, EncryptedStateBenefitsUserData]] = {
     val update = set("lastUpdated", toBson(LocalDateTime.now(ZoneOffset.UTC))(MongoJavatimeFormats.localDateTimeFormat))
     val options = FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
-    val eventualResult = collection.findOneAndUpdate(filter(sessionDataId), update, options).toFutureOption().map {
+    val eventualResult = collection.findOneAndUpdate(filter(nino, sessionDataId), update, options).toFutureOption().map {
       case Some(data) => Right(data)
       case None => Left(DataNotFoundError)
     }
@@ -127,7 +127,7 @@ class StateBenefitsUserDataRepositoryImpl @Inject()(mongo: MongoComponent, appCo
 trait StateBenefitsUserDataRepository {
   def createOrUpdate(userData: StateBenefitsUserData): Future[Either[ServiceError, UUID]]
 
-  def find(sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]]
+  def find(nino: String, sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]]
 
   def logOutIndexes(): Unit
 }

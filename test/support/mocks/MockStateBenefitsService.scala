@@ -21,7 +21,7 @@ import models.IncomeTaxUserData
 import models.api.AllStateBenefitsData
 import models.errors.ServiceError
 import models.mongo.StateBenefitsUserData
-import org.scalamock.handlers.{CallHandler1, CallHandler3, CallHandler4}
+import org.scalamock.handlers.{CallHandler1, CallHandler2, CallHandler3, CallHandler4}
 import org.scalamock.scalatest.MockFactory
 import services.StateBenefitsService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -52,11 +52,12 @@ trait MockStateBenefitsService extends MockFactory {
       .returning(Future.successful(result))
   }
 
-  def mockGetStateBenefitsUserData(sessionDataId: UUID,
+  def mockGetStateBenefitsUserData(nino: String,
+                                   sessionDataId: UUID,
                                    result: Either[ServiceError, StateBenefitsUserData]
-                                  ): CallHandler1[UUID, Future[Either[ServiceError, StateBenefitsUserData]]] = {
-    (mockStateBenefitsService.getStateBenefitsUserData(_: UUID))
-      .expects(sessionDataId)
+                                  ): CallHandler2[String, UUID, Future[Either[ServiceError, StateBenefitsUserData]]] = {
+    (mockStateBenefitsService.getStateBenefitsUserData(_: String, _: UUID))
+      .expects(nino, sessionDataId)
       .returning(Future.successful(result))
   }
 

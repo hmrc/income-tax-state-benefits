@@ -34,6 +34,7 @@ class UserSessionDataControllerSpec extends ControllerUnitTest
   with FakeRequestProvider {
 
   private val sessionDataId = UUID.randomUUID()
+  private val nino = "AA123456A"
 
   private val underTest = new UserSessionDataController(
     authorisedAction = mockAuthorisedAction,
@@ -44,27 +45,27 @@ class UserSessionDataControllerSpec extends ControllerUnitTest
   ".getStateBenefitsUserData" should {
     "return InternalServerError when stateBenefitsService returns DatabaseError different than DataNotFoundError" in {
       mockAuthorisation()
-      mockGetStateBenefitsUserData(sessionDataId, Left(DataNotUpdatedError))
+      mockGetStateBenefitsUserData(nino, sessionDataId, Left(DataNotUpdatedError))
 
-      val result = underTest.getStateBenefitsUserData(sessionDataId)(fakeGetRequest)
+      val result = underTest.getStateBenefitsUserData(nino, sessionDataId)(fakeGetRequest)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
     "return NotFound when data with given stateBenefitsService returns DataNotFoundError" in {
       mockAuthorisation()
-      mockGetStateBenefitsUserData(sessionDataId, Left(DataNotFoundError))
+      mockGetStateBenefitsUserData(nino, sessionDataId, Left(DataNotFoundError))
 
-      val result = underTest.getStateBenefitsUserData(sessionDataId)(fakeGetRequest)
+      val result = underTest.getStateBenefitsUserData(nino, sessionDataId)(fakeGetRequest)
 
       status(result) shouldBe NOT_FOUND
     }
 
     "return StateBenefitsUserData when stateBenefitsService returns data" in {
       mockAuthorisation()
-      mockGetStateBenefitsUserData(sessionDataId, Right(aStateBenefitsUserData))
+      mockGetStateBenefitsUserData(nino, sessionDataId, Right(aStateBenefitsUserData))
 
-      val result = await(underTest.getStateBenefitsUserData(sessionDataId)(fakeGetRequest))
+      val result = await(underTest.getStateBenefitsUserData(nino, sessionDataId)(fakeGetRequest))
 
       result.header.status shouldBe OK
       Json.parse(consumeBody(result)) shouldBe Json.toJson(aStateBenefitsUserData)

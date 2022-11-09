@@ -34,8 +34,8 @@ class UserSessionDataController @Inject()(authorisedAction: AuthorisedAction,
                                           cc: ControllerComponents)
                                          (implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
-  def getStateBenefitsUserData(sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { _ =>
-    stateBenefitsService.getStateBenefitsUserData(sessionDataId).map {
+  def getStateBenefitsUserData(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { _ =>
+    stateBenefitsService.getStateBenefitsUserData(nino, sessionDataId).map {
       case Right(data) => Ok(Json.toJson(data))
       case Left(DataNotFoundError) => NotFound
       case Left(_) => InternalServerError

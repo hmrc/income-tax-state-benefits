@@ -18,7 +18,7 @@ package support.mocks
 
 import models.errors.ServiceError
 import models.mongo.StateBenefitsUserData
-import org.scalamock.handlers.CallHandler1
+import org.scalamock.handlers.{CallHandler1, CallHandler2}
 import org.scalamock.scalatest.MockFactory
 import repositories.StateBenefitsUserDataRepository
 
@@ -36,10 +36,11 @@ trait MockStateBenefitsUserDataRepository extends MockFactory {
       .returning(Future.successful(result))
   }
 
-  def mockFind(sessionDataId: UUID,
-               result: Either[ServiceError, StateBenefitsUserData]): CallHandler1[UUID, Future[Either[ServiceError, StateBenefitsUserData]]] = {
-    (mockStateBenefitsUserDataRepository.find(_: UUID))
-      .expects(sessionDataId)
+  def mockFind(nino: String,
+               sessionDataId: UUID,
+               result: Either[ServiceError, StateBenefitsUserData]): CallHandler2[String, UUID, Future[Either[ServiceError, StateBenefitsUserData]]] = {
+    (mockStateBenefitsUserDataRepository.find(_: String, _: UUID))
+      .expects(nino, sessionDataId)
       .returning(Future.successful(result))
   }
 }
