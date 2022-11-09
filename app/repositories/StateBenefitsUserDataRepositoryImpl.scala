@@ -48,7 +48,8 @@ class StateBenefitsUserDataRepositoryImpl @Inject()(mongo: MongoComponent, appCo
     mongoComponent = mongo,
     collectionName = "stateBenefitsUserData",
     domainFormat = EncryptedStateBenefitsUserData.format,
-    indexes = StateBenefitsUserDataIndexes.indexes(appConfig)
+    indexes = StateBenefitsUserDataIndexes.indexes(appConfig),
+    replaceIndexes = true
   ) with Repository with StateBenefitsUserDataRepository with Logging {
 
   private lazy val findMessageStart = "[StateBenefitsUserDataRepositoryImpl][find]"
