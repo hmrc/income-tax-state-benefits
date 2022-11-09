@@ -15,6 +15,8 @@ Add a link to the relevant story in Jira
 ##### Whilst Reviewing
 - [ ]  Have you run the tests?
 - [ ]  Have you run the journey tests?
+- [ ]  Have you run the smoke tests?
+- [ ]  Have you run the performance tests?
 - [ ]  Have you looked at the JIRA story to make sure all Acceptance Criteria has been met?
 
 ##### After Reviewing
@@ -26,6 +28,8 @@ Add a link to the relevant story in Jira
 ##### Before creating PR
 - [ ]  Have you run the tests?
 - [ ]  Have you run the journey tests? (where applicable)
+- [ ]  Have you run the smoke tests? (where applicable)
+- [ ]  Have you run the performance tests? (where applicable)
 - [ ]  Have you addressed warnings where appropriate?
 - [ ]  Have you rebased against the current version of main?
 - [ ]  Have you checked code coverage isn’t lower than previously?
