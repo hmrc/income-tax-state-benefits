@@ -40,17 +40,31 @@ trait WireMockStubs {
     stubFor(mappingBuilderWithHeaders.willReturn(responseBuilder))
   }
 
-  def stubPostHttpClientCall(url: String,
-                             httpRequestBodyJson: String,
-                             httpResponse: HttpResponse,
-                             requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
+  def stubPutHttpClientCall(url: String,
+                            httpRequestBodyJson: String,
+                            httpResponse: HttpResponse,
+                            requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
     val responseBuilder = aResponse()
       .withStatus(httpResponse.status)
       .withBody(httpResponse.body)
       .withHeader(CONTENT_TYPE, JSON)
+    val putBuilder = put(urlMatching(url)).withRequestBody(equalToJson(httpRequestBodyJson))
 
     val mappingBuilderWithHeaders: MappingBuilder = requestHeaders
-      .foldLeft(post(urlMatching(url)).withRequestBody(equalToJson(httpRequestBodyJson)))((result, nxt) => result.withHeader(nxt.key(), equalTo(nxt.firstValue())))
+      .foldLeft(putBuilder)((result, nxt) => result.withHeader(nxt.key(), equalTo(nxt.firstValue())))
+
+    stubFor(mappingBuilderWithHeaders.willReturn(responseBuilder))
+  }
+
+  def stubDeleteHttpClientCall(url: String,
+                               httpResponse: HttpResponse,
+                               requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
+    val responseBuilder = aResponse()
+      .withStatus(httpResponse.status)
+      .withBody(httpResponse.body)
+      .withHeader(CONTENT_TYPE, JSON)
+    val mappingBuilderWithHeaders: MappingBuilder = requestHeaders
+      .foldLeft(delete(urlMatching(url)))((result, nxt) => result.withHeader(nxt.key(), equalTo(nxt.firstValue())))
 
     stubFor(mappingBuilderWithHeaders.willReturn(responseBuilder))
   }

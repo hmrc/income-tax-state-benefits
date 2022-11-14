@@ -18,10 +18,10 @@ package support.mocks
 
 import connectors.errors.ApiError
 import models.IncomeTaxUserData
-import models.api.AllStateBenefitsData
+import models.api.{AllStateBenefitsData, StateBenefitDetailOverride}
 import models.errors.ServiceError
 import models.mongo.StateBenefitsUserData
-import org.scalamock.handlers.{CallHandler1, CallHandler2, CallHandler3, CallHandler4}
+import org.scalamock.handlers._
 import org.scalamock.scalatest.MockFactory
 import services.StateBenefitsService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -39,6 +39,26 @@ trait MockStateBenefitsService extends MockFactory {
                                  ): CallHandler3[Int, String, HeaderCarrier, Future[Either[ApiError, Option[AllStateBenefitsData]]]] = {
     (mockStateBenefitsService.getAllStateBenefitsData(_: Int, _: String)(_: HeaderCarrier))
       .expects(taxYear, nino, *)
+      .returning(Future.successful(result))
+  }
+
+  def mockCreateOrUpdateStateBenefitDetailOverride(taxYear: Int,
+                                                   nino: String,
+                                                   benefitId: UUID,
+                                                   stateBenefitDetailOverride: StateBenefitDetailOverride,
+                                                   result: Either[ApiError, Unit]
+                                                  ): CallHandler5[Int, String, UUID, StateBenefitDetailOverride, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
+    (mockStateBenefitsService.createOrUpdateStateBenefitDetailOverride(_: Int, _: String, _: UUID, _: StateBenefitDetailOverride)(_: HeaderCarrier))
+      .expects(taxYear, nino, benefitId, stateBenefitDetailOverride, *)
+      .returning(Future.successful(result))
+  }
+
+  def mockDeleteStateBenefit(taxYear: Int,
+                             nino: String,
+                             benefitId: UUID,
+                             result: Either[ApiError, Unit]): CallHandler4[Int, String, UUID, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
+    (mockStateBenefitsService.deleteStateBenefit(_: Int, _: String, _: UUID)(_: HeaderCarrier))
+      .expects(taxYear, nino, benefitId, *)
       .returning(Future.successful(result))
   }
 
