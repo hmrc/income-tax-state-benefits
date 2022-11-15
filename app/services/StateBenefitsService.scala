@@ -19,7 +19,7 @@ package services
 import connectors.errors.ApiError
 import connectors.{IntegrationFrameworkConnector, SubmissionConnector}
 import models.IncomeTaxUserData
-import models.api.AllStateBenefitsData
+import models.api.{AllStateBenefitsData, StateBenefitDetailOverride}
 import models.errors.ServiceError
 import models.mongo.StateBenefitsUserData
 import repositories.StateBenefitsUserDataRepository
@@ -37,6 +37,19 @@ class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
   def getAllStateBenefitsData(taxYear: Int, nino: String)
                              (implicit hc: HeaderCarrier): Future[Either[ApiError, Option[AllStateBenefitsData]]] = {
     integrationFrameworkConnector.getAllStateBenefitsData(taxYear, nino)
+  }
+
+  def createOrUpdateStateBenefitDetailOverride(taxYear: Int,
+                                               nino: String,
+                                               benefitId: UUID,
+                                               stateBenefitDetailOverride: StateBenefitDetailOverride)
+                                              (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
+    integrationFrameworkConnector.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, stateBenefitDetailOverride)
+  }
+
+  def deleteStateBenefit(taxYear: Int, nino: String, benefitId: UUID)
+                        (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
+    integrationFrameworkConnector.deleteStateBenefit(taxYear, nino, benefitId)
   }
 
   def getPriorData(taxYear: Int, nino: String, mtdtid: String)

@@ -1,6 +1,8 @@
 # microservice specific routes
 
-GET     /income-tax/nino/:nino/tax-year/:taxYear                controllers.GetStateBenefitsController.getAllStateBenefitsData(nino: String, taxYear: Int)
+GET     /income-tax/nino/:nino/tax-year/:taxYear                            controllers.StateBenefitsController.getAllStateBenefitsData(nino: String, taxYear: Int)
+PUT     /income-tax/nino/:nino/tax-year/:taxYear/benefits/:benefitId        controllers.StateBenefitsController.createOrUpdateStateBenefitDetailOverride(nino: String, taxYear: Int, benefitId: java.util.UUID)
+DELETE  /income-tax/nino/:nino/tax-year/:taxYear/benefits/:benefitId        controllers.StateBenefitsController.deleteStateBenefit(nino: String, taxYear: Int, benefitId: java.util.UUID)
 
 GET     /prior-data/nino/:nino/tax-year/:taxYear                controllers.GetUserPriorDataController.getPriorData(nino: String, taxYear: Int)
 

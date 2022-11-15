@@ -51,6 +51,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     s"/if/income-tax/income/state-benefits/$nino/$taxYearParameter/$benefitId"
   }
 
+  def deleteUrl(taxYear: Int, nino: String, benefitId: UUID): String = {
+    val taxYearParameter = s"${taxYear - 1}-${taxYear.toString takeRight 2}"
+    s"/if/income-tax/income/state-benefits/$nino/$taxYearParameter/custom/$benefitId"
+  }
+
   ".getAllStateBenefitsData" should {
     "return correct IF data when correct parameters are passed" in {
       val httpResponse = HttpResponse(OK, Json.toJson(anAllStateBenefitsData).toString())
@@ -72,14 +77,14 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     }
   }
 
-  ".createOrUpdateStateBenefits" should {
+  ".createOrUpdateStateBenefitDetailOverride" should {
     "return correct IF data when correct parameters are passed" in {
       val jsValue = Json.toJson(aStateBenefitDetailOverride)
       val httpResponse = HttpResponse(NO_CONTENT, jsValue.toString())
 
-      stubPostHttpClientCall(createOrUpdateUrl(taxYear, nino, benefitId), jsValue.toString(), httpResponse)
+      stubPutHttpClientCall(createOrUpdateUrl(taxYear, nino, benefitId), jsValue.toString(), httpResponse)
 
-      await(underTest.createOrUpdateStateBenefits(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe Right(())
+      await(underTest.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe Right(())
     }
 
     "return IF error and perform a pagerDutyLog when Left is returned" in {
@@ -88,9 +93,30 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       (pagerDutyLoggerService.pagerDutyLog _).expects(*, "CreateOrUpdateStateBenefitResponse")
 
-      stubPostHttpClientCall(createOrUpdateUrl(taxYear, nino, benefitId), jsValue.toString(), httpResponse)
+      stubPutHttpClientCall(createOrUpdateUrl(taxYear, nino, benefitId), jsValue.toString(), httpResponse)
 
-      await(underTest.createOrUpdateStateBenefits(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe
+      await(underTest.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe
+        Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+    }
+  }
+
+  ".deleteStateBenefit" should {
+    "return correct IF response when correct parameters are passed" in {
+      val httpResponse = HttpResponse(NO_CONTENT, "")
+
+      stubDeleteHttpClientCall(deleteUrl(taxYear, nino, benefitId), httpResponse)
+
+      await(underTest.deleteStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe Right(())
+    }
+
+    "return IF error and perform a pagerDutyLog when Left is returned" in {
+      val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
+
+      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "DeleteStateBenefitResponse")
+
+      stubDeleteHttpClientCall(deleteUrl(taxYear, nino, benefitId), httpResponse)
+
+      await(underTest.deleteStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
     }
   }

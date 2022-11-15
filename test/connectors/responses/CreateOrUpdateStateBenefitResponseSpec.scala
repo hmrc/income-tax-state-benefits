@@ -88,7 +88,7 @@ class CreateOrUpdateStateBenefitResponseSpec extends UnitTest {
         )
       }
 
-      "status is something else and jsValue for error" in {
+      "status is INTERNAL_SERVER_ERROR for any other error and jsValue for error" in {
         val httpResponse: HttpResponse = HttpResponse.apply(FAILED_DEPENDENCY, singleErrorBodyJson, anyHeaders)
 
         underTest.read(anyMethod, anyUrl, httpResponse) shouldBe CreateOrUpdateStateBenefitResponse(

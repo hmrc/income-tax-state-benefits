@@ -18,11 +18,12 @@ package support.mocks
 
 import connectors.IntegrationFrameworkConnector
 import connectors.errors.ApiError
-import models.api.AllStateBenefitsData
-import org.scalamock.handlers.CallHandler3
+import models.api.{AllStateBenefitsData, StateBenefitDetailOverride}
+import org.scalamock.handlers.{CallHandler3, CallHandler4, CallHandler5}
 import org.scalamock.scalatest.MockFactory
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.util.UUID
 import scala.concurrent.Future
 
 trait MockIntegrationFrameworkConnector extends MockFactory {
@@ -35,6 +36,26 @@ trait MockIntegrationFrameworkConnector extends MockFactory {
                                  ): CallHandler3[Int, String, HeaderCarrier, Future[Either[ApiError, Option[AllStateBenefitsData]]]] = {
     (mockIntegrationFrameworkConnector.getAllStateBenefitsData(_: Int, _: String)(_: HeaderCarrier))
       .expects(taxYear, nino, *)
+      .returning(Future.successful(result))
+  }
+
+  def mockCreateOrUpdateStateBenefitDetailOverride(taxYear: Int,
+                                                   nino: String,
+                                                   benefitId: UUID,
+                                                   stateBenefitDetailOverride: StateBenefitDetailOverride,
+                                                   result: Either[ApiError, Unit])
+  : CallHandler5[Int, String, UUID, StateBenefitDetailOverride, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
+    (mockIntegrationFrameworkConnector.createOrUpdateStateBenefitDetailOverride(_: Int, _: String, _: UUID, _: StateBenefitDetailOverride)(_: HeaderCarrier))
+      .expects(taxYear, nino, benefitId, stateBenefitDetailOverride, *)
+      .returning(Future.successful(result))
+  }
+
+  def mockDeleteStateBenefit(taxYear: Int,
+                             nino: String,
+                             benefitId: UUID,
+                             result: Either[ApiError, Unit]): CallHandler4[Int, String, UUID, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
+    (mockIntegrationFrameworkConnector.deleteStateBenefit(_: Int, _: String, _: UUID)(_: HeaderCarrier))
+      .expects(taxYear, nino, benefitId, *)
       .returning(Future.successful(result))
   }
 }

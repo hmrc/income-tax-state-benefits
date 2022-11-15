@@ -19,6 +19,7 @@ package services
 import support.UnitTest
 import support.builders.IncomeTaxUserDataBuilder.anIncomeTaxUserData
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
+import support.builders.api.StateBenefitDetailOverrideBuilder.aStateBenefitDetailOverride
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
 import support.mocks.{MockIntegrationFrameworkConnector, MockStateBenefitsUserDataRepository, MockSubmissionConnector}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -33,6 +34,8 @@ class StateBenefitsServiceSpec extends UnitTest
   private implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
 
   private val anyTaxYear = 2022
+  private val anyNino = "any-nino"
+  private val anyBenefitId = UUID.randomUUID()
   private val sessionDataId = UUID.randomUUID()
 
   private val underTest = new StateBenefitsService(mockSubmissionConnector, mockIntegrationFrameworkConnector, mockStateBenefitsUserDataRepository)
@@ -41,25 +44,41 @@ class StateBenefitsServiceSpec extends UnitTest
     "delegate to integrationFrameworkConnector and return the result" in {
       val result = Right(Some(anAllStateBenefitsData))
 
-      mockGetAllStateBenefitsData(anyTaxYear, "any-nino", result)
+      mockGetAllStateBenefitsData(anyTaxYear, anyNino, result)
 
-      underTest.getAllStateBenefitsData(anyTaxYear, "any-nino")
+      underTest.getAllStateBenefitsData(anyTaxYear, anyNino)
+    }
+  }
+
+  ".createOrUpdateStateBenefitDetailOverride" should {
+    "delegate to integrationFrameworkConnector and return the result" in {
+      mockCreateOrUpdateStateBenefitDetailOverride(anyTaxYear, anyNino, anyBenefitId, aStateBenefitDetailOverride, Right(()))
+
+      underTest.createOrUpdateStateBenefitDetailOverride(anyTaxYear, anyNino, anyBenefitId, aStateBenefitDetailOverride)
+    }
+  }
+
+  ".deleteStateBenefit" should {
+    "delegate to integrationFrameworkConnector and return the result" in {
+      mockDeleteStateBenefit(anyTaxYear, anyNino, anyBenefitId, Right(()))
+
+      underTest.deleteStateBenefit(anyTaxYear, anyNino, anyBenefitId)
     }
   }
 
   ".getPriorData" should {
     "delegate to submissionConnector and return the result" in {
-      mockGetIncomeTaxUserData(anyTaxYear, nino = "any-nino", mtditid = "any-mtditid", Right(anIncomeTaxUserData))
+      mockGetIncomeTaxUserData(anyTaxYear, nino = anyNino, mtditid = "any-mtditid", Right(anIncomeTaxUserData))
 
-      underTest.getPriorData(anyTaxYear, "any-nino", "any-mtditid")
+      underTest.getPriorData(anyTaxYear, anyNino, "any-mtditid")
     }
   }
 
   ".getStateBenefitsUserData" should {
     "delegate to stateBenefitsUserDataRepository and return the result" in {
-      mockFind("any-nino", sessionDataId, Right(aStateBenefitsUserData))
+      mockFind(anyNino, sessionDataId, Right(aStateBenefitsUserData))
 
-      underTest.getStateBenefitsUserData("any-nino", sessionDataId)
+      underTest.getStateBenefitsUserData(anyNino, sessionDataId)
     }
   }
 

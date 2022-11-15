@@ -21,9 +21,9 @@ import play.api.test.FakeRequest
 
 trait FakeRequestProvider {
 
-  protected val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-
-  protected val fakeGetRequest: FakeRequest[AnyContentAsEmpty.type] = fakeRequest.withMethod(newMethod = "GET").withHeaders("MTDITID" -> "1234567890")
-
-  protected val fakePostRequest: FakeRequest[AnyContentAsEmpty.type] = fakeRequest.withMethod(newMethod = "POST").withHeaders("MTDITID" -> "1234567890")
+  protected val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withHeaders("MTDITID" -> "1234567890")
+  protected val fakeGetRequest: FakeRequest[AnyContentAsEmpty.type] = fakeRequest.withMethod(newMethod = "GET")
+  protected val fakePostRequest: FakeRequest[AnyContentAsEmpty.type] = fakeRequest.withMethod(newMethod = "POST")
+  protected val fakePutRequest: FakeRequest[AnyContentAsEmpty.type] = fakeRequest.withMethod(newMethod = "PUT")
+  protected val fakeDeleteRequest: FakeRequest[AnyContentAsEmpty.type] = fakeRequest.withMethod(newMethod = "DELETE")
 }

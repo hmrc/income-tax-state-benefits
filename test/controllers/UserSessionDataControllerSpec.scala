@@ -76,7 +76,7 @@ class UserSessionDataControllerSpec extends ControllerUnitTest
     "return BadRequest when data received is in invalid format" in {
       mockAuthorisation()
 
-      val result = underTest.createOrUpdate()(fakePostRequest.withJsonBody(Json.parse("""{"wrongFormat": "wrong-value"}""")))
+      val result = underTest.createOrUpdate()(fakePutRequest.withJsonBody(Json.parse("""{"wrongFormat": "wrong-value"}""")))
 
       status(result) shouldBe BAD_REQUEST
     }
