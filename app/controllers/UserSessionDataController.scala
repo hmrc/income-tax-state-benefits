@@ -52,6 +52,10 @@ class UserSessionDataController @Inject()(authorisedAction: AuthorisedAction,
     }
   }
 
+  def removeClaim(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
+    Future.successful(NoContent)
+  }
+
   private def responseHandler(stateBenefitsUserData: StateBenefitsUserData): Future[Result] = {
     stateBenefitsService.createOrUpdateStateBenefitsUserData(stateBenefitsUserData).map {
       case Left(_) => InternalServerError

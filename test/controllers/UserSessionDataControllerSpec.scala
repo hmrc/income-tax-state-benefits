@@ -17,7 +17,7 @@
 package controllers
 
 import models.errors.{DataNotFoundError, DataNotUpdatedError}
-import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
+import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import play.api.test.Helpers.status
 import support.ControllerUnitTest
@@ -98,6 +98,15 @@ class UserSessionDataControllerSpec extends ControllerUnitTest
       val result = underTest.createOrUpdate()(fakePostRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+  }
+
+  ".removeClaim" should {
+    "always return a No content response" in {
+      mockAuthorisation()
+      val result = underTest.removeClaim(nino, sessionDataId)(fakeDeleteRequest)
+
+      status(result) shouldBe NO_CONTENT
     }
   }
 }
