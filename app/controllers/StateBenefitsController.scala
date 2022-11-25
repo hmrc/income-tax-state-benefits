@@ -56,13 +56,6 @@ class StateBenefitsController @Inject()(stateBenefitsService: StateBenefitsServi
     }
   }
 
-  def deleteStateBenefit(nino: String, taxYear: Int, benefitId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
-    stateBenefitsService.deleteStateBenefit(taxYear, nino, benefitId).map {
-      case Left(errorModel) => Status(errorModel.status)(errorModel.toJson)
-      case Right(_) => NoContent
-    }
-  }
-
   private def responseHandler(nino: String,
                               taxYear: Int,
                               benefitId: UUID,

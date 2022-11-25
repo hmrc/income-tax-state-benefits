@@ -110,27 +110,4 @@ class StateBenefitsControllerSpec extends ControllerUnitTest
       result.header.status shouldBe BAD_REQUEST
     }
   }
-
-  ".deleteStateBenefit" should {
-    "return NoContent when stateBenefitsService returns Right(_)" in {
-      mockAuthorisation()
-      mockDeleteStateBenefit(anyYear, "some-nino", benefitId, Right(()))
-
-      val result = underTest.deleteStateBenefit("some-nino", anyYear, benefitId)(fakeDeleteRequest)
-
-      status(result) shouldBe NO_CONTENT
-    }
-
-    "return error when stateBenefitsService returns Left(errorModel)" in {
-      val error = ApiError(status = FORBIDDEN, body = SingleErrorBody("some-code", "some-reason"))
-
-      mockAuthorisation()
-      mockDeleteStateBenefit(anyYear, "some-nino", benefitId, Left(error))
-
-      val result = await(underTest.deleteStateBenefit("some-nino", anyYear, benefitId)(fakeDeleteRequest))
-
-      result.header.status shouldBe FORBIDDEN
-      Json.parse(consumeBody(result)) shouldBe error.toJson
-    }
-  }
 }
