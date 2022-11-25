@@ -39,7 +39,7 @@ class AuthorisedAction @Inject()(defaultActionBuilder: DefaultActionBuilder,
   private implicit val executionContext: ExecutionContext = cc.executionContext
 
   private val agentDelegatedAuthRuleKey: String = "mtd-it-auth"
-  private val minimumConfidenceLevel: Int = ConfidenceLevel.L200.level
+  private val minimumConfidenceLevel: Int = ConfidenceLevel.L250.level
   private val unauthorized: Future[Result] = Future.successful(Unauthorized)
 
   def async(block: AuthorisationRequest[AnyContent] => Future[Result]): Action[AnyContent] = defaultActionBuilder.async { implicit request =>
@@ -95,7 +95,7 @@ class AuthorisedAction @Inject()(defaultActionBuilder: DefaultActionBuilder,
             unauthorized
         }
       case _ =>
-        val logMessage = "[AuthorisedAction][individualAuthentication] User has confidence level below 200."
+        val logMessage = "[AuthorisedAction][individualAuthentication] User has confidence level below 250."
         logger.info(logMessage)
         unauthorized
     }
