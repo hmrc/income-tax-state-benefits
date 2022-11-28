@@ -33,6 +33,10 @@ trait Repository {
     equal("nino", toBson(nino))
   )
 
+  def sessionIdFilter(sessionId: String): Bson = and(
+    equal("sessionId", toBson(sessionId))
+  )
+
   def handleEncryptionDecryptionException[T](exception: Exception, startOfMessage: String): Left[ServiceError, T] = {
     val message: String = exception match {
       case exception: EncryptionDecryptionException => s"${exception.failureReason} ${exception.failureMessage}"

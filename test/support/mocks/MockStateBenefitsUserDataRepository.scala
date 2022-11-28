@@ -43,4 +43,11 @@ trait MockStateBenefitsUserDataRepository extends MockFactory {
       .expects(nino, sessionDataId)
       .returning(Future.successful(result))
   }
+
+  def mockClear(sessionId: String,
+                result: Boolean): CallHandler1[String, Future[Boolean]] = {
+    (mockStateBenefitsUserDataRepository.clear(_: String))
+      .expects(sessionId)
+      .returning(Future.successful(result))
+  }
 }
