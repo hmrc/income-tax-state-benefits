@@ -30,8 +30,13 @@ private[repositories] object StateBenefitsUserDataIndexes {
     ascending("nino")
   )
 
+  private val sessionIdIndex: Bson = compoundIndex(
+    ascending("sessionId")
+  )
+
   def indexes(appConfig: AppConfig): Seq[IndexModel] = Seq(
     IndexModel(lookUpIndex, IndexOptions().unique(true).name("UserDataLookupIndex")),
+    IndexModel(sessionIdIndex, IndexOptions().unique(true).name("SessionIdIndex")),
     IndexModel(ascending("lastUpdated"), IndexOptions().expireAfter(appConfig.mongoTTL, TimeUnit.MINUTES).name("UserDataTTL"))
   )
 }

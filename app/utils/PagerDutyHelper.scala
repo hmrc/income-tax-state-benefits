@@ -30,7 +30,7 @@ object PagerDutyHelper {
     val FOURXX_RESPONSE_FROM_API: PagerDutyKeys.Value = Value
     val FAILED_TO_CREATE_UPDATE_STATE_BENEFITS_DATA: PagerDutyKeys.Value = Value
     val FAILED_TO_FIND_STATE_BENEFITS_DATA: PagerDutyKeys.Value = Value
-    val FAILED_TO_ClEAR_STATE_BENEFITS_DATA: PagerDutyKeys.Value = Value
+    val FAILED_TO_CLEAR_STATE_BENEFITS_DATA: PagerDutyKeys.Value = Value
     val ENCRYPTION_DECRYPTION_ERROR: PagerDutyKeys.Value = Value
     val INVALID_PERIOD_DATES: PagerDutyKeys.Value = Value
   }

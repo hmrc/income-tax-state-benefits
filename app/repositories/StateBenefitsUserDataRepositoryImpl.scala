@@ -23,6 +23,7 @@ import config.AppConfig
 import models.encryption.TextAndKey
 import models.errors.{DataNotFoundError, DataNotUpdatedError, MongoError, ServiceError}
 import models.mongo._
+import org.mongodb.scala.MongoException
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.{FindOneAndReplaceOptions, FindOneAndUpdateOptions}
 import play.api.Logging
@@ -31,8 +32,8 @@ import uk.gov.hmrc.mongo.play.json.Codecs.toBson
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.play.http.logging.Mdc
-import utils.PagerDutyHelper.PagerDutyKeys.{FAILED_TO_CREATE_UPDATE_STATE_BENEFITS_DATA, FAILED_TO_FIND_STATE_BENEFITS_DATA}
-import utils.PagerDutyHelper.pagerDutyLog
+import utils.PagerDutyHelper.PagerDutyKeys._
+import utils.PagerDutyHelper.{PagerDutyKeys, pagerDutyLog}
 import utils.SecureGCMCipher
 
 import java.time.{LocalDateTime, ZoneOffset}
@@ -122,6 +123,27 @@ class StateBenefitsUserDataRepositoryImpl @Inject()(mongo: MongoComponent, appCo
       case Right(encryptedData) => Right(encryptedData)
     }
   }
+
+  override def clear(sessionId: String): Future[Boolean] =
+    collection.deleteMany(sessionIdFilter(sessionId))
+      .toFutureOption()
+      .recover(mongoRecover("Clear", FAILED_TO_CLEAR_STATE_BENEFITS_DATA, sessionId))
+      .map(_.exists(_.wasAcknowledged()))
+
+  def mongoRecover[T](operation: String,
+                      pagerDutyKey: PagerDutyKeys.Value,
+                      sessionId: String): PartialFunction[Throwable, Option[T]] = new PartialFunction[Throwable, Option[T]] {
+
+    override def isDefinedAt(x: Throwable): Boolean = x.isInstanceOf[MongoException]
+
+    override def apply(e: Throwable): Option[T] = {
+      pagerDutyLog(
+        pagerDutyKey,
+        s"[StateBenefitsUserDataRepositoryImpl][$operation] Failed to clear state benefits user data. Error:${e.getMessage}. SessionId: $sessionId"
+      )
+      None
+    }
+  }
 }
 
 @ImplementedBy(classOf[StateBenefitsUserDataRepositoryImpl])
@@ -131,4 +153,6 @@ trait StateBenefitsUserDataRepository {
   def find(nino: String, sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]]
 
   def logOutIndexes(): Unit
+
+  def clear(sessionId: String): Future[Boolean]
 }

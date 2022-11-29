@@ -16,18 +16,20 @@
 
 package repositories
 
+import com.mongodb.MongoTimeoutException
 import models.encryption.TextAndKey
 import models.errors.{DataNotFoundError, EncryptionDecryptionError}
 import models.mongo.{EncryptedStateBenefitsUserData, StateBenefitsUserData}
-import org.mongodb.scala.MongoWriteException
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import org.mongodb.scala.{MongoException, MongoInternalException, MongoWriteException}
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.inject.guice.GuiceApplicationBuilder
 import support.IntegrationTest
 import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
 import uk.gov.hmrc.mongo.MongoUtils
+import utils.PagerDutyHelper.PagerDutyKeys.FAILED_TO_CREATE_UPDATE_STATE_BENEFITS_DATA
 import utils.SecureGCMCipher
 
 import java.time.{LocalDateTime, ZoneOffset}
@@ -51,6 +53,40 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
     await(underTest.collection.drop().toFuture())
     await(underTest.ensureIndexes)
     count() shouldBe 0
+  }
+
+  "the set indexes" should {
+    "enforce uniqueness" in new EmptyDatabase {
+      private val data_1: StateBenefitsUserData = aStateBenefitsUserData.copy(sessionId = "session-1")
+      private val data_2: StateBenefitsUserData = aStateBenefitsUserData.copy(sessionId = "session-2")
+
+      implicit val textAndKey: TextAndKey = TextAndKey(data_1.mtdItId, appConfig.encryptionKey)
+      await(underTest.createOrUpdate(data_1))
+      count shouldBe 1
+
+      private val encryptedUserData: EncryptedStateBenefitsUserData = data_2.encrypted
+
+      private val caught = intercept[MongoWriteException](await(underTest.collection.insertOne(encryptedUserData).toFuture()))
+
+      caught.getMessage must
+        include("E11000 duplicate key error collection: income-tax-state-benefits.stateBenefitsUserData index: UserDataLookupIndex dup key:")
+    }
+
+    "enforce uniqueness for sessionId" in new EmptyDatabase {
+      private val data_1: StateBenefitsUserData = aStateBenefitsUserData.copy(sessionId = "session-test")
+      private val data_2: StateBenefitsUserData = aStateBenefitsUserData.copy(sessionId = "session-test", nino = "some-nino")
+
+      implicit val textAndKey: TextAndKey = TextAndKey(data_1.mtdItId, appConfig.encryptionKey)
+      await(underTest.createOrUpdate(data_1))
+      count shouldBe 1
+
+      private val encryptedUserData: EncryptedStateBenefitsUserData = data_2.encrypted
+
+      private val caught = intercept[MongoWriteException](await(underTest.collection.insertOne(encryptedUserData).toFuture()))
+
+      caught.getMessage must
+        include("E11000 duplicate key error collection: income-tax-state-benefits.stateBenefitsUserData index: SessionIdIndex dup key:")
+    }
   }
 
   "createOrUpdate with invalid encryption" should {
@@ -135,20 +171,36 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
     }
   }
 
-  "the set indexes" should {
-    "enforce uniqueness" in new EmptyDatabase {
-      private val data: StateBenefitsUserData = aStateBenefitsUserData
+  "mongoRecover" should {
+    Seq(new MongoTimeoutException(""), new MongoInternalException(""), new MongoException("")).foreach { exception =>
+      s"recover when the exception is a MongoException or a subclass of MongoException - ${exception.getClass.getSimpleName}" in {
+        val result = Future.failed(exception)
+          .recover(underTest.mongoRecover[Int]("CreateOrUpdate", FAILED_TO_CREATE_UPDATE_STATE_BENEFITS_DATA, "some-session-id"))
 
-      implicit val textAndKey: TextAndKey = TextAndKey(data.mtdItId, appConfig.encryptionKey)
-      await(underTest.createOrUpdate(data))
-      count shouldBe 1
+        await(result) mustBe None
+      }
+    }
 
-      private val encryptedUserData: EncryptedStateBenefitsUserData = data.encrypted
+    Seq(new NullPointerException(""), new RuntimeException("")).foreach { exception =>
+      s"not recover when the exception is not a subclass of MongoException - ${exception.getClass.getSimpleName}" in {
+        val result = Future.failed(exception)
+          .recover(underTest.mongoRecover[Int]("CreateOrUpdate", FAILED_TO_CREATE_UPDATE_STATE_BENEFITS_DATA, "some-session-id"))
 
-      private val caught = intercept[MongoWriteException](await(underTest.collection.insertOne(encryptedUserData).toFuture()))
+        assertThrows[RuntimeException] {
+          await(result)
+        }
+      }
+    }
+  }
 
-      caught.getMessage must
-        include("E11000 duplicate key error collection: income-tax-state-benefits.stateBenefitsUserData index: UserDataLookupIndex dup key:")
+  "clear" should {
+    "remove a record" in new EmptyDatabase {
+      count mustBe 0
+      await(underTest.createOrUpdate(aStateBenefitsUserData.copy(sessionId = "some-session-id"))) mustBe Right(aStateBenefitsUserData.sessionDataId.get)
+      count mustBe 1
+
+      await(underTest.clear("some-session-id")) mustBe true
+      count mustBe 0
     }
   }
 }

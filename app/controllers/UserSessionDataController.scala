@@ -44,7 +44,7 @@ class UserSessionDataController @Inject()(authorisedAction: AuthorisedAction,
 
   def createOrUpdate(): Action[AnyContent] = authorisedAction.async { implicit authRequest =>
     authRequest.request.body.asJson.map(_.validate[StateBenefitsUserData]) match {
-      case Some(data: JsSuccess[StateBenefitsUserData]) => responseHandler(data.value)
+      case Some(data: JsSuccess[StateBenefitsUserData]) => handleCreateOrUpdateWithResponse(data.value)
       case _ =>
         val logMessage = "[UserSessionDataController][createOrUpdate] Create update state benefits request is invalid"
         logger.warn(logMessage)
@@ -56,7 +56,7 @@ class UserSessionDataController @Inject()(authorisedAction: AuthorisedAction,
     Future.successful(NoContent)
   }
 
-  private def responseHandler(stateBenefitsUserData: StateBenefitsUserData): Future[Result] = {
+  private def handleCreateOrUpdateWithResponse(stateBenefitsUserData: StateBenefitsUserData): Future[Result] = {
     stateBenefitsService.createOrUpdateStateBenefitsUserData(stateBenefitsUserData).map {
       case Left(_) => InternalServerError
       case Right(uuid) => Ok(Json.toJson(uuid))

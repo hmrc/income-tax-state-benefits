@@ -16,6 +16,7 @@
 
 package services
 
+import models.errors.DataNotUpdatedError
 import support.UnitTest
 import support.builders.IncomeTaxUserDataBuilder.anIncomeTaxUserData
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
@@ -25,6 +26,7 @@ import support.mocks.{MockIntegrationFrameworkConnector, MockStateBenefitsUserDa
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class StateBenefitsServiceSpec extends UnitTest
   with MockSubmissionConnector
@@ -83,7 +85,24 @@ class StateBenefitsServiceSpec extends UnitTest
   }
 
   ".createOrUpdateStateBenefitsUserData" should {
-    "delegate to stateBenefitsUserDataRepository and return the result" in {
+    "delegate to createOrUpdate and return result when clear succeeds for given sessionId" in {
+      val userData = aStateBenefitsUserData.copy(sessionDataId = None, sessionId = "some-session-id")
+
+      mockClear("some-session-id", result = true)
+      mockCreateOrUpdate(userData, Right(sessionDataId))
+
+      await(underTest.createOrUpdateStateBenefitsUserData(userData)) shouldBe Right(sessionDataId)
+    }
+
+    "return DataNotUpdatedError when clear data fails" in {
+      val userData = aStateBenefitsUserData.copy(sessionDataId = None, sessionId = "some-session-id")
+
+      mockClear("some-session-id", result = false)
+
+      await(underTest.createOrUpdateStateBenefitsUserData(userData)) shouldBe Left(DataNotUpdatedError)
+    }
+
+    "update existing data when already exists" in {
       mockCreateOrUpdate(aStateBenefitsUserData, Right(sessionDataId))
 
       await(underTest.createOrUpdateStateBenefitsUserData(aStateBenefitsUserData)) shouldBe Right(sessionDataId)

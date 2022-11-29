@@ -20,19 +20,20 @@ import connectors.errors.ApiError
 import connectors.{IntegrationFrameworkConnector, SubmissionConnector}
 import models.IncomeTaxUserData
 import models.api.{AllStateBenefitsData, StateBenefitDetailOverride}
-import models.errors.ServiceError
+import models.errors.{DataNotUpdatedError, ServiceError}
 import models.mongo.StateBenefitsUserData
 import repositories.StateBenefitsUserDataRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
                                      integrationFrameworkConnector: IntegrationFrameworkConnector,
-                                     stateBenefitsUserDataRepository: StateBenefitsUserDataRepository) {
+                                     stateBenefitsUserDataRepository: StateBenefitsUserDataRepository)
+                                    (implicit ec: ExecutionContext) {
 
   def getAllStateBenefitsData(taxYear: Int, nino: String)
                              (implicit hc: HeaderCarrier): Future[Either[ApiError, Option[AllStateBenefitsData]]] = {
@@ -62,6 +63,19 @@ class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
   }
 
   def createOrUpdateStateBenefitsUserData(stateBenefitsUserData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] = {
-    stateBenefitsUserDataRepository.createOrUpdate(stateBenefitsUserData)
+    if (isCreate(stateBenefitsUserData)) deleteAndCreateNew(stateBenefitsUserData) else updateExisting(stateBenefitsUserData)
   }
+
+  private def isCreate(stateBenefitsUserData: StateBenefitsUserData): Boolean =
+    stateBenefitsUserData.sessionDataId.isEmpty
+
+  private def deleteAndCreateNew(stateBenefitsUserData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] = {
+    stateBenefitsUserDataRepository.clear(stateBenefitsUserData.sessionId).flatMap {
+      case false => Future.successful(Left(DataNotUpdatedError))
+      case true => stateBenefitsUserDataRepository.createOrUpdate(stateBenefitsUserData)
+    }
+  }
+
+  private def updateExisting(stateBenefitsUserData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] =
+    stateBenefitsUserDataRepository.createOrUpdate(stateBenefitsUserData)
 }
