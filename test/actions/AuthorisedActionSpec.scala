@@ -124,7 +124,7 @@ class AuthorisedActionSpec extends UnitTest
         lazy val result: Result = {
           (mockAuthConnector.authorise(_: Predicate, _: Retrieval[_])(_: HeaderCarrier, _: ExecutionContext))
             .expects(*, Retrievals.allEnrolments and Retrievals.confidenceLevel, *, *)
-            .returning(Future.successful(enrolments and ConfidenceLevel.L200))
+            .returning(Future.successful(enrolments and ConfidenceLevel.L250))
 
           await(underTest.individualAuthentication(block, mtditid)(requestWithMtditid, emptyHeaderCarrier))
         }
@@ -148,7 +148,7 @@ class AuthorisedActionSpec extends UnitTest
         lazy val result: Result = {
           (mockAuthConnector.authorise(_: Predicate, _: Retrieval[_])(_: HeaderCarrier, _: ExecutionContext))
             .expects(*, Retrievals.allEnrolments and Retrievals.confidenceLevel, *, *)
-            .returning(Future.successful(enrolments and ConfidenceLevel.L200))
+            .returning(Future.successful(enrolments and ConfidenceLevel.L250))
 
           await(underTest.individualAuthentication(block, mtditid)(requestWithMtditid, emptyHeaderCarrier))
         }
@@ -185,7 +185,7 @@ class AuthorisedActionSpec extends UnitTest
         lazy val result = {
           (mockAuthConnector.authorise(_: Predicate, _: Retrieval[_])(_: HeaderCarrier, _: ExecutionContext))
             .expects(*, Retrievals.allEnrolments and Retrievals.confidenceLevel, *, *)
-            .returning(Future.successful(enrolments and ConfidenceLevel.L200))
+            .returning(Future.successful(enrolments and ConfidenceLevel.L250))
 
           await(underTest.individualAuthentication(block, mtditid)(requestWithMtditid, emptyHeaderCarrier))
         }
@@ -202,7 +202,7 @@ class AuthorisedActionSpec extends UnitTest
         lazy val result: Result = {
           (mockAuthConnector.authorise(_: Predicate, _: Retrieval[_])(_: HeaderCarrier, _: ExecutionContext))
             .expects(*, Retrievals.allEnrolments and Retrievals.confidenceLevel, *, *)
-            .returning(Future.successful(enrolments and ConfidenceLevel.L200))
+            .returning(Future.successful(enrolments and ConfidenceLevel.L250))
 
           await(underTest.individualAuthentication(block, id)(requestWithMtditid, emptyHeaderCarrier))
         }
@@ -221,7 +221,7 @@ class AuthorisedActionSpec extends UnitTest
         lazy val result: Result = {
           (mockAuthConnector.authorise(_: Predicate, _: Retrieval[_])(_: HeaderCarrier, _: ExecutionContext))
             .expects(*, Retrievals.allEnrolments and Retrievals.confidenceLevel, *, *)
-            .returning(Future.successful(enrolments and ConfidenceLevel.L200))
+            .returning(Future.successful(enrolments and ConfidenceLevel.L250))
 
           await(underTest.individualAuthentication(block, mtditid)(requestWithMtditid, emptyHeaderCarrier))
         }
@@ -242,7 +242,7 @@ class AuthorisedActionSpec extends UnitTest
       lazy val result: Result = {
         (mockAuthConnector.authorise(_: Predicate, _: Retrieval[_])(_: HeaderCarrier, _: ExecutionContext))
           .expects(*, Retrievals.allEnrolments and Retrievals.confidenceLevel, *, *)
-          .returning(Future.successful(enrolments and ConfidenceLevel.L200))
+          .returning(Future.successful(enrolments and ConfidenceLevel.L250))
 
         await(underTest.individualAuthentication(block, mtditid)(requestWithMtditid, emptyHeaderCarrier))
       }
@@ -279,7 +279,7 @@ class AuthorisedActionSpec extends UnitTest
       lazy val result: Result = {
         (mockAuthConnector.authorise(_: Predicate, _: Retrieval[_])(_: HeaderCarrier, _: ExecutionContext))
           .expects(*, Retrievals.allEnrolments and Retrievals.confidenceLevel, *, *)
-          .returning(Future.successful(enrolments and ConfidenceLevel.L200))
+          .returning(Future.successful(enrolments and ConfidenceLevel.L250))
 
         await(underTest.individualAuthentication(block, mtditid)(requestWithMtditid, emptyHeaderCarrier))
       }
@@ -296,7 +296,7 @@ class AuthorisedActionSpec extends UnitTest
       lazy val result: Result = {
         (mockAuthConnector.authorise(_: Predicate, _: Retrieval[_])(_: HeaderCarrier, _: ExecutionContext))
           .expects(*, Retrievals.allEnrolments and Retrievals.confidenceLevel, *, *)
-          .returning(Future.successful(enrolments and ConfidenceLevel.L200))
+          .returning(Future.successful(enrolments and ConfidenceLevel.L250))
 
         await(underTest.individualAuthentication(block, id)(requestWithMtditid, emptyHeaderCarrier))
       }
