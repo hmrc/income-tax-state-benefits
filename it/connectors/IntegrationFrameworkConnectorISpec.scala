@@ -80,7 +80,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
   ".createOrUpdateStateBenefitDetailOverride" should {
     "return correct IF data when correct parameters are passed" in {
       val jsValue = Json.toJson(aStateBenefitDetailOverride)
-      val httpResponse = HttpResponse(NO_CONTENT, jsValue.toString())
+      val httpResponse = HttpResponse(NO_CONTENT, "")
 
       stubPutHttpClientCall(createOrUpdateUrl(taxYear, nino, benefitId), jsValue.toString(), httpResponse)
 

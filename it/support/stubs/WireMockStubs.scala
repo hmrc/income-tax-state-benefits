@@ -49,7 +49,6 @@ trait WireMockStubs {
       .withBody(httpResponse.body)
       .withHeader(CONTENT_TYPE, JSON)
     val putBuilder = put(urlMatching(url)).withRequestBody(equalToJson(httpRequestBodyJson))
-
     val mappingBuilderWithHeaders: MappingBuilder = requestHeaders
       .foldLeft(putBuilder)((result, nxt) => result.withHeader(nxt.key(), equalTo(nxt.firstValue())))
 

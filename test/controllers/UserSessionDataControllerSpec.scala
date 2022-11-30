@@ -17,7 +17,7 @@
 package controllers
 
 import models.errors.{DataNotFoundError, DataNotUpdatedError}
-import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND, NO_CONTENT, OK}
+import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.test.Helpers.status
 import support.ControllerUnitTest
@@ -102,8 +102,28 @@ class UserSessionDataControllerSpec extends ControllerUnitTest
   }
 
   ".removeClaim" should {
-    "always return a No content response" in {
+    "return NotFound when stateBenefitsService.removeClaim(...) returns DataNotFoundError" in {
       mockAuthorisation()
+      mockRemoveClaim(nino, sessionDataId, Left(DataNotFoundError))
+
+      val result = underTest.removeClaim(nino, sessionDataId)(fakeDeleteRequest)
+
+      status(result) shouldBe NOT_FOUND
+    }
+
+    "return InternalServerError when stateBenefitsService.removeClaim(...) returns any error different than DataNotFoundError" in {
+      mockAuthorisation()
+      mockRemoveClaim(nino, sessionDataId, Left(DataNotUpdatedError))
+
+      val result = underTest.removeClaim(nino, sessionDataId)(fakeDeleteRequest)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return NoContent when stateBenefitsService.removeClaim(...) returns success" in {
+      mockAuthorisation()
+      mockRemoveClaim(nino, sessionDataId, Right(()))
+
       val result = underTest.removeClaim(nino, sessionDataId)(fakeDeleteRequest)
 
       status(result) shouldBe NO_CONTENT

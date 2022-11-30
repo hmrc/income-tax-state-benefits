@@ -18,8 +18,9 @@ package connectors
 
 import config.AppConfig
 import connectors.errors.ApiError
-import connectors.responses.GetIncomeTaxUserDataResponse
+import connectors.responses.{GetIncomeTaxUserDataResponse, RefreshIncomeSourceResponse}
 import models.IncomeTaxUserData
+import models.requests.RefreshIncomeSourceRequest
 import services.PagerDutyLoggerService
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
@@ -40,9 +41,25 @@ class SubmissionConnector @Inject()(httpClient: HttpClient,
     }
   }
 
+  def refreshStateBenefits(taxYear: Int, nino: String, mtditid: String)
+                          (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
+    val eventualResponse = refreshStateBenefitsResponse(taxYear, nino)(hc.withExtraHeaders(("mtditid", mtditid)))
+
+    eventualResponse.map { response =>
+      if (response.result.isLeft) pagerDutyLoggerService.pagerDutyLog(response.httpResponse, response.getClass.getSimpleName)
+      response.result
+    }
+  }
+
   private def getAllStateBenefitsDataResponse(taxYear: Int, nino: String)
                                              (implicit hc: HeaderCarrier): Future[GetIncomeTaxUserDataResponse] = {
     val url = config.submissionBaseUrl + s"/income-tax/nino/$nino/sources/session?taxYear=$taxYear"
     httpClient.GET[GetIncomeTaxUserDataResponse](url)
+  }
+
+  private def refreshStateBenefitsResponse(taxYear: Int, nino: String)
+                                          (implicit hc: HeaderCarrier): Future[RefreshIncomeSourceResponse] = {
+    val url = config.submissionBaseUrl + s"/income-tax/nino/$nino/sources/session?taxYear=$taxYear"
+    httpClient.PUT[RefreshIncomeSourceRequest, RefreshIncomeSourceResponse](url, RefreshIncomeSourceRequest("state-benefits"))
   }
 }
