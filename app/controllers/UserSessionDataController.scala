@@ -35,7 +35,7 @@ class UserSessionDataController @Inject()(authorisedAction: AuthorisedAction,
                                          (implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
   def getStateBenefitsUserData(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { _ =>
-    stateBenefitsService.getStateBenefitsUserData(nino, sessionDataId).map {
+    stateBenefitsService.getUserData(nino, sessionDataId).map {
       case Right(data) => Ok(Json.toJson(data))
       case Left(DataNotFoundError) => NotFound
       case Left(_) => InternalServerError
@@ -53,11 +53,19 @@ class UserSessionDataController @Inject()(authorisedAction: AuthorisedAction,
   }
 
   def removeClaim(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
+    stateBenefitsService.removeClaim(nino, sessionDataId).map {
+      case Left(DataNotFoundError) => NotFound
+      case Left(_) => InternalServerError
+      case Right(_) => NoContent
+    }
+  }
+
+  def ignoreClaim(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
     Future.successful(NoContent)
   }
 
   private def handleCreateOrUpdateWithResponse(stateBenefitsUserData: StateBenefitsUserData): Future[Result] = {
-    stateBenefitsService.createOrUpdateStateBenefitsUserData(stateBenefitsUserData).map {
+    stateBenefitsService.createOrUpdateUserData(stateBenefitsUserData).map {
       case Left(_) => InternalServerError
       case Right(uuid) => Ok(Json.toJson(uuid))
     }

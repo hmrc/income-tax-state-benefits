@@ -35,3 +35,7 @@ case class MongoError(error: String) extends ServiceError {
 case class EncryptionDecryptionError(error: String) extends ServiceError {
   override val message: String = s"Encryption / Decryption exception occurred. Exception: $error"
 }
+
+case class ApiServiceError(error: String) extends ServiceError {
+  override val message: String = s"API exception occurred. Exception: $error"
+}

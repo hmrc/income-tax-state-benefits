@@ -17,8 +17,9 @@
 package connectors
 
 import connectors.errors.{ApiError, SingleErrorBody}
+import models.requests.RefreshIncomeSourceRequest
 import org.scalamock.scalatest.MockFactory
-import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
+import play.api.http.Status.{INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import services.PagerDutyLoggerService
 import support.ConnectorIntegrationTest
@@ -57,6 +58,29 @@ class SubmissionConnectorISpec extends ConnectorIntegrationTest
       stubGetHttpClientCall(s"/income-tax/nino/$nino/sources/session\\?taxYear=$taxYear", httpResponse)
 
       await(underTest.getIncomeTaxUserData(taxYear, nino, mtditid)(hc)) shouldBe
+        Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+    }
+  }
+
+  ".refreshStateBenefits" should {
+    "succeed when correct parameters are passed" in {
+      val jsValue = Json.toJson(RefreshIncomeSourceRequest("state-benefits"))
+      val httpResponse = HttpResponse(NO_CONTENT, "")
+
+      stubPutHttpClientCall(s"/income-tax/nino/$nino/sources/session\\?taxYear=$taxYear", jsValue.toString(), httpResponse)
+
+      await(underTest.refreshStateBenefits(taxYear, nino, mtditid)(hc)) shouldBe Right(())
+    }
+
+    "return error and perform pagerDutyLog when Left is returned" in {
+      val jsValue = Json.toJson(RefreshIncomeSourceRequest("state-benefits"))
+      val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
+
+      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "RefreshIncomeSourceResponse")
+
+      stubPutHttpClientCall(s"/income-tax/nino/$nino/sources/session\\?taxYear=$taxYearEOY", jsValue.toString(), httpResponse)
+
+      await(underTest.refreshStateBenefits(taxYearEOY, nino, mtditid)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
     }
   }

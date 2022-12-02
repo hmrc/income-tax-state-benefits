@@ -39,4 +39,13 @@ trait MockSubmissionConnector extends MockFactory {
       .expects(taxYear, nino, mtditid, *)
       .returning(Future.successful(result))
   }
+
+  def mockRefreshStateBenefits(taxYear: Int,
+                               nino: String,
+                               mtditid: String,
+                               result: Either[ApiError, Unit]): CallHandler4[Int, String, String, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
+    (mockSubmissionConnector.refreshStateBenefits(_: Int, _: String, _: String)(_: HeaderCarrier))
+      .expects(taxYear, nino, mtditid, *)
+      .returning(Future.successful(result))
+  }
 }
