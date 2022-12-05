@@ -23,6 +23,7 @@ import support.UnitTest
 import support.builders.IncomeTaxUserDataBuilder.anIncomeTaxUserData
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
 import support.builders.api.StateBenefitDetailOverrideBuilder.aStateBenefitDetailOverride
+import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
 import support.mocks.{MockIntegrationFrameworkConnector, MockStateBenefitsUserDataRepository, MockSubmissionConnector}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -135,10 +136,10 @@ class StateBenefitsServiceSpec extends UnitTest
       await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Right(())
     }
 
-    "return error when isPriorSubmission is true and deleteStateBenefit fails" in {
+    "return error when isPriorSubmission is true and ignoreStateBenefit fails" in {
       val userData = aStateBenefitsUserData.copy(isPriorSubmission = true)
       mockFind(anyNino, sessionDataId, Right(userData))
-      mockDeleteStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Left(apiError))
+      mockIgnoreStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Left(apiError))
 
       await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Left(ApiServiceError(apiError.status.toString))
     }
@@ -146,7 +147,7 @@ class StateBenefitsServiceSpec extends UnitTest
     "return error when isPriorSubmission is true and refreshStateBenefits fails" in {
       val userData = aStateBenefitsUserData.copy(isPriorSubmission = true)
       mockFind(anyNino, sessionDataId, Right(userData))
-      mockDeleteStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Right(()))
+      mockIgnoreStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Right(()))
       mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Left(apiError))
 
       await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Left(ApiServiceError(apiError.status.toString))
@@ -155,7 +156,7 @@ class StateBenefitsServiceSpec extends UnitTest
     "return error when isPriorSubmission is true and clear fails" in {
       val userData = aStateBenefitsUserData.copy(isPriorSubmission = true)
       mockFind(anyNino, sessionDataId, Right(userData))
-      mockDeleteStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Right(()))
+      mockIgnoreStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Right(()))
       mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
       mockClear(userData.sessionId, result = false)
 
@@ -164,6 +165,16 @@ class StateBenefitsServiceSpec extends UnitTest
 
     "perform proper remove when isPriorSubmission is true all subsequent calls succeed" in {
       val userData = aStateBenefitsUserData.copy(isPriorSubmission = true)
+      mockFind(anyNino, sessionDataId, Right(userData))
+      mockIgnoreStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Right(()))
+      mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
+      mockClear(userData.sessionId, result = true)
+
+      await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Right(())
+    }
+
+    "perform proper remove when isPriorSubmission is true all subsequent calls succeed for Customer added data" in {
+      val userData = aStateBenefitsUserData.copy(isPriorSubmission = true, claim = Some(aClaimCYAModel.copy(isHmrcData = false)))
       mockFind(anyNino, sessionDataId, Right(userData))
       mockDeleteStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Right(()))
       mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
