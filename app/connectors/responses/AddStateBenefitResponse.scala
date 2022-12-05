@@ -27,6 +27,7 @@ import java.util.UUID
 case class AddStateBenefitResponse(httpResponse: HttpResponse, result: Either[ApiError, UUID])
 
 object AddStateBenefitResponse {
+  private case class BenefitId(benefitId: UUID)
 
   implicit val addStateBenefitResponseReads: HttpReads[AddStateBenefitResponse] = new HttpReads[AddStateBenefitResponse] with Parser {
     override protected[connectors] val parserName: String = this.getClass.getSimpleName
@@ -46,4 +47,3 @@ object AddStateBenefitResponse {
   }
 }
 
-private case class BenefitId(benefitId: UUID)
