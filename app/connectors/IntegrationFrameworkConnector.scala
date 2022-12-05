@@ -18,7 +18,7 @@ package connectors
 
 import config.AppConfig
 import connectors.errors.ApiError
-import connectors.responses.{AddStateBenefitResponse, CreateOrUpdateStateBenefitResponse, DeleteStateBenefitResponse, GetStateBenefitsResponse}
+import connectors.responses._
 import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride}
 import services.PagerDutyLoggerService
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
@@ -37,6 +37,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
   private val getApiVersion = "1652"
   private val addApiVersion = "1676"
   private val deleteApiVersion = "1678"
+  private val unIgnoreApiVersion = "1700"
 
   override protected[connectors] val appConfig: AppConfig = appConf
 
@@ -89,6 +90,19 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     }
   }
 
+  def unIgnoreStateBenefit(taxYear: Int,
+                           nino: String,
+                           benefitId: UUID)
+                          (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
+    val url = baseUrl + s"/income-tax/state-benefits/$nino/${toTaxYearParam(taxYear)}/ignore/$benefitId"
+    val eventualResponse = callUnIgnoreStateBenefit(url)(ifHeaderCarrier(url, unIgnoreApiVersion))
+
+    eventualResponse.map { apiResponse: UnIgnoreStateBenefitResponse =>
+      if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
+      apiResponse.result
+    }
+  }
+
   private def callCreateOrUpdateDetailOverride(url: String, stateBenefitDetailOverride: StateBenefitDetailOverride)
                                               (implicit hc: HeaderCarrier): Future[CreateOrUpdateStateBenefitResponse] = {
     httpClient.PUT[StateBenefitDetailOverride, CreateOrUpdateStateBenefitResponse](url, stateBenefitDetailOverride)
@@ -103,8 +117,12 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     httpClient.POST[AddStateBenefit, AddStateBenefitResponse](url, addStateBenefit)
   }
 
-  def callDeleteStateBenefit(url: String)(implicit hc: HeaderCarrier): Future[DeleteStateBenefitResponse] = {
+  private def callDeleteStateBenefit(url: String)(implicit hc: HeaderCarrier): Future[DeleteStateBenefitResponse] = {
     httpClient.DELETE[DeleteStateBenefitResponse](url)
+  }
+
+  private def callUnIgnoreStateBenefit(url: String)(implicit hc: HeaderCarrier): Future[UnIgnoreStateBenefitResponse] = {
+    httpClient.DELETE[UnIgnoreStateBenefitResponse](url)
   }
 
   private def toTaxYearParam(taxYear: Int): String = {
