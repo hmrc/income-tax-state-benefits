@@ -22,6 +22,7 @@ import play.api.http.Status.{INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import services.PagerDutyLoggerService
 import support.ConnectorIntegrationTest
+import support.builders.api.AddStateBenefitBuilder.anAddStateBenefit
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
 import support.builders.api.StateBenefitDetailOverrideBuilder.aStateBenefitDetailOverride
 import support.providers.TaxYearProvider
@@ -44,6 +45,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
   def getUrl(taxYear: Int, nino: String): String = {
     val taxYearParameter = s"${taxYear - 1}-${taxYear.toString takeRight 2}"
     s"/if/income-tax/income/state-benefits/$nino/$taxYearParameter"
+  }
+
+  def addUrl(taxYear: Int, nino: String): String = {
+    val taxYearParameter = s"${taxYear - 1}-${taxYear.toString takeRight 2}"
+    s"/if/income-tax/income/state-benefits/$nino/$taxYearParameter/custom"
   }
 
   def createOrUpdateUrl(taxYear: Int, nino: String, benefitId: UUID): String = {
@@ -73,6 +79,28 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
       stubGetHttpClientCall(getUrl(taxYear, nino), httpResponse)
 
       await(underTest.getAllStateBenefitsData(taxYear, nino)(hc)) shouldBe
+        Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+    }
+  }
+
+  ".addStateBenefit" should {
+    "return correct IF data when correct parameters are passed" in {
+      val httpResponse = HttpResponse(OK, s"""{"benefitId": "$benefitId"}""")
+
+      stubPostHttpClientCall(addUrl(taxYear, nino), Json.toJson(anAddStateBenefit).toString(), httpResponse)
+
+      await(underTest.addStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe Right(benefitId)
+    }
+
+
+    "return IF error and perform a pagerDutyLog when Left is returned" in {
+      val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
+
+      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "AddStateBenefitResponse")
+
+      stubPostHttpClientCall(addUrl(taxYear, nino), Json.toJson(anAddStateBenefit).toString(), httpResponse)
+
+      await(underTest.addStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
     }
   }

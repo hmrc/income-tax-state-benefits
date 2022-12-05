@@ -36,7 +36,7 @@ class PagerDutyLoggerService() extends Logging {
       case OK => (BAD_SUCCESS_JSON_FROM_IF, s"[$parserName][read] Invalid Json from Integration Framework.")
       case INTERNAL_SERVER_ERROR => (INTERNAL_SERVER_ERROR_FROM_IF, logMessage(httpResponse, parserName))
       case SERVICE_UNAVAILABLE => (SERVICE_UNAVAILABLE_FROM_IF, logMessage(httpResponse, parserName))
-      case BAD_REQUEST | UNPROCESSABLE_ENTITY => (FOURXX_RESPONSE_FROM_IF, logMessage(httpResponse, parserName))
+      case BAD_REQUEST | UNPROCESSABLE_ENTITY | CONFLICT => (FOURXX_RESPONSE_FROM_IF, logMessage(httpResponse, parserName))
       case _ => (UNEXPECTED_RESPONSE_FROM_IF, logMessage(httpResponse, parserName))
     }
 

@@ -18,8 +18,8 @@ package connectors
 
 import config.AppConfig
 import connectors.errors.ApiError
-import connectors.responses.{CreateOrUpdateStateBenefitResponse, DeleteStateBenefitResponse, GetStateBenefitsResponse}
-import models.api.{AllStateBenefitsData, StateBenefitDetailOverride}
+import connectors.responses.{AddStateBenefitResponse, CreateOrUpdateStateBenefitResponse, DeleteStateBenefitResponse, GetStateBenefitsResponse}
+import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride}
 import services.PagerDutyLoggerService
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
@@ -35,6 +35,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   private val createOrUpdateApiVersion = "1651"
   private val getApiVersion = "1652"
+  private val addApiVersion = "1676"
   private val deleteApiVersion = "1678"
 
   override protected[connectors] val appConfig: AppConfig = appConf
@@ -43,6 +44,17 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
                              (implicit hc: HeaderCarrier): Future[Either[ApiError, Option[AllStateBenefitsData]]] = {
     val url = baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}"
     val getRequestResponse = callGetStateBenefits(url)(ifHeaderCarrier(url, getApiVersion))
+
+    getRequestResponse.map { apiResponse =>
+      if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
+      apiResponse.result
+    }
+  }
+
+  def addStateBenefit(taxYear: Int, nino: String, addStateBenefit: AddStateBenefit)
+                     (implicit hc: HeaderCarrier): Future[Either[ApiError, UUID]] = {
+    val url = baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom"
+    val getRequestResponse = callAddStateBenefits(url, addStateBenefit)(ifHeaderCarrier(url, addApiVersion))
 
     getRequestResponse.map { apiResponse =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
@@ -84,6 +96,11 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   private def callGetStateBenefits(url: String)(implicit hc: HeaderCarrier): Future[GetStateBenefitsResponse] = {
     httpClient.GET[GetStateBenefitsResponse](url)
+  }
+
+  private def callAddStateBenefits(url: String, addStateBenefit: AddStateBenefit)
+                                  (implicit hc: HeaderCarrier): Future[AddStateBenefitResponse] = {
+    httpClient.POST[AddStateBenefit, AddStateBenefitResponse](url, addStateBenefit)
   }
 
   def callDeleteStateBenefit(url: String)(implicit hc: HeaderCarrier): Future[DeleteStateBenefitResponse] = {
