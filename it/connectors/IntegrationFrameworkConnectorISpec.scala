@@ -18,7 +18,7 @@ package connectors
 
 import connectors.errors.{ApiError, SingleErrorBody}
 import org.scalamock.scalatest.MockFactory
-import play.api.http.Status.{INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
+import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import services.PagerDutyLoggerService
 import support.ConnectorIntegrationTest
@@ -42,36 +42,15 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
   private val pagerDutyLoggerService = mock[PagerDutyLoggerService]
   private val underTest = new IntegrationFrameworkConnector(httpClient, pagerDutyLoggerService, appConfigStub)
 
-  def getUrl(taxYear: Int, nino: String): String = {
-    val taxYearParameter = s"${taxYear - 1}-${taxYear.toString takeRight 2}"
-    s"/if/income-tax/income/state-benefits/$nino/$taxYearParameter"
-  }
-
-  def addUrl(taxYear: Int, nino: String): String = {
-    val taxYearParameter = s"${taxYear - 1}-${taxYear.toString takeRight 2}"
-    s"/if/income-tax/income/state-benefits/$nino/$taxYearParameter/custom"
-  }
-
-  def createOrUpdateUrl(taxYear: Int, nino: String, benefitId: UUID): String = {
-    val taxYearParameter = s"${taxYear - 1}-${taxYear.toString takeRight 2}"
-    s"/if/income-tax/income/state-benefits/$nino/$taxYearParameter/$benefitId"
-  }
-
-  def deleteUrl(taxYear: Int, nino: String, benefitId: UUID): String = {
-    val taxYearParameter = s"${taxYear - 1}-${taxYear.toString takeRight 2}"
-    s"/if/income-tax/income/state-benefits/$nino/$taxYearParameter/custom/$benefitId"
-  }
-
-  def unIgnoreUrl(taxYear: Int, nino: String, benefitId: UUID): String = {
-    val taxYearParameter = s"${taxYear - 1}-${taxYear.toString takeRight 2}"
-    s"/if/income-tax/state-benefits/$nino/$taxYearParameter/ignore/$benefitId"
+  private def toTaxYearParameter(taxYear: Int) = {
+    s"${taxYear - 1}-${taxYear.toString takeRight 2}"
   }
 
   ".getAllStateBenefitsData" should {
     "return correct IF data when correct parameters are passed" in {
       val httpResponse = HttpResponse(OK, Json.toJson(anAllStateBenefitsData).toString())
 
-      stubGetHttpClientCall(getUrl(taxYear, nino), httpResponse)
+      stubGetHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}", httpResponse)
 
       await(underTest.getAllStateBenefitsData(taxYear, nino)(hc)) shouldBe Right(Some(anAllStateBenefitsData))
     }
@@ -81,7 +60,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       (pagerDutyLoggerService.pagerDutyLog _).expects(*, "GetStateBenefitsResponse")
 
-      stubGetHttpClientCall(getUrl(taxYear, nino), httpResponse)
+      stubGetHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}", httpResponse)
 
       await(underTest.getAllStateBenefitsData(taxYear, nino)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
@@ -92,7 +71,8 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return correct IF data when correct parameters are passed" in {
       val httpResponse = HttpResponse(OK, s"""{"benefitId": "$benefitId"}""")
 
-      stubPostHttpClientCall(addUrl(taxYear, nino), Json.toJson(anAddStateBenefit).toString(), httpResponse)
+      val url = s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/custom"
+      stubPostHttpClientCall(url, Json.toJson(anAddStateBenefit).toString(), httpResponse)
 
       await(underTest.addStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe Right(benefitId)
     }
@@ -103,7 +83,8 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       (pagerDutyLoggerService.pagerDutyLog _).expects(*, "AddStateBenefitResponse")
 
-      stubPostHttpClientCall(addUrl(taxYear, nino), Json.toJson(anAddStateBenefit).toString(), httpResponse)
+      val url = s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/custom"
+      stubPostHttpClientCall(url, Json.toJson(anAddStateBenefit).toString(), httpResponse)
 
       await(underTest.addStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
@@ -115,7 +96,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
       val jsValue = Json.toJson(aStateBenefitDetailOverride)
       val httpResponse = HttpResponse(NO_CONTENT, "")
 
-      stubPutHttpClientCall(createOrUpdateUrl(taxYear, nino, benefitId), jsValue.toString(), httpResponse)
+      stubPutHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/$benefitId", jsValue.toString(), httpResponse)
 
       await(underTest.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe Right(())
     }
@@ -126,7 +107,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       (pagerDutyLoggerService.pagerDutyLog _).expects(*, "CreateOrUpdateStateBenefitResponse")
 
-      stubPutHttpClientCall(createOrUpdateUrl(taxYear, nino, benefitId), jsValue.toString(), httpResponse)
+      stubPutHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/$benefitId", jsValue.toString(), httpResponse)
 
       await(underTest.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
@@ -137,7 +118,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return correct IF response when correct parameters are passed" in {
       val httpResponse = HttpResponse(NO_CONTENT, "")
 
-      stubDeleteHttpClientCall(deleteUrl(taxYear, nino, benefitId), httpResponse)
+      stubDeleteHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/custom/$benefitId", httpResponse)
 
       await(underTest.deleteStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe Right(())
     }
@@ -147,9 +128,30 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       (pagerDutyLoggerService.pagerDutyLog _).expects(*, "DeleteStateBenefitResponse")
 
-      stubDeleteHttpClientCall(deleteUrl(taxYear, nino, benefitId), httpResponse)
+      stubDeleteHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/custom/$benefitId", httpResponse)
 
       await(underTest.deleteStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe
+        Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+    }
+  }
+
+  ".ignoreStateBenefit" should {
+    "return correct IF response when correct parameters are passed" in {
+      val httpResponse = HttpResponse(CREATED, "")
+
+      stubPutHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/ignore/$benefitId", "{}", httpResponse)
+
+      await(underTest.ignoreStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe Right(())
+    }
+
+    "return IF error and perform a pagerDutyLog when Left is returned" in {
+      val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
+
+      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "IgnoreStateBenefitResponse")
+
+      stubPutHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/ignore/$benefitId", "{}", httpResponse)
+
+      await(underTest.ignoreStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
     }
   }
@@ -158,7 +160,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return correct IF response when correct parameters are passed" in {
       val httpResponse = HttpResponse(NO_CONTENT, "")
 
-      stubDeleteHttpClientCall(unIgnoreUrl(taxYear, nino, benefitId), httpResponse)
+      stubDeleteHttpClientCall(s"/if/income-tax/state-benefits/$nino/${toTaxYearParameter(taxYear)}/ignore/$benefitId", httpResponse)
 
       await(underTest.unIgnoreStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe Right(())
     }
@@ -168,7 +170,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       (pagerDutyLoggerService.pagerDutyLog _).expects(*, "UnIgnoreStateBenefitResponse")
 
-      stubDeleteHttpClientCall(unIgnoreUrl(taxYear, nino, benefitId), httpResponse)
+      stubDeleteHttpClientCall(s"/if/income-tax/state-benefits/$nino/${toTaxYearParameter(taxYear)}/ignore/$benefitId", httpResponse)
 
       await(underTest.unIgnoreStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))

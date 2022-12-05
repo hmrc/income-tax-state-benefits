@@ -8,4 +8,3 @@ GET     /prior-data/nino/:nino/tax-year/:taxYear                    controllers.
 GET     /session-data/nino/:nino/session/:sessionDataId             controllers.UserSessionDataController.getStateBenefitsUserData(nino: String, sessionDataId: java.util.UUID)
 POST    /session-data                                               controllers.UserSessionDataController.createOrUpdate()
 DELETE  /session-data/nino/:nino/session/:sessionDataId             controllers.UserSessionDataController.removeClaim(nino: String, sessionDataId: java.util.UUID)
-DELETE  /session-data/nino/:nino/session/:sessionDataId/ignore      controllers.UserSessionDataController.ignoreClaim(nino: String, sessionDataId: java.util.UUID)

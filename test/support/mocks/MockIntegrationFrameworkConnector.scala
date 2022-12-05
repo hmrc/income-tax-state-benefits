@@ -58,4 +58,13 @@ trait MockIntegrationFrameworkConnector extends MockFactory {
       .expects(taxYear, nino, benefitId, *)
       .returning(Future.successful(result))
   }
+
+  def mockIgnoreStateBenefit(taxYear: Int,
+                             nino: String,
+                             benefitId: UUID,
+                             result: Either[ApiError, Unit]): CallHandler4[Int, String, UUID, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
+    (mockIntegrationFrameworkConnector.ignoreStateBenefit(_: Int, _: String, _: UUID)(_: HeaderCarrier))
+      .expects(taxYear, nino, benefitId, *)
+      .returning(Future.successful(result))
+  }
 }

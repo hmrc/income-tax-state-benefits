@@ -35,6 +35,8 @@ case class StateBenefitsUserData(sessionDataId: Option[UUID] = None,
                                  claim: Option[ClaimCYAModel],
                                  lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)) {
 
+  lazy val isHmrcData: Boolean = claim.exists(_.isHmrcData)
+
   def encrypted()(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedStateBenefitsUserData = EncryptedStateBenefitsUserData(
     sessionDataId = sessionDataId,
     sessionId = sessionId,

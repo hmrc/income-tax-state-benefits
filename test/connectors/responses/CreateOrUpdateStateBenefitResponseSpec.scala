@@ -26,7 +26,7 @@ import uk.gov.hmrc.http.HttpResponse
 class CreateOrUpdateStateBenefitResponseSpec extends UnitTest {
 
   private val anyHeaders: Map[String, Seq[String]] = Map.empty
-  private val anyMethod: String = "GET"
+  private val anyMethod: String = "PUT"
   private val anyUrl = "/any-url"
   private val singleErrorBodyJson: JsValue = Json.toJson(SingleErrorBody("some-code", "some-reason"))
 

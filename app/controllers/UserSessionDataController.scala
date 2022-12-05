@@ -60,10 +60,6 @@ class UserSessionDataController @Inject()(authorisedAction: AuthorisedAction,
     }
   }
 
-  def ignoreClaim(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
-    Future.successful(NoContent)
-  }
-
   private def handleCreateOrUpdateWithResponse(stateBenefitsUserData: StateBenefitsUserData): Future[Result] = {
     stateBenefitsService.createOrUpdateUserData(stateBenefitsUserData).map {
       case Left(_) => InternalServerError

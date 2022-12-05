@@ -37,6 +37,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
   private val getApiVersion = "1652"
   private val addApiVersion = "1676"
   private val deleteApiVersion = "1678"
+  private val ignoreApiVersion = "1679"
   private val unIgnoreApiVersion = "1700"
 
   override protected[connectors] val appConfig: AppConfig = appConf
@@ -90,6 +91,19 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     }
   }
 
+  def ignoreStateBenefit(taxYear: Int,
+                         nino: String,
+                         benefitId: UUID)
+                        (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
+    val url = baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/ignore/$benefitId"
+    val eventualResponse = callIgnoreStateBenefit(url)(ifHeaderCarrier(url, ignoreApiVersion))
+
+    eventualResponse.map { apiResponse: IgnoreStateBenefitResponse =>
+      if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
+      apiResponse.result
+    }
+  }
+
   def unIgnoreStateBenefit(taxYear: Int,
                            nino: String,
                            benefitId: UUID)
@@ -119,6 +133,10 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   private def callDeleteStateBenefit(url: String)(implicit hc: HeaderCarrier): Future[DeleteStateBenefitResponse] = {
     httpClient.DELETE[DeleteStateBenefitResponse](url)
+  }
+
+  private def callIgnoreStateBenefit(url: String)(implicit hc: HeaderCarrier): Future[IgnoreStateBenefitResponse] = {
+    httpClient.PUT[Map[String, String], IgnoreStateBenefitResponse](url, Map[String, String]())
   }
 
   private def callUnIgnoreStateBenefit(url: String)(implicit hc: HeaderCarrier): Future[UnIgnoreStateBenefitResponse] = {

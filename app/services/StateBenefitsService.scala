@@ -78,7 +78,7 @@ class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
                                    (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
     if (userData.isPriorSubmission) {
       val benefitId = userData.claim.flatMap(_.benefitId).get
-      integrationFrameworkConnector.deleteStateBenefit(userData.taxYear, userData.nino, benefitId).flatMap {
+      removeOrIgnoreClaim(userData, benefitId).flatMap {
         case Left(error) => Future.successful(Left(ApiServiceError(error.status.toString)))
         case Right(_) => submissionConnector.refreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId).flatMap {
           case Left(error) => Future.successful(Left(ApiServiceError(error.status.toString)))
@@ -94,6 +94,13 @@ class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
         case _ => Right(())
       }
     }
+  }
+
+  private def removeOrIgnoreClaim(userData: StateBenefitsUserData, benefitId: UUID)
+                                 (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = if (userData.isHmrcData) {
+    integrationFrameworkConnector.ignoreStateBenefit(userData.taxYear, userData.nino, benefitId)
+  } else {
+    integrationFrameworkConnector.deleteStateBenefit(userData.taxYear, userData.nino, benefitId)
   }
 
   private def isCreate(stateBenefitsUserData: StateBenefitsUserData): Boolean =
