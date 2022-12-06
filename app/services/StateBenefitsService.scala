@@ -16,10 +16,10 @@
 
 package services
 
+import connectors.SubmissionConnector
 import connectors.errors.ApiError
-import connectors.{IntegrationFrameworkConnector, SubmissionConnector}
 import models.IncomeTaxUserData
-import models.api.{AllStateBenefitsData, StateBenefitDetailOverride}
+import models.api.AllStateBenefitsData
 import models.errors.{ApiServiceError, DataNotUpdatedError, MongoError, ServiceError}
 import models.mongo.StateBenefitsUserData
 import repositories.StateBenefitsUserDataRepository
@@ -30,27 +30,14 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
-                                     integrationFrameworkConnector: IntegrationFrameworkConnector,
+class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
+                                     submissionConnector: SubmissionConnector,
                                      stateBenefitsUserDataRepository: StateBenefitsUserDataRepository)
                                     (implicit ec: ExecutionContext) {
 
   def getAllStateBenefitsData(taxYear: Int, nino: String)
-                             (implicit hc: HeaderCarrier): Future[Either[ApiError, Option[AllStateBenefitsData]]] = {
-    integrationFrameworkConnector.getAllStateBenefitsData(taxYear, nino)
-  }
-
-  def createOrUpdateStateBenefitDetailOverride(taxYear: Int,
-                                               nino: String,
-                                               benefitId: UUID,
-                                               stateBenefitDetailOverride: StateBenefitDetailOverride)
-                                              (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    integrationFrameworkConnector.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, stateBenefitDetailOverride)
-  }
-
-  def deleteStateBenefit(taxYear: Int, nino: String, benefitId: UUID)
-                        (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    integrationFrameworkConnector.deleteStateBenefit(taxYear, nino, benefitId)
+                             (implicit hc: HeaderCarrier): Future[Either[ServiceError, Option[AllStateBenefitsData]]] = {
+    ifService.getAllStateBenefitsData(taxYear, nino)
   }
 
   def getPriorData(taxYear: Int, nino: String, mtdtid: String)
@@ -66,6 +53,14 @@ class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
     if (isCreate(userData)) deleteAndCreateNew(userData) else updateExisting(userData)
   }
 
+  def saveUserData(userData: StateBenefitsUserData)
+                  (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
+    stateBenefitsUserDataRepository.find(userData.nino, userData.sessionDataId.get).flatMap {
+      case Left(error) => Future.successful(Left(error))
+      case Right(userData) => handleSaveClaimFor(userData)
+    }
+  }
+
   def removeClaim(nino: String, sessionDataId: UUID)
                  (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
     stateBenefitsUserDataRepository.find(nino, sessionDataId).flatMap {
@@ -74,12 +69,26 @@ class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
     }
   }
 
+  private def handleSaveClaimFor(userData: StateBenefitsUserData)
+                                (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
+    ifService.createOrUpdateStateBenefit(userData).flatMap {
+      case Left(error) => Future.successful(Left(error))
+      case Right(_) => submissionConnector.refreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId).flatMap {
+        case Left(error) => Future.successful(Left(ApiServiceError(error.status.toString)))
+        case Right(_) => stateBenefitsUserDataRepository.clear(userData.sessionId).map {
+          case false => Left(MongoError("FAILED_TO_CLEAR_STATE_BENEFITS_DATA"))
+          case _ => Right(())
+        }
+      }
+    }
+  }
+
   private def handleClaimRemovalFor(userData: StateBenefitsUserData)
                                    (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
     if (userData.isPriorSubmission) {
       val benefitId = userData.claim.flatMap(_.benefitId).get
-      removeOrIgnoreClaim(userData, benefitId).flatMap {
-        case Left(error) => Future.successful(Left(ApiServiceError(error.status.toString)))
+      ifService.removeOrIgnoreClaim(userData, benefitId).flatMap {
+        case Left(error) => Future.successful(Left(error))
         case Right(_) => submissionConnector.refreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId).flatMap {
           case Left(error) => Future.successful(Left(ApiServiceError(error.status.toString)))
           case Right(_) => stateBenefitsUserDataRepository.clear(userData.sessionId).map {
@@ -94,13 +103,6 @@ class StateBenefitsService @Inject()(submissionConnector: SubmissionConnector,
         case _ => Right(())
       }
     }
-  }
-
-  private def removeOrIgnoreClaim(userData: StateBenefitsUserData, benefitId: UUID)
-                                 (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = if (userData.isHmrcData) {
-    integrationFrameworkConnector.ignoreStateBenefit(userData.taxYear, userData.nino, benefitId)
-  } else {
-    integrationFrameworkConnector.deleteStateBenefit(userData.taxYear, userData.nino, benefitId)
   }
 
   private def isCreate(stateBenefitsUserData: StateBenefitsUserData): Boolean =

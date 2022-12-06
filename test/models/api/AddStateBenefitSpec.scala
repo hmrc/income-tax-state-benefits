@@ -16,21 +16,18 @@
 
 package models.api
 
-import models.mongo.ClaimCYAModel
-import play.api.libs.json.{Json, OFormat}
+import support.UnitTest
+import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 
-import java.time.LocalDate
+class AddStateBenefitSpec extends UnitTest {
 
-case class AddStateBenefit(benefitType: String,
-                           startDate: LocalDate,
-                           endDate: Option[LocalDate] = None)
-
-object AddStateBenefit {
-  implicit val format: OFormat[AddStateBenefit] = Json.format[AddStateBenefit]
-
-  def apply(benefitType: String, claimCYAModel: ClaimCYAModel): AddStateBenefit = AddStateBenefit(
-    benefitType = benefitType,
-    startDate = claimCYAModel.startDate,
-    endDate = claimCYAModel.endDate
-  )
+  ".apply(...)" should {
+    "create correct AddStateBenefit" in {
+      AddStateBenefit.apply("some-benefit-type", aClaimCYAModel) shouldBe AddStateBenefit(
+        benefitType = "some-benefit-type",
+        startDate = aClaimCYAModel.startDate,
+        endDate = aClaimCYAModel.endDate
+      )
+    }
+  }
 }

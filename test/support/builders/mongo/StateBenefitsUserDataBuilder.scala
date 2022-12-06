@@ -16,6 +16,7 @@
 
 package support.builders.mongo
 
+import models.api.BenefitType
 import models.mongo.StateBenefitsUserData
 import play.api.libs.json.{Format, JsObject, Json}
 import support.builders.UserBuilder.aUser
@@ -29,6 +30,7 @@ import java.util.UUID
 object StateBenefitsUserDataBuilder {
 
   val aStateBenefitsUserData: StateBenefitsUserData = StateBenefitsUserData(
+    benefitType = BenefitType.JobSeekersAllowance.typeName,
     sessionDataId = Some(UUID.fromString("558238ef-d2ff-4839-bd6d-307324d6fe37")),
     sessionId = "sessionId-eb3158c2-0aff-4ce8-8d1b-f2208ace52fe",
     mtdItId = aUser.mtditid,
@@ -41,6 +43,7 @@ object StateBenefitsUserDataBuilder {
   implicit val mongoLocalDateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
 
   val aStateBenefitsUserDataJson: JsObject = Json.obj(
+    "benefitType" -> aStateBenefitsUserData.benefitType,
     "sessionDataId" -> aStateBenefitsUserData.sessionDataId,
     "sessionId" -> aStateBenefitsUserData.sessionId,
     "mtdItId" -> aStateBenefitsUserData.mtdItId,

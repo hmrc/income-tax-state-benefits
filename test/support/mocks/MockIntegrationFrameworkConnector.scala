@@ -18,7 +18,7 @@ package support.mocks
 
 import connectors.IntegrationFrameworkConnector
 import connectors.errors.ApiError
-import models.api.{AllStateBenefitsData, StateBenefitDetailOverride}
+import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride}
 import org.scalamock.handlers.{CallHandler3, CallHandler4, CallHandler5}
 import org.scalamock.scalatest.MockFactory
 import uk.gov.hmrc.http.HeaderCarrier
@@ -32,10 +32,28 @@ trait MockIntegrationFrameworkConnector extends MockFactory {
 
   def mockGetAllStateBenefitsData(taxYear: Int,
                                   nino: String,
-                                  result: Either[ApiError, Option[AllStateBenefitsData]]
-                                 ): CallHandler3[Int, String, HeaderCarrier, Future[Either[ApiError, Option[AllStateBenefitsData]]]] = {
+                                  result: Either[ApiError, Option[AllStateBenefitsData]])
+  : CallHandler3[Int, String, HeaderCarrier, Future[Either[ApiError, Option[AllStateBenefitsData]]]] = {
     (mockIntegrationFrameworkConnector.getAllStateBenefitsData(_: Int, _: String)(_: HeaderCarrier))
       .expects(taxYear, nino, *)
+      .returning(Future.successful(result))
+  }
+
+  def mockAddStateBenefit(taxYear: Int,
+                          nino: String,
+                          addStateBenefit: AddStateBenefit,
+                          result: Either[ApiError, UUID]): CallHandler4[Int, String, AddStateBenefit, HeaderCarrier, Future[Either[ApiError, UUID]]] = {
+    (mockIntegrationFrameworkConnector.addStateBenefit(_: Int, _: String, _: AddStateBenefit)(_: HeaderCarrier))
+      .expects(taxYear, nino, addStateBenefit, *)
+      .returning(Future.successful(result))
+  }
+
+  def mockUpdateStateBenefit(taxYear: Int,
+                             nino: String,
+                             benefitId: UUID,
+                             result: Either[ApiError, Unit]): CallHandler4[Int, String, UUID, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
+    (mockIntegrationFrameworkConnector.updateStateBenefit(_: Int, _: String, _: UUID)(_: HeaderCarrier))
+      .expects(taxYear, nino, benefitId, *)
       .returning(Future.successful(result))
   }
 

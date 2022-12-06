@@ -26,7 +26,8 @@ import utils.SecureGCMCipher
 import java.time.{LocalDateTime, ZoneOffset}
 import java.util.UUID
 
-case class StateBenefitsUserData(sessionDataId: Option[UUID] = None,
+case class StateBenefitsUserData(benefitType: String,
+                                 sessionDataId: Option[UUID] = None,
                                  sessionId: String,
                                  mtdItId: String,
                                  nino: String,
@@ -37,7 +38,10 @@ case class StateBenefitsUserData(sessionDataId: Option[UUID] = None,
 
   lazy val isHmrcData: Boolean = claim.exists(_.isHmrcData)
 
+  lazy val isNewClaim: Boolean = claim.exists(_.benefitId.isEmpty)
+
   def encrypted()(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedStateBenefitsUserData = EncryptedStateBenefitsUserData(
+    benefitType: String,
     sessionDataId = sessionDataId,
     sessionId = sessionId,
     mtdItId = mtdItId,
@@ -54,6 +58,7 @@ object StateBenefitsUserData {
 
   implicit val stateBenefitsUserDataWrites: OWrites[StateBenefitsUserData] = (data: StateBenefitsUserData) => {
     jsonObjNoNulls(
+      "benefitType" -> data.benefitType,
       "sessionDataId" -> data.sessionDataId,
       "sessionId" -> data.sessionId,
       "mtdItId" -> data.mtdItId,
@@ -66,7 +71,8 @@ object StateBenefitsUserData {
   }
 
   implicit val stateBenefitsUserDataReads: Reads[StateBenefitsUserData] = (
-    (JsPath \ "sessionDataId").readNullable[UUID] and
+    (JsPath \ "benefitType").read[String] and
+      (JsPath \ "sessionDataId").readNullable[UUID] and
       (JsPath \ "sessionId").read[String] and
       (JsPath \ "mtdItId").read[String] and
       (JsPath \ "nino").read[String] and
@@ -74,10 +80,11 @@ object StateBenefitsUserData {
       (JsPath \ "isPriorSubmission").read[Boolean] and
       (JsPath \ "claim").readNullable[ClaimCYAModel] and
       (JsPath \ "lastUpdated").readWithDefault[LocalDateTime](LocalDateTime.now(ZoneOffset.UTC))
-    ) (StateBenefitsUserData.apply _)
+    )(StateBenefitsUserData.apply _)
 }
 
-case class EncryptedStateBenefitsUserData(sessionDataId: Option[UUID] = None,
+case class EncryptedStateBenefitsUserData(benefitType: String,
+                                          sessionDataId: Option[UUID] = None,
                                           sessionId: String,
                                           mtdItId: String,
                                           nino: String,
@@ -87,6 +94,7 @@ case class EncryptedStateBenefitsUserData(sessionDataId: Option[UUID] = None,
                                           lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)) {
 
   def decrypted()(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): StateBenefitsUserData = StateBenefitsUserData(
+    benefitType = benefitType,
     sessionDataId = sessionDataId,
     sessionId = sessionId,
     mtdItId = mtdItId,

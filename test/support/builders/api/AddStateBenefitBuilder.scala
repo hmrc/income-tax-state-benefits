@@ -18,15 +18,13 @@ package support.builders.api
 
 import models.api.AddStateBenefit
 import models.api.BenefitType.JobSeekersAllowance
-import support.utils.TaxYearUtils.taxYearEOY
-
-import java.time.LocalDate
+import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 
 object AddStateBenefitBuilder {
 
   val anAddStateBenefit: AddStateBenefit = AddStateBenefit(
     benefitType = JobSeekersAllowance.typeName,
-    startDate = LocalDate.parse(s"${taxYearEOY - 1}-01-01"),
-    endDate = Some(LocalDate.parse(s"${taxYearEOY - 1}-02-01"))
+    startDate = aClaimCYAModel.startDate,
+    endDate = aClaimCYAModel.endDate
   )
 }

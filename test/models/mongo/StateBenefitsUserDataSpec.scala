@@ -20,8 +20,11 @@ import models.encryption.TextAndKey
 import org.scalamock.scalatest.MockFactory
 import play.api.libs.json.Json
 import support.UnitTest
+import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 import support.builders.mongo.StateBenefitsUserDataBuilder.{aStateBenefitsUserData, aStateBenefitsUserDataJson}
 import utils.SecureGCMCipher
+
+import java.util.UUID
 
 class StateBenefitsUserDataSpec extends UnitTest
   with MockFactory {
@@ -31,6 +34,34 @@ class StateBenefitsUserDataSpec extends UnitTest
 
   private val claimCYAModel = mock[ClaimCYAModel]
   private val encryptedClaimCYAModel = mock[EncryptedClaimCYAModel]
+
+  ".isHmrcData" should {
+    "return false when claim is None" in {
+      aStateBenefitsUserData.copy(claim = None).isHmrcData shouldBe false
+    }
+
+    "return false when claim.isHmrcData is false" in {
+      aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(isHmrcData = false))).isHmrcData shouldBe false
+    }
+
+    "return false when claim.isHmrcData is true" in {
+      aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(isHmrcData = true))).isHmrcData shouldBe true
+    }
+  }
+
+  ".isNewClaim" should {
+    "return false when claim is None" in {
+      aStateBenefitsUserData.copy(claim = None).isNewClaim shouldBe false
+    }
+
+    "return false when claim.benefitId is Some(...)" in {
+      aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = Some(UUID.randomUUID())))).isNewClaim shouldBe false
+    }
+
+    "return false when claim.benefitId is None" in {
+      aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = None))).isNewClaim shouldBe true
+    }
+  }
 
   "StateBenefitsUserData.format" should {
     "write to Json correctly when using implicit formatter" in {
@@ -51,6 +82,7 @@ class StateBenefitsUserDataSpec extends UnitTest
       (claimCYAModel.encrypted()(_: SecureGCMCipher, _: TextAndKey)).expects(*, *).returning(encryptedClaimCYAModel)
 
       underTest.encrypted shouldBe EncryptedStateBenefitsUserData(
+        benefitType = underTest.benefitType,
         sessionDataId = underTest.sessionDataId,
         sessionId = underTest.sessionId,
         mtdItId = underTest.mtdItId,
@@ -68,6 +100,7 @@ class StateBenefitsUserDataSpec extends UnitTest
       (encryptedClaimCYAModel.decrypted()(_: SecureGCMCipher, _: TextAndKey)).expects(*, *).returning(claimCYAModel)
 
       val encryptedData = EncryptedStateBenefitsUserData(
+        benefitType = aStateBenefitsUserData.benefitType,
         sessionDataId = aStateBenefitsUserData.sessionDataId,
         sessionId = aStateBenefitsUserData.sessionId,
         mtdItId = aStateBenefitsUserData.mtdItId,
@@ -79,6 +112,7 @@ class StateBenefitsUserDataSpec extends UnitTest
       )
 
       encryptedData.decrypted shouldBe StateBenefitsUserData(
+        benefitType = aStateBenefitsUserData.benefitType,
         sessionDataId = aStateBenefitsUserData.sessionDataId,
         sessionId = aStateBenefitsUserData.sessionId,
         mtdItId = aStateBenefitsUserData.mtdItId,
