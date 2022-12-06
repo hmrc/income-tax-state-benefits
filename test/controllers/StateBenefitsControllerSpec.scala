@@ -16,17 +16,16 @@
 
 package controllers
 
-import connectors.errors.{ApiError, SingleErrorBody}
-import play.api.http.Status.{BAD_REQUEST, FORBIDDEN, NO_CONTENT, OK}
+import models.errors.{DataNotFoundError, DataNotUpdatedError}
+import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import play.api.test.Helpers.status
 import support.ControllerUnitTest
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
-import support.builders.api.StateBenefitDetailOverrideBuilder.aStateBenefitDetailOverride
+import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
 import support.mocks.{MockAuthorisedAction, MockStateBenefitsService}
 import support.providers.FakeRequestProvider
 
-import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class StateBenefitsControllerSpec extends ControllerUnitTest
@@ -35,7 +34,6 @@ class StateBenefitsControllerSpec extends ControllerUnitTest
   with FakeRequestProvider {
 
   private val anyYear = 2022
-  private val benefitId = UUID.randomUUID()
 
   private val underTest = new StateBenefitsController(
     mockStateBenefitsService,
@@ -64,50 +62,40 @@ class StateBenefitsControllerSpec extends ControllerUnitTest
     }
 
     "return error when stateBenefitsService returns Left(errorModel)" in {
-      val error = ApiError(status = BAD_REQUEST, body = SingleErrorBody("some-code", "some-reason"))
-
       mockAuthorisation()
-      mockGetAllStateBenefitsData(anyYear, "some-nino", Left(error))
+      mockGetAllStateBenefitsData(anyYear, "some-nino", Left(DataNotFoundError))
 
-      val result = await(underTest.getAllStateBenefitsData("some-nino", anyYear)(fakeGetRequest))
+      val result = underTest.getAllStateBenefitsData("some-nino", anyYear)(fakeGetRequest)
 
-      result.header.status shouldBe BAD_REQUEST
-      Json.parse(consumeBody(result)) shouldBe error.toJson
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 
-  ".createOrUpdateStateBenefitDetailOverride" should {
-    "return NoContent when stateBenefitsService returns Right(_)" in {
+  ".saveUserData" should {
+    "return BadRequest when data received is in invalid format" in {
       mockAuthorisation()
-      mockCreateOrUpdateStateBenefitDetailOverride(anyYear, "some-nino", benefitId, aStateBenefitDetailOverride, Right(()))
 
-      val request = fakePutRequest.withJsonBody(Json.toJson(aStateBenefitDetailOverride))
-      val result = underTest.createOrUpdateStateBenefitDetailOverride("some-nino", anyYear, benefitId)(request)
+      val result = underTest.saveUserData()(fakePutRequest.withJsonBody(Json.parse("""{"wrongFormat": "wrong-value"}""")))
+
+      status(result) shouldBe BAD_REQUEST
+    }
+
+    "return INTERNAL_SERVER_ERROR when saveUserData returns an error" in {
+      mockAuthorisation()
+      mockSaveUserData(aStateBenefitsUserData, Left(DataNotUpdatedError))
+
+      val result = underTest.saveUserData()(fakePutRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return NoContent when stateBenefitsService returns Right(None)" in {
+      mockAuthorisation()
+      mockSaveUserData(aStateBenefitsUserData, Right(()))
+
+      val result = underTest.saveUserData()(fakePutRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
 
       status(result) shouldBe NO_CONTENT
-    }
-
-    "return error when stateBenefitsService returns Left(errorModel)" in {
-      val error = ApiError(status = FORBIDDEN, body = SingleErrorBody("some-code", "some-reason"))
-      val request = fakePutRequest.withJsonBody(Json.toJson(aStateBenefitDetailOverride))
-
-      mockAuthorisation()
-      mockCreateOrUpdateStateBenefitDetailOverride(anyYear, "some-nino", benefitId, aStateBenefitDetailOverride, Left(error))
-
-      val result = await(underTest.createOrUpdateStateBenefitDetailOverride("some-nino", anyYear, benefitId)(request))
-
-      result.header.status shouldBe FORBIDDEN
-      Json.parse(consumeBody(result)) shouldBe error.toJson
-    }
-
-    "return BadRequest when JSON in request is in wrong format" in {
-      val request = fakePutRequest.withJsonBody(Json.parse("""{"wrong-key": "wrong-value"}"""))
-
-      mockAuthorisation()
-
-      val result = await(underTest.createOrUpdateStateBenefitDetailOverride("some-nino", anyYear, benefitId)(request))
-
-      result.header.status shouldBe BAD_REQUEST
     }
   }
 }

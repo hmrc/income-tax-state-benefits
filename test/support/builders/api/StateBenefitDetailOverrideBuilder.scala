@@ -17,11 +17,12 @@
 package support.builders.api
 
 import models.api.StateBenefitDetailOverride
+import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 
 object StateBenefitDetailOverrideBuilder {
 
   val aStateBenefitDetailOverride: StateBenefitDetailOverride = StateBenefitDetailOverride(
-    amount = 100.00,
-    taxPaid = Some(200.00)
+    amount = aClaimCYAModel.amount.get,
+    taxPaid = aClaimCYAModel.taxPaid
   )
 }

@@ -64,6 +64,12 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     }
   }
 
+  // TODO: This should be implemented when API 1677 is implemented
+  def updateStateBenefit(taxYear: Int, nino: String, benefitId: UUID)
+                        (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
+    Future.successful(Right(()))
+  }
+
   def createOrUpdateStateBenefitDetailOverride(taxYear: Int,
                                                nino: String,
                                                benefitId: UUID,
