@@ -19,12 +19,13 @@ package connectors.responses
 import connectors.Parser
 import connectors.errors.ApiError
 import models.api.AllStateBenefitsData
+import play.api.Logging
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 
 case class GetStateBenefitsResponse(httpResponse: HttpResponse, result: Either[ApiError, Option[AllStateBenefitsData]])
 
-object GetStateBenefitsResponse {
+object GetStateBenefitsResponse extends Logging {
 
   implicit val getStateBenefitsResponseReads: HttpReads[GetStateBenefitsResponse] = new HttpReads[GetStateBenefitsResponse] with Parser {
 
@@ -39,7 +40,9 @@ object GetStateBenefitsResponse {
     }
 
     private def extractResult(response: HttpResponse): Either[ApiError, Option[AllStateBenefitsData]] = {
-      response.json.validate[AllStateBenefitsData]
+      val json = response.json
+      logger.error("GetStateBenefitsResponse (Test): " + json.toString())
+      json.validate[AllStateBenefitsData]
         .fold[Either[ApiError, Option[AllStateBenefitsData]]](_ => badSuccessJsonResponse, parsedModel => Right(Some(parsedModel)))
     }
   }
