@@ -23,7 +23,7 @@ import StateBenefitsDataBuilder.aStateBenefitsData
 object AllStateBenefitsDataBuilder {
 
   val anAllStateBenefitsData: AllStateBenefitsData = AllStateBenefitsData(
-    stateBenefitsData = aStateBenefitsData,
+    stateBenefitsData = Some(aStateBenefitsData),
     customerAddedStateBenefitsData = Some(aCustomerAddedStateBenefitsData)
   )
 }

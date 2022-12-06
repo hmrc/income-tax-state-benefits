@@ -52,7 +52,7 @@ class GetIncomeTaxUserDataResponseSpec extends UnitTest {
         val jsValue: JsValue = Json.parse(
           """
             |{
-            |   "stateBenefits": {}
+            |   "stateBenefits": { "stateBenefits": {"statePension": []}}
             |}
             |""".stripMargin)
 
