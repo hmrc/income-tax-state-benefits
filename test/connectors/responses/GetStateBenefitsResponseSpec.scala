@@ -46,14 +46,16 @@ class GetStateBenefitsResponseSpec extends UnitTest {
 
         underTest.read(anyMethod, anyUrl, httpResponse) shouldBe GetStateBenefitsResponse(
           httpResponse,
-          Right(Some(AllStateBenefitsData(StateBenefitsData(), None)))
+          Right(Some(AllStateBenefitsData(Some(StateBenefitsData()), None)))
         )
       }
 
       "status is OK and invalid jsValue" in {
         val jsValue: JsValue = Json.parse(
           """
-            |{}
+            |{
+            |   "stateBenefits": {"statePension": []}
+            |}
             |""".stripMargin)
 
         val httpResponse: HttpResponse = HttpResponse.apply(OK, jsValue, anyHeaders)
