@@ -25,6 +25,7 @@ import support.ConnectorIntegrationTest
 import support.builders.api.AddStateBenefitBuilder.anAddStateBenefit
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
 import support.builders.api.StateBenefitDetailOverrideBuilder.aStateBenefitDetailOverride
+import support.builders.api.UpdateStateBenefitBuilder.anUpdateStateBenefit
 import support.providers.TaxYearProvider
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
 
@@ -87,6 +88,29 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
       stubPostHttpClientCall(url, Json.toJson(anAddStateBenefit).toString(), httpResponse)
 
       await(underTest.addStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe
+        Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+    }
+  }
+
+  ".updateStateBenefit" should {
+    val url = s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/custom/$benefitId"
+    "return correct IF data when correct parameters are passed" in {
+      val httpResponse = HttpResponse(CREATED, "")
+
+      stubPutHttpClientCall(url, Json.toJson(anUpdateStateBenefit).toString(), httpResponse)
+
+      await(underTest.updateStateBenefit(taxYear, nino, benefitId, anUpdateStateBenefit)(hc)) shouldBe Right(())
+    }
+
+
+    "return IF error and perform a pagerDutyLog when Left is returned" in {
+      val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
+
+      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "UpdateStateBenefitResponse")
+
+      stubPutHttpClientCall(url, Json.toJson(anUpdateStateBenefit).toString(), httpResponse)
+
+      await(underTest.updateStateBenefit(taxYear, nino, benefitId, anUpdateStateBenefit)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
     }
   }

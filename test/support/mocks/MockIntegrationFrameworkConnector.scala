@@ -18,7 +18,7 @@ package support.mocks
 
 import connectors.IntegrationFrameworkConnector
 import connectors.errors.ApiError
-import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride}
+import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride, UpdateStateBenefit}
 import org.scalamock.handlers.{CallHandler3, CallHandler4, CallHandler5}
 import org.scalamock.scalatest.MockFactory
 import uk.gov.hmrc.http.HeaderCarrier
@@ -51,9 +51,11 @@ trait MockIntegrationFrameworkConnector extends MockFactory {
   def mockUpdateStateBenefit(taxYear: Int,
                              nino: String,
                              benefitId: UUID,
-                             result: Either[ApiError, Unit]): CallHandler4[Int, String, UUID, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
-    (mockIntegrationFrameworkConnector.updateStateBenefit(_: Int, _: String, _: UUID)(_: HeaderCarrier))
-      .expects(taxYear, nino, benefitId, *)
+                             updateStateBenefit: UpdateStateBenefit,
+                             result: Either[ApiError, Unit])
+  : CallHandler5[Int, String, UUID, UpdateStateBenefit, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
+    (mockIntegrationFrameworkConnector.updateStateBenefit(_: Int, _: String, _: UUID, _: UpdateStateBenefit)(_: HeaderCarrier))
+      .expects(taxYear, nino, benefitId, updateStateBenefit, *)
       .returning(Future.successful(result))
   }
 

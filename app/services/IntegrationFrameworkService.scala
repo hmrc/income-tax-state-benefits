@@ -18,7 +18,7 @@ package services
 
 import connectors.IntegrationFrameworkConnector
 import connectors.errors.ApiError
-import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride}
+import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride, UpdateStateBenefit}
 import models.errors.ApiServiceError
 import models.mongo.{ClaimCYAModel, StateBenefitsUserData}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -66,7 +66,7 @@ class IntegrationFrameworkService @Inject()(val integrationFrameworkConnector: I
     integrationFrameworkConnector.addStateBenefit(userData.taxYear, userData.nino, AddStateBenefit(userData.benefitType, claimData))
   } else {
     val benefitId = claimData.benefitId.get
-    integrationFrameworkConnector.updateStateBenefit(userData.taxYear, userData.nino, benefitId).map {
+    integrationFrameworkConnector.updateStateBenefit(userData.taxYear, userData.nino, benefitId, UpdateStateBenefit(claimData)).map {
       case Left(error) => Left(error)
       case Right(_) => Right(benefitId)
     }

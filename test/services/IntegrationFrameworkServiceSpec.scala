@@ -23,6 +23,7 @@ import support.UnitTest
 import support.builders.api.AddStateBenefitBuilder.anAddStateBenefit
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
 import support.builders.api.StateBenefitDetailOverrideBuilder.aStateBenefitDetailOverride
+import support.builders.api.UpdateStateBenefitBuilder.anUpdateStateBenefit
 import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
 import support.mocks.MockIntegrationFrameworkConnector
@@ -87,7 +88,7 @@ class IntegrationFrameworkServiceSpec extends UnitTest
 
     "existing claim" should {
       "and updateStateBenefit returns error then return error" in {
-        mockUpdateStateBenefit(aStateBenefitsUserData.taxYear, aStateBenefitsUserData.nino, benefitId, Left(apiError))
+        mockUpdateStateBenefit(aStateBenefitsUserData.taxYear, aStateBenefitsUserData.nino, benefitId, anUpdateStateBenefit, Left(apiError))
 
         await(underTest.createOrUpdateStateBenefit(aStateBenefitsUserData)) shouldBe Left(ApiServiceError(apiError.status.toString))
       }
@@ -95,7 +96,7 @@ class IntegrationFrameworkServiceSpec extends UnitTest
       "and createOrUpdateStateBenefitDetailOverride returns error then return error" in {
         val userData = aStateBenefitsUserData
 
-        mockUpdateStateBenefit(aStateBenefitsUserData.taxYear, aStateBenefitsUserData.nino, benefitId, Right(benefitId))
+        mockUpdateStateBenefit(aStateBenefitsUserData.taxYear, aStateBenefitsUserData.nino, benefitId, anUpdateStateBenefit, Right(()))
         mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, aStateBenefitsUserData.nino, benefitId, aStateBenefitDetailOverride, Left(apiError))
 
         await(underTest.createOrUpdateStateBenefit(aStateBenefitsUserData)) shouldBe Left(ApiServiceError(apiError.status.toString))
@@ -104,7 +105,7 @@ class IntegrationFrameworkServiceSpec extends UnitTest
       "succeed when all calls succeed" in {
         val userData = aStateBenefitsUserData
 
-        mockUpdateStateBenefit(userData.taxYear, userData.nino, benefitId, Right(benefitId))
+        mockUpdateStateBenefit(userData.taxYear, userData.nino, benefitId, anUpdateStateBenefit, Right(()))
         mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Right(()))
 
         await(underTest.createOrUpdateStateBenefit(userData)) shouldBe Right(())
