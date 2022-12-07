@@ -19,7 +19,7 @@ package connectors
 import config.AppConfig
 import connectors.errors.ApiError
 import connectors.responses._
-import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride}
+import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride, UpdateStateBenefit}
 import services.PagerDutyLoggerService
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
@@ -36,6 +36,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
   private val createOrUpdateApiVersion = "1651"
   private val getApiVersion = "1652"
   private val addApiVersion = "1676"
+  private val updateApiVersion = "1677"
   private val deleteApiVersion = "1678"
   private val ignoreApiVersion = "1679"
   private val unIgnoreApiVersion = "1700"
@@ -56,7 +57,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
   def addStateBenefit(taxYear: Int, nino: String, addStateBenefit: AddStateBenefit)
                      (implicit hc: HeaderCarrier): Future[Either[ApiError, UUID]] = {
     val url = baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom"
-    val getRequestResponse = callAddStateBenefits(url, addStateBenefit)(ifHeaderCarrier(url, addApiVersion))
+    val getRequestResponse = callAddStateBenefit(url, addStateBenefit)(ifHeaderCarrier(url, addApiVersion))
 
     getRequestResponse.map { apiResponse =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
@@ -64,10 +65,15 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     }
   }
 
-  // TODO: This should be implemented when API 1677 is implemented
-  def updateStateBenefit(taxYear: Int, nino: String, benefitId: UUID)
+  def updateStateBenefit(taxYear: Int, nino: String, benefitId: UUID, updateStateBenefit: UpdateStateBenefit)
                         (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    Future.successful(Right(()))
+    val url = baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom/$benefitId"
+    val eventualResponse = callUpdateStateBenefit(url, updateStateBenefit)(ifHeaderCarrier(url, updateApiVersion))
+
+    eventualResponse.map { apiResponse =>
+      if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
+      apiResponse.result
+    }
   }
 
   def createOrUpdateStateBenefitDetailOverride(taxYear: Int,
@@ -132,9 +138,13 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     httpClient.GET[GetStateBenefitsResponse](url)
   }
 
-  private def callAddStateBenefits(url: String, addStateBenefit: AddStateBenefit)
-                                  (implicit hc: HeaderCarrier): Future[AddStateBenefitResponse] = {
+  private def callAddStateBenefit(url: String, addStateBenefit: AddStateBenefit)
+                                 (implicit hc: HeaderCarrier): Future[AddStateBenefitResponse] = {
     httpClient.POST[AddStateBenefit, AddStateBenefitResponse](url, addStateBenefit)
+  }
+
+  private def callUpdateStateBenefit(url: String, updateStateBenefit: UpdateStateBenefit)(implicit hc: HeaderCarrier): Future[UpdateStateBenefitResponse] = {
+    httpClient.PUT[UpdateStateBenefit, UpdateStateBenefitResponse](url, updateStateBenefit)
   }
 
   private def callDeleteStateBenefit(url: String)(implicit hc: HeaderCarrier): Future[DeleteStateBenefitResponse] = {
