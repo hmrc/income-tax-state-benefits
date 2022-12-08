@@ -61,6 +61,15 @@ class IntegrationFrameworkService @Inject()(val integrationFrameworkConnector: I
     }
   }
 
+  def unIgnoreClaim(userData: StateBenefitsUserData)
+                   (implicit hc: HeaderCarrier): Future[Either[ApiServiceError, Unit]] = {
+    val benefitId = userData.claim.get.benefitId.get
+    integrationFrameworkConnector.unIgnoreStateBenefit(userData.taxYear, userData.nino, benefitId).map {
+      case Left(error) => Left(ApiServiceError(error.status.toString))
+      case Right(_) => Right(())
+    }
+  }
+
   private def createOrUpdateStateBenefit(userData: StateBenefitsUserData, claimData: ClaimCYAModel)
                                         (implicit hc: HeaderCarrier): Future[Either[ApiError, UUID]] = if (userData.isNewClaim) {
     integrationFrameworkConnector.addStateBenefit(userData.taxYear, userData.nino, AddStateBenefit(userData.benefitType, claimData))

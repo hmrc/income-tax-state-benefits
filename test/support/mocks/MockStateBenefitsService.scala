@@ -77,9 +77,17 @@ trait MockStateBenefitsService extends MockFactory {
 
   def mockRemoveClaim(nino: String,
                       sessionDataId: UUID,
-                      reslt: Either[ServiceError, Unit]): CallHandler3[String, UUID, HeaderCarrier, Future[Either[ServiceError, Unit]]] = {
+                      result: Either[ServiceError, Unit]): CallHandler3[String, UUID, HeaderCarrier, Future[Either[ServiceError, Unit]]] = {
     (mockStateBenefitsService.removeClaim(_: String, _: UUID)(_: HeaderCarrier))
       .expects(nino, sessionDataId, *)
-      .returning(Future.successful(reslt))
+      .returning(Future.successful(result))
+  }
+
+  def mockRestoreClaim(nino: String,
+                       sessionDataId: UUID,
+                       result: Either[ServiceError, Unit]): CallHandler3[String, UUID, HeaderCarrier, Future[Either[ServiceError, Unit]]] = {
+    (mockStateBenefitsService.restoreClaim(_: String, _: UUID)(_: HeaderCarrier))
+      .expects(nino, sessionDataId, *)
+      .returning(Future.successful(result))
   }
 }

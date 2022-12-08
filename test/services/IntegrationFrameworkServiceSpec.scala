@@ -150,4 +150,20 @@ class IntegrationFrameworkServiceSpec extends UnitTest
       }
     }
   }
+
+  ".unIgnoreClaim" should {
+    val userData = aStateBenefitsUserData
+
+    "return error when unIgnoreStateBenefit fails" in {
+      mockUnIgnoreStateBenefit(userData.taxYear, userData.nino, benefitId, Left(apiError))
+
+      await(underTest.unIgnoreClaim(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+    }
+
+    "return success when unIgnoreStateBenefit succeeds" in {
+      mockUnIgnoreStateBenefit(userData.taxYear, userData.nino, benefitId, Right(()))
+
+      await(underTest.unIgnoreClaim(userData)) shouldBe Right(())
+    }
+  }
 }

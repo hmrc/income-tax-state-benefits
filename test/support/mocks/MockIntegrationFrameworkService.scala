@@ -56,4 +56,11 @@ trait MockIntegrationFrameworkService extends MockFactory {
       .expects(userData, benefitId, *)
       .returning(Future.successful(result))
   }
+
+  def mockUnIgnoreClaim(userData: StateBenefitsUserData,
+                        result: Either[ApiServiceError, Unit]): CallHandler2[StateBenefitsUserData, HeaderCarrier, Future[Either[ApiServiceError, Unit]]] = {
+    (mockIntegrationFrameworkService.unIgnoreClaim(_: StateBenefitsUserData)(_: HeaderCarrier))
+      .expects(userData, *)
+      .returning(Future.successful(result))
+  }
 }

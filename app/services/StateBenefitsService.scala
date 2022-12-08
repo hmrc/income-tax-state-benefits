@@ -69,6 +69,14 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
     }
   }
 
+  def restoreClaim(nino: String, sessionDataId: UUID)
+                  (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
+    stateBenefitsUserDataRepository.find(nino, sessionDataId).flatMap {
+      case Left(error) => Future.successful(Left(error))
+      case Right(userData) => handleRestoreClaimFor(userData)
+    }
+  }
+
   private def handleSaveClaimFor(userData: StateBenefitsUserData)
                                 (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
     ifService.createOrUpdateStateBenefit(userData).flatMap {
@@ -101,6 +109,20 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
       stateBenefitsUserDataRepository.clear(userData.sessionId).map {
         case false => Left(MongoError("FAILED_TO_CLEAR_STATE_BENEFITS_DATA"))
         case _ => Right(())
+      }
+    }
+  }
+
+  private def handleRestoreClaimFor(userData: StateBenefitsUserData)
+                                   (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
+    ifService.unIgnoreClaim(userData).flatMap {
+      case Left(error) => Future.successful(Left(error))
+      case Right(_) => submissionConnector.refreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId).flatMap {
+        case Left(error) => Future.successful(Left(ApiServiceError(error.status.toString)))
+        case Right(_) => stateBenefitsUserDataRepository.clear(userData.sessionId).map {
+          case false => Left(MongoError("FAILED_TO_CLEAR_STATE_BENEFITS_DATA"))
+          case _ => Right(())
+        }
       }
     }
   }

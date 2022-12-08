@@ -212,4 +212,47 @@ class StateBenefitsServiceSpec extends UnitTest
       await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Right(())
     }
   }
+
+  ".restoreClaim(...)" should {
+    val userData = aStateBenefitsUserData
+
+    "return error when stateBenefitsUserDataRepository.find(...) returns error" in {
+      mockFind(anyNino, sessionDataId, Left(DataNotUpdatedError))
+
+      await(underTest.restoreClaim(anyNino, sessionDataId)) shouldBe Left(DataNotUpdatedError)
+    }
+
+    "return error when unIgnoreClaim fails" in {
+      mockFind(userData.nino, sessionDataId, Right(userData))
+      mockUnIgnoreClaim(userData, Left(ApiServiceError("some-error")))
+
+      await(underTest.restoreClaim(userData.nino, sessionDataId)) shouldBe Left(ApiServiceError("some-error"))
+    }
+
+    "return error when refreshStateBenefits fails" in {
+      mockFind(userData.nino, sessionDataId, Right(userData))
+      mockUnIgnoreClaim(userData, Right(()))
+      mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Left(apiError))
+
+      await(underTest.restoreClaim(userData.nino, sessionDataId)) shouldBe Left(ApiServiceError(apiError.status.toString))
+    }
+
+    "return error when clear fails" in {
+      mockFind(userData.nino, sessionDataId, Right(userData))
+      mockUnIgnoreClaim(userData, Right(()))
+      mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right())
+      mockClear(userData.sessionId, result = false)
+
+      await(underTest.restoreClaim(userData.nino, sessionDataId)) shouldBe Left(MongoError("FAILED_TO_CLEAR_STATE_BENEFITS_DATA"))
+    }
+
+    "perform unIgnoreClaim when all calls succeed" in {
+      mockFind(userData.nino, sessionDataId, Right(userData))
+      mockUnIgnoreClaim(userData, Right(()))
+      mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
+      mockClear(userData.sessionId, result = true)
+
+      await(underTest.restoreClaim(userData.nino, sessionDataId)) shouldBe Right(())
+    }
+  }
 }
