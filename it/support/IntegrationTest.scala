@@ -46,7 +46,7 @@ trait IntegrationTest extends AnyWordSpec
   override implicit lazy val app: Application = new GuiceApplicationBuilder()
     .in(Environment.simple(mode = Mode.Dev))
     .configure(config)
-    .build
+    .build()
 
   override def beforeAll(): Unit = {
     super.beforeAll()

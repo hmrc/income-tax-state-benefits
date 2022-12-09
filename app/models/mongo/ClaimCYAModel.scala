@@ -38,7 +38,7 @@ case class ClaimCYAModel(benefitId: Option[UUID] = None,
                          taxPaid: Option[BigDecimal] = None,
                          isHmrcData: Boolean) {
 
-  def encrypted()(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedClaimCYAModel = EncryptedClaimCYAModel(
+  def encrypted(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedClaimCYAModel = EncryptedClaimCYAModel(
     benefitId = benefitId.map(_.encrypted),
     startDate = startDate.encrypted,
     endDateQuestion = endDateQuestion.map(_.encrypted),
@@ -67,7 +67,7 @@ case class EncryptedClaimCYAModel(benefitId: Option[EncryptedValue],
                                   taxPaid: Option[EncryptedValue] = None,
                                   isHmrcData: EncryptedValue) {
 
-  def decrypted()(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): ClaimCYAModel = ClaimCYAModel(
+  def decrypted(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): ClaimCYAModel = ClaimCYAModel(
     benefitId = benefitId.map(_.decrypted[UUID]),
     startDate = startDate.decrypted[LocalDate],
     endDateQuestion = endDateQuestion.map(_.decrypted[Boolean]),

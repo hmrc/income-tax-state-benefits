@@ -21,7 +21,6 @@ import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.test.Helpers.status
 import support.ControllerUnitTest
-import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
 import support.mocks.{MockAuthorisedAction, MockStateBenefitsService}
 import support.providers.FakeRequestProvider
@@ -133,7 +132,6 @@ class UserSessionDataControllerSpec extends ControllerUnitTest
 
   ".restoreClaim" should {
     val userData = aStateBenefitsUserData
-    val benefitId = aClaimCYAModel.benefitId.get
 
     "return INTERNAL_SERVER_ERROR when restoreClaim returns an error" in {
       mockAuthorisation()
@@ -146,7 +144,7 @@ class UserSessionDataControllerSpec extends ControllerUnitTest
 
     "return NoContent when restoreClaim returns Right(None)" in {
       mockAuthorisation()
-      mockRestoreClaim(userData.nino, sessionDataId, Right())
+      mockRestoreClaim(userData.nino, sessionDataId, Right(()))
 
       val result = underTest.restoreClaim(userData.nino, sessionDataId)(fakeDeleteRequest)
 

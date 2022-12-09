@@ -50,7 +50,7 @@ class AuthorisedAction @Inject()(defaultActionBuilder: DefaultActionBuilder,
     } {
       mtdItId =>
         implicit val headerCarrier: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-        authorised.retrieve(affinityGroup) {
+        authorised().retrieve(affinityGroup) {
           case Some(AffinityGroup.Agent) => agentAuthentication(block, mtdItId)(request, headerCarrier)
           case _ => individualAuthentication(block, mtdItId)(request, headerCarrier)
         } recover {
@@ -68,7 +68,7 @@ class AuthorisedAction @Inject()(defaultActionBuilder: DefaultActionBuilder,
 
   private[actions] def individualAuthentication[A](block: AuthorisationRequest[A] => Future[Result], requestMtdItId: String)
                                                   (implicit request: Request[A], hc: HeaderCarrier): Future[Result] = {
-    authorised.retrieve(allEnrolments and confidenceLevel) {
+    authorised().retrieve(allEnrolments and confidenceLevel) {
       case enrolments ~ userConfidence if userConfidence.level >= minimumConfidenceLevel =>
         val optionalMtdItId: Option[String] = enrolmentGetIdentifierValue(Individual.key, Individual.value, enrolments)
         val optionalNino: Option[String] = enrolmentGetIdentifierValue(Nino.key, Nino.value, enrolments)

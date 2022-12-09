@@ -79,7 +79,7 @@ class StateBenefitsUserDataSpec extends UnitTest
     "return EncryptedStateBenefitsUserData" in {
       val underTest = aStateBenefitsUserData.copy(claim = Some(claimCYAModel))
 
-      (claimCYAModel.encrypted()(_: SecureGCMCipher, _: TextAndKey)).expects(*, *).returning(encryptedClaimCYAModel)
+      (claimCYAModel.encrypted(_: SecureGCMCipher, _: TextAndKey)).expects(*, *).returning(encryptedClaimCYAModel)
 
       underTest.encrypted shouldBe EncryptedStateBenefitsUserData(
         benefitType = underTest.benefitType,
@@ -97,7 +97,7 @@ class StateBenefitsUserDataSpec extends UnitTest
 
   "EncryptedStateBenefitsUserData.decrypted" should {
     "return StateBenefitsUserData" in {
-      (encryptedClaimCYAModel.decrypted()(_: SecureGCMCipher, _: TextAndKey)).expects(*, *).returning(claimCYAModel)
+      (encryptedClaimCYAModel.decrypted(_: SecureGCMCipher, _: TextAndKey)).expects(*, *).returning(claimCYAModel)
 
       val encryptedData = EncryptedStateBenefitsUserData(
         benefitType = aStateBenefitsUserData.benefitType,

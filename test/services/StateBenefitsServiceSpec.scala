@@ -240,7 +240,7 @@ class StateBenefitsServiceSpec extends UnitTest
     "return error when clear fails" in {
       mockFind(userData.nino, sessionDataId, Right(userData))
       mockUnIgnoreClaim(userData, Right(()))
-      mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right())
+      mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
       mockClear(userData.sessionId, result = false)
 
       await(underTest.restoreClaim(userData.nino, sessionDataId)) shouldBe Left(MongoError("FAILED_TO_CLEAR_STATE_BENEFITS_DATA"))

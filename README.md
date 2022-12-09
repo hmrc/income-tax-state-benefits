@@ -1,7 +1,7 @@
 
 # income-tax-state-benefits
 
-This is a placeholder README.md for a new repository
+This is where we make API calls from users viewing and making changes to the State Benefits section of their income tax return.
 
 ### License
 

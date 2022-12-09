@@ -40,7 +40,7 @@ case class StateBenefitsUserData(benefitType: String,
 
   lazy val isNewClaim: Boolean = claim.exists(_.benefitId.isEmpty)
 
-  def encrypted()(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedStateBenefitsUserData = EncryptedStateBenefitsUserData(
+  def encrypted(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedStateBenefitsUserData = EncryptedStateBenefitsUserData(
     benefitType: String,
     sessionDataId = sessionDataId,
     sessionId = sessionId,
@@ -93,7 +93,7 @@ case class EncryptedStateBenefitsUserData(benefitType: String,
                                           claim: Option[EncryptedClaimCYAModel],
                                           lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)) {
 
-  def decrypted()(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): StateBenefitsUserData = StateBenefitsUserData(
+  def decrypted(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): StateBenefitsUserData = StateBenefitsUserData(
     benefitType = benefitType,
     sessionDataId = sessionDataId,
     sessionId = sessionId,
