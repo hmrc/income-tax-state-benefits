@@ -16,11 +16,10 @@
 
 package services
 
-import connectors.SubmissionConnector
-import connectors.errors.ApiError
+import cats.data.EitherT
 import models.IncomeTaxUserData
 import models.api.AllStateBenefitsData
-import models.errors.{ApiServiceError, DataNotUpdatedError, MongoError, ServiceError}
+import models.errors.{ApiServiceError, ServiceError}
 import models.mongo.StateBenefitsUserData
 import repositories.StateBenefitsUserDataRepository
 import uk.gov.hmrc.http.HeaderCarrier
@@ -31,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
-                                     submissionConnector: SubmissionConnector,
+                                     submissionService: SubmissionService,
                                      stateBenefitsUserDataRepository: StateBenefitsUserDataRepository)
                                     (implicit ec: ExecutionContext) {
 
@@ -41,102 +40,94 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
   }
 
   def getPriorData(taxYear: Int, nino: String, mtdtid: String)
-                  (implicit hc: HeaderCarrier): Future[Either[ApiError, IncomeTaxUserData]] = {
-    submissionConnector.getIncomeTaxUserData(taxYear, nino, mtdtid)
+                  (implicit hc: HeaderCarrier): Future[Either[ApiServiceError, IncomeTaxUserData]] = {
+    submissionService.getIncomeTaxUserData(taxYear, nino, mtdtid)
   }
 
   def getUserData(nino: String, sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]] = {
-    stateBenefitsUserDataRepository.find(nino, sessionDataId)
-  }
-
-  def createOrUpdateUserData(userData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] = {
-    if (isCreate(userData)) deleteAndCreateNew(userData) else updateExisting(userData)
+    findSessionData(nino, sessionDataId).value
   }
 
   def saveUserData(userData: StateBenefitsUserData)
                   (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
-    stateBenefitsUserDataRepository.find(userData.nino, userData.sessionDataId.get).flatMap {
-      case Left(error) => Future.successful(Left(error))
-      case Right(userData) => handleSaveClaimFor(userData)
-    }
+    val response = for {
+      data <- findSessionData(userData.nino, userData.sessionDataId.get)
+      _ <- createOrUpdateStateBenefit(data)
+      _ <- refreshSubmissionServiceData(data)
+      result <- clearSessionData(data)
+    } yield result
+    response.value
   }
 
   def removeClaim(nino: String, sessionDataId: UUID)
                  (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
-    stateBenefitsUserDataRepository.find(nino, sessionDataId).flatMap {
-      case Left(error) => Future.successful(Left(error))
-      case Right(userData) => handleClaimRemovalFor(userData)
-    }
+    val response = for {
+      userData <- findSessionData(nino, sessionDataId)
+      result <- handleClaimRemovalFor(userData)
+    } yield result
+    response.value
   }
 
   def restoreClaim(nino: String, sessionDataId: UUID)
                   (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
-    stateBenefitsUserDataRepository.find(nino, sessionDataId).flatMap {
-      case Left(error) => Future.successful(Left(error))
-      case Right(userData) => handleRestoreClaimFor(userData)
-    }
+    val response = for {
+      userData <- findSessionData(nino, sessionDataId)
+      _ <- unIgnoreClaim(userData)
+      _ <- refreshSubmissionServiceData(userData)
+      result <- clearSessionData(userData)
+    } yield result
+    response.value
   }
 
-  private def handleSaveClaimFor(userData: StateBenefitsUserData)
-                                (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
-    ifService.createOrUpdateStateBenefit(userData).flatMap {
-      case Left(error) => Future.successful(Left(error))
-      case Right(_) => submissionConnector.refreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId).flatMap {
-        case Left(error) => Future.successful(Left(ApiServiceError(error.status.toString)))
-        case Right(_) => stateBenefitsUserDataRepository.clear(userData.sessionId).map {
-          case false => Left(MongoError("FAILED_TO_CLEAR_STATE_BENEFITS_DATA"))
-          case _ => Right(())
-        }
-      }
-    }
-  }
-
-  private def handleClaimRemovalFor(userData: StateBenefitsUserData)
-                                   (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
-    if (userData.isPriorSubmission) {
-      val benefitId = userData.claim.flatMap(_.benefitId).get
-      ifService.removeOrIgnoreClaim(userData, benefitId).flatMap {
-        case Left(error) => Future.successful(Left(error))
-        case Right(_) => submissionConnector.refreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId).flatMap {
-          case Left(error) => Future.successful(Left(ApiServiceError(error.status.toString)))
-          case Right(_) => stateBenefitsUserDataRepository.clear(userData.sessionId).map {
-            case false => Left(MongoError("FAILED_TO_CLEAR_STATE_BENEFITS_DATA"))
-            case _ => Right(())
-          }
-        }
-      }
-    } else {
-      stateBenefitsUserDataRepository.clear(userData.sessionId).map {
-        case false => Left(MongoError("FAILED_TO_CLEAR_STATE_BENEFITS_DATA"))
-        case _ => Right(())
-      }
-    }
-  }
-
-  private def handleRestoreClaimFor(userData: StateBenefitsUserData)
-                                   (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
-    ifService.unIgnoreClaim(userData).flatMap {
-      case Left(error) => Future.successful(Left(error))
-      case Right(_) => submissionConnector.refreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId).flatMap {
-        case Left(error) => Future.successful(Left(ApiServiceError(error.status.toString)))
-        case Right(_) => stateBenefitsUserDataRepository.clear(userData.sessionId).map {
-          case false => Left(MongoError("FAILED_TO_CLEAR_STATE_BENEFITS_DATA"))
-          case _ => Right(())
-        }
-      }
-    }
-  }
+  def createOrUpdateUserData(userData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] =
+    if (isCreate(userData)) deleteAndCreateNewSessionData(userData).value else updateExistingSessionData(userData).value
 
   private def isCreate(stateBenefitsUserData: StateBenefitsUserData): Boolean =
     stateBenefitsUserData.sessionDataId.isEmpty
 
-  private def deleteAndCreateNew(stateBenefitsUserData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] = {
-    stateBenefitsUserDataRepository.clear(stateBenefitsUserData.sessionId).flatMap {
-      case false => Future.successful(Left(DataNotUpdatedError))
-      case true => stateBenefitsUserDataRepository.createOrUpdate(stateBenefitsUserData)
-    }
-  }
+  private def deleteAndCreateNewSessionData(stateBenefitsUserData: StateBenefitsUserData): EitherT[Future, ServiceError, UUID] = for {
+    _ <- clearSessionData(stateBenefitsUserData)
+    result <- createOrUpdateSessionData(stateBenefitsUserData)
+  } yield result
 
-  private def updateExisting(stateBenefitsUserData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] =
-    stateBenefitsUserDataRepository.createOrUpdate(stateBenefitsUserData)
+  private def updateExistingSessionData(stateBenefitsUserData: StateBenefitsUserData): EitherT[Future, ServiceError, UUID] =
+    createOrUpdateSessionData(stateBenefitsUserData)
+
+  private def handleClaimRemovalFor(userData: StateBenefitsUserData)
+                                   (implicit hc: HeaderCarrier): EitherT[Future, ServiceError, Unit] =
+    if (userData.isPriorSubmission) {
+      val benefitId = userData.claim.flatMap(_.benefitId).get
+      for {
+        _ <- removeOrIgnoreClaim(userData, benefitId)
+        _ <- refreshSubmissionServiceData(userData)
+        result <- clearSessionData(userData)
+      } yield result
+    } else {
+      clearSessionData(userData)
+    }
+
+  private def findSessionData(nino: String, sessionDataId: UUID): EitherT[Future, ServiceError, StateBenefitsUserData] =
+    EitherT(stateBenefitsUserDataRepository.find(nino, sessionDataId))
+
+  private def refreshSubmissionServiceData(userData: StateBenefitsUserData)
+                                          (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
+    EitherT(submissionService.refreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId))
+
+  private def removeOrIgnoreClaim(userData: StateBenefitsUserData, benefitId: UUID)
+                                 (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
+    EitherT(ifService.removeOrIgnoreClaim(userData, benefitId))
+
+  private def unIgnoreClaim(userData: StateBenefitsUserData)
+                           (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
+    EitherT(ifService.unIgnoreClaim(userData))
+
+  private def createOrUpdateStateBenefit(userData: StateBenefitsUserData)
+                                        (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
+    EitherT(ifService.createOrUpdateStateBenefit(userData))
+
+  private def clearSessionData(userData: StateBenefitsUserData): EitherT[Future, ServiceError, Unit] =
+    EitherT(stateBenefitsUserDataRepository.clear(userData.sessionId))
+
+  private def createOrUpdateSessionData(stateBenefitsUserData: StateBenefitsUserData): EitherT[Future, ServiceError, UUID] =
+    EitherT(stateBenefitsUserDataRepository.createOrUpdate(stateBenefitsUserData))
 }

@@ -197,7 +197,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
       await(underTest.createOrUpdate(aStateBenefitsUserData.copy(sessionId = "some-session-id"))) mustBe Right(aStateBenefitsUserData.sessionDataId.get)
       await(underTest.collection.countDocuments().toFuture()) mustBe 1
 
-      await(underTest.clear("some-session-id")) mustBe true
+      await(underTest.clear("some-session-id")) mustBe Right(())
       await(underTest.collection.countDocuments().toFuture()) mustBe 0
     }
   }

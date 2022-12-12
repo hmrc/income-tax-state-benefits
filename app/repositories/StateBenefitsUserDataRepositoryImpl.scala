@@ -124,11 +124,17 @@ class StateBenefitsUserDataRepositoryImpl @Inject()(mongo: MongoComponent, appCo
     }
   }
 
-  override def clear(sessionId: String): Future[Boolean] =
-    collection.deleteMany(sessionIdFilter(sessionId))
+  override def clear(sessionId: String): Future[Either[ServiceError, Unit]] = {
+    val eventualResponse = collection.deleteMany(sessionIdFilter(sessionId))
       .toFutureOption()
       .recover(mongoRecover("Clear", FAILED_TO_CLEAR_STATE_BENEFITS_DATA, sessionId))
       .map(_.exists(_.wasAcknowledged()))
+
+    eventualResponse.map {
+      case false => Left(MongoError("FAILED_TO_CLEAR_STATE_BENEFITS_DATA"))
+      case true => Right(())
+    }
+  }
 
   def mongoRecover[T](operation: String,
                       pagerDutyKey: PagerDutyKeys.Value,
@@ -154,5 +160,5 @@ trait StateBenefitsUserDataRepository {
 
   def logOutIndexes(): Unit
 
-  def clear(sessionId: String): Future[Boolean]
+  def clear(sessionId: String): Future[Either[ServiceError, Unit]]
 }

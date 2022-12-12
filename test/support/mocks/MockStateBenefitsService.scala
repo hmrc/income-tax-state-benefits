@@ -16,10 +16,9 @@
 
 package support.mocks
 
-import connectors.errors.ApiError
 import models.IncomeTaxUserData
 import models.api.AllStateBenefitsData
-import models.errors.ServiceError
+import models.errors.{ApiServiceError, ServiceError}
 import models.mongo.StateBenefitsUserData
 import org.scalamock.handlers._
 import org.scalamock.scalatest.MockFactory
@@ -45,8 +44,8 @@ trait MockStateBenefitsService extends MockFactory {
   def mockGetPriorData(taxYear: Int,
                        nino: String,
                        mtditid: String,
-                       result: Either[ApiError, IncomeTaxUserData]
-                      ): CallHandler4[Int, String, String, HeaderCarrier, Future[Either[ApiError, IncomeTaxUserData]]] = {
+                       result: Either[ApiServiceError, IncomeTaxUserData]
+                      ): CallHandler4[Int, String, String, HeaderCarrier, Future[Either[ApiServiceError, IncomeTaxUserData]]] = {
     (mockStateBenefitsService.getPriorData(_: Int, _: String, _: String)(_: HeaderCarrier))
       .expects(taxYear, nino, mtditid, *)
       .returning(Future.successful(result))

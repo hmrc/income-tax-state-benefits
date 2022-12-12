@@ -28,7 +28,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class IntegrationFrameworkService @Inject()(val integrationFrameworkConnector: IntegrationFrameworkConnector)
+class IntegrationFrameworkService @Inject()(integrationFrameworkConnector: IntegrationFrameworkConnector)
                                            (implicit ec: ExecutionContext) {
 
   def getAllStateBenefitsData(taxYear: Int, nino: String)
