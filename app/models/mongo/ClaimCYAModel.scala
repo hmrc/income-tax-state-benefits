@@ -18,10 +18,7 @@ package models.mongo
 
 import models.encryption.TextAndKey
 import play.api.libs.json.{Json, OFormat}
-import utils.DecryptableSyntax.DecryptableOps
-import utils.DecryptorInstances.{bigDecimalDecryptor, booleanDecryptor, instantDateDecryptor, localDateDecryptor, uuidDecryptor}
-import utils.EncryptableSyntax.EncryptableOps
-import utils.EncryptorInstances.{bigDecimalEncryptor, booleanEncryptor, instantEncryptor, localDateEncryptor, uuidEncryptor}
+import utils.CypherSyntax.{DecryptableOps, EncryptableOps}
 import utils.{EncryptedValue, SecureGCMCipher}
 
 import java.time.{Instant, LocalDate}

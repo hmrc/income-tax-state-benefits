@@ -21,11 +21,7 @@ import org.scalamock.scalatest.MockFactory
 import play.api.libs.json.Json
 import support.UnitTest
 import support.builders.mongo.ClaimCYAModelBuilder.{aClaimCYAModel, aClaimCYAModelJson}
-import utils.TypeCaster.Converter
 import utils.{EncryptedValue, SecureGCMCipher}
-
-import java.time.{Instant, LocalDate}
-import java.util.UUID
 
 class ClaimCYAModelSpec extends UnitTest
   with MockFactory {
@@ -58,16 +54,16 @@ class ClaimCYAModelSpec extends UnitTest
 
   "ClaimCYAModel.encrypted" should {
     "return EncryptedClaimCYAModel" in {
-      (secureGCMCipher.encrypt(_: UUID)(_: TextAndKey)).expects(aClaimCYAModel.benefitId.get, textAndKey).returning(encryptedBenefitId)
-      (secureGCMCipher.encrypt(_: LocalDate)(_: TextAndKey)).expects(aClaimCYAModel.startDate, textAndKey).returning(encryptedStartDate)
-      (secureGCMCipher.encrypt(_: Boolean)(_: TextAndKey)).expects(aClaimCYAModel.endDateQuestion.get, textAndKey).returning(encryptedEndDateQuestion)
-      (secureGCMCipher.encrypt(_: LocalDate)(_: TextAndKey)).expects(aClaimCYAModel.endDate.get, textAndKey).returning(encryptedEndDate)
-      (secureGCMCipher.encrypt(_: Instant)(_: TextAndKey)).expects(aClaimCYAModel.dateIgnored.get, textAndKey).returning(encryptedDateIgnored)
-      (secureGCMCipher.encrypt(_: Instant)(_: TextAndKey)).expects(aClaimCYAModel.submittedOn.get, textAndKey).returning(encryptedSubmittedOn)
-      (secureGCMCipher.encrypt(_: BigDecimal)(_: TextAndKey)).expects(aClaimCYAModel.amount.get, textAndKey).returning(encryptedAmount)
-      (secureGCMCipher.encrypt(_: Boolean)(_: TextAndKey)).expects(aClaimCYAModel.taxPaidQuestion.get, textAndKey).returning(encryptedTaxPaidQuestion)
-      (secureGCMCipher.encrypt(_: BigDecimal)(_: TextAndKey)).expects(aClaimCYAModel.taxPaid.get, textAndKey).returning(encryptedTaxPaid)
-      (secureGCMCipher.encrypt(_: Boolean)(_: TextAndKey)).expects(aClaimCYAModel.isHmrcData, textAndKey).returning(encryptedIsHmrcData)
+      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(aClaimCYAModel.benefitId.get.toString, textAndKey).returning(encryptedBenefitId)
+      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(aClaimCYAModel.startDate.toString, textAndKey).returning(encryptedStartDate)
+      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(aClaimCYAModel.endDateQuestion.get.toString, textAndKey).returning(encryptedEndDateQuestion)
+      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(aClaimCYAModel.endDate.get.toString, textAndKey).returning(encryptedEndDate)
+      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(aClaimCYAModel.dateIgnored.get.toString, textAndKey).returning(encryptedDateIgnored)
+      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(aClaimCYAModel.submittedOn.get.toString, textAndKey).returning(encryptedSubmittedOn)
+      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(aClaimCYAModel.amount.get.toString, textAndKey).returning(encryptedAmount)
+      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(aClaimCYAModel.taxPaidQuestion.get.toString, textAndKey).returning(encryptedTaxPaidQuestion)
+      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(aClaimCYAModel.taxPaid.get.toString, textAndKey).returning(encryptedTaxPaid)
+      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(aClaimCYAModel.isHmrcData.toString, textAndKey).returning(encryptedIsHmrcData)
 
       aClaimCYAModel.encrypted shouldBe EncryptedClaimCYAModel(
         benefitId = Some(encryptedBenefitId),
@@ -86,26 +82,26 @@ class ClaimCYAModelSpec extends UnitTest
 
   "EncryptedClaimCYAModel.decrypted" should {
     "return ClaimCYAModel" in {
-      (secureGCMCipher.decrypt[UUID](_: String, _: String)(_: TextAndKey, _: Converter[UUID]))
-        .expects(encryptedBenefitId.value, encryptedBenefitId.nonce, textAndKey, *).returning(aClaimCYAModel.benefitId.get)
-      (secureGCMCipher.decrypt[LocalDate](_: String, _: String)(_: TextAndKey, _: Converter[LocalDate]))
-        .expects(encryptedStartDate.value, encryptedStartDate.nonce, textAndKey, *).returning(aClaimCYAModel.startDate)
-      (secureGCMCipher.decrypt[Boolean](_: String, _: String)(_: TextAndKey, _: Converter[Boolean]))
-        .expects(encryptedEndDateQuestion.value, encryptedEndDateQuestion.nonce, textAndKey, *).returning(aClaimCYAModel.endDateQuestion.get)
-      (secureGCMCipher.decrypt[LocalDate](_: String, _: String)(_: TextAndKey, _: Converter[LocalDate]))
-        .expects(encryptedEndDate.value, encryptedEndDate.nonce, textAndKey, *).returning(aClaimCYAModel.endDate.get)
-      (secureGCMCipher.decrypt[Instant](_: String, _: String)(_: TextAndKey, _: Converter[Instant]))
-        .expects(encryptedDateIgnored.value, encryptedDateIgnored.nonce, textAndKey, *).returning(aClaimCYAModel.dateIgnored.get)
-      (secureGCMCipher.decrypt[Instant](_: String, _: String)(_: TextAndKey, _: Converter[Instant]))
-        .expects(encryptedSubmittedOn.value, encryptedSubmittedOn.nonce, textAndKey, *).returning(aClaimCYAModel.submittedOn.get)
-      (secureGCMCipher.decrypt[BigDecimal](_: String, _: String)(_: TextAndKey, _: Converter[BigDecimal]))
-        .expects(encryptedAmount.value, encryptedAmount.nonce, textAndKey, *).returning(aClaimCYAModel.amount.get)
-      (secureGCMCipher.decrypt[Boolean](_: String, _: String)(_: TextAndKey, _: Converter[Boolean]))
-        .expects(encryptedTaxPaidQuestion.value, encryptedTaxPaidQuestion.nonce, textAndKey, *).returning(aClaimCYAModel.taxPaidQuestion.get)
-      (secureGCMCipher.decrypt[BigDecimal](_: String, _: String)(_: TextAndKey, _: Converter[BigDecimal]))
-        .expects(encryptedTaxPaid.value, encryptedTaxPaid.nonce, textAndKey, *).returning(aClaimCYAModel.taxPaid.get)
-      (secureGCMCipher.decrypt[Boolean](_: String, _: String)(_: TextAndKey, _: Converter[Boolean]))
-        .expects(encryptedIsHmrcData.value, encryptedIsHmrcData.nonce, textAndKey, *).returning(aClaimCYAModel.isHmrcData)
+      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
+        .expects(encryptedBenefitId.value, encryptedBenefitId.nonce, textAndKey).returning(aClaimCYAModel.benefitId.get.toString)
+      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
+        .expects(encryptedStartDate.value, encryptedStartDate.nonce, textAndKey).returning(aClaimCYAModel.startDate.toString)
+      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
+        .expects(encryptedEndDateQuestion.value, encryptedEndDateQuestion.nonce, textAndKey).returning(aClaimCYAModel.endDateQuestion.get.toString)
+      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
+        .expects(encryptedEndDate.value, encryptedEndDate.nonce, textAndKey).returning(aClaimCYAModel.endDate.get.toString)
+      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
+        .expects(encryptedDateIgnored.value, encryptedDateIgnored.nonce, textAndKey).returning(aClaimCYAModel.dateIgnored.get.toString)
+      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
+        .expects(encryptedSubmittedOn.value, encryptedSubmittedOn.nonce, textAndKey).returning(aClaimCYAModel.submittedOn.get.toString)
+      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
+        .expects(encryptedAmount.value, encryptedAmount.nonce, textAndKey).returning(aClaimCYAModel.amount.get.toString)
+      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
+        .expects(encryptedTaxPaidQuestion.value, encryptedTaxPaidQuestion.nonce, textAndKey).returning(aClaimCYAModel.taxPaidQuestion.get.toString)
+      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
+        .expects(encryptedTaxPaid.value, encryptedTaxPaid.nonce, textAndKey).returning(aClaimCYAModel.taxPaid.get.toString)
+      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
+        .expects(encryptedIsHmrcData.value, encryptedIsHmrcData.nonce, textAndKey).returning(aClaimCYAModel.isHmrcData.toString)
 
       val encryptedData = EncryptedClaimCYAModel(
         benefitId = Some(encryptedBenefitId),
