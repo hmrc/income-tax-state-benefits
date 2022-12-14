@@ -16,10 +16,9 @@
 
 package support.mocks
 
-import connectors.errors.ApiError
 import models.IncomeTaxUserData
 import models.api.AllStateBenefitsData
-import models.errors.ServiceError
+import models.errors.{ApiServiceError, ServiceError}
 import models.mongo.StateBenefitsUserData
 import org.scalamock.handlers._
 import org.scalamock.scalatest.MockFactory
@@ -45,8 +44,8 @@ trait MockStateBenefitsService extends MockFactory {
   def mockGetPriorData(taxYear: Int,
                        nino: String,
                        mtditid: String,
-                       result: Either[ApiError, IncomeTaxUserData]
-                      ): CallHandler4[Int, String, String, HeaderCarrier, Future[Either[ApiError, IncomeTaxUserData]]] = {
+                       result: Either[ApiServiceError, IncomeTaxUserData]
+                      ): CallHandler4[Int, String, String, HeaderCarrier, Future[Either[ApiServiceError, IncomeTaxUserData]]] = {
     (mockStateBenefitsService.getPriorData(_: Int, _: String, _: String)(_: HeaderCarrier))
       .expects(taxYear, nino, mtditid, *)
       .returning(Future.successful(result))
@@ -77,9 +76,17 @@ trait MockStateBenefitsService extends MockFactory {
 
   def mockRemoveClaim(nino: String,
                       sessionDataId: UUID,
-                      reslt: Either[ServiceError, Unit]): CallHandler3[String, UUID, HeaderCarrier, Future[Either[ServiceError, Unit]]] = {
+                      result: Either[ServiceError, Unit]): CallHandler3[String, UUID, HeaderCarrier, Future[Either[ServiceError, Unit]]] = {
     (mockStateBenefitsService.removeClaim(_: String, _: UUID)(_: HeaderCarrier))
       .expects(nino, sessionDataId, *)
-      .returning(Future.successful(reslt))
+      .returning(Future.successful(result))
+  }
+
+  def mockRestoreClaim(nino: String,
+                       sessionDataId: UUID,
+                       result: Either[ServiceError, Unit]): CallHandler3[String, UUID, HeaderCarrier, Future[Either[ServiceError, Unit]]] = {
+    (mockStateBenefitsService.restoreClaim(_: String, _: UUID)(_: HeaderCarrier))
+      .expects(nino, sessionDataId, *)
+      .returning(Future.successful(result))
   }
 }

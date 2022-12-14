@@ -20,7 +20,6 @@ import config.AppConfig
 import models.encryption.TextAndKey
 import play.api.Logging
 import play.api.libs.json.{Json, OFormat}
-import utils.TypeCaster.Converter
 
 import java.security.{InvalidAlgorithmParameterException, InvalidKeyException, NoSuchAlgorithmException, SecureRandom}
 import java.util.Base64
@@ -68,7 +67,7 @@ class SecureGCMCipher @Inject()(implicit private val appConfig: AppConfig) exten
     }
   }
 
-  def decrypt[T](valueToDecrypt: String, nonce: String)(implicit textAndKey: TextAndKey, converter: Converter[T]): T = {
+  def decrypt(valueToDecrypt: String, nonce: String)(implicit textAndKey: TextAndKey): String = {
     if (appConfig.useEncryption) {
       val initialisationVector = Base64.getDecoder.decode(nonce)
       val gcmParameterSpec = new GCMParameterSpec(TAG_BIT_LENGTH, initialisationVector)
@@ -78,11 +77,11 @@ class SecureGCMCipher @Inject()(implicit private val appConfig: AppConfig) exten
         decryptCipherText(valueToDecrypt, validateAssociatedText(textAndKey.associatedText, METHOD_DECRYPT), gcmParameterSpec, secretKey)
       }.toEither match {
         case Left(exception) => throw exception
-        case Right(value) => converter.convert(value)
+        case Right(value) => value
       }
     } else {
       logger.info("[SecureGCMCipher][decrypt] Encryption is turned off")
-      converter.convert(valueToDecrypt)
+      valueToDecrypt
     }
   }
 

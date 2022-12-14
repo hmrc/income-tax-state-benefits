@@ -16,9 +16,9 @@
 
 package controllers
 
-import connectors.errors.{ApiError, SingleErrorBody}
 import models.IncomeTaxUserData
-import play.api.http.Status.{BAD_REQUEST, NOT_FOUND, OK}
+import models.errors.ApiServiceError
+import play.api.http.Status.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
 import play.api.libs.json.Json
 import play.api.test.Helpers.status
 import support.ControllerUnitTest
@@ -64,15 +64,12 @@ class GetUserPriorDataControllerSpec extends ControllerUnitTest
     }
 
     "return error when stateBenefitsService.getPriorData(...) returns Left(errorModel)" in {
-      val error = ApiError(status = BAD_REQUEST, body = SingleErrorBody("some-code", "some-reason"))
-
       mockAuthorisation()
-      mockGetPriorData(anyYear, nino = "some-nino", aUser.mtditid, Left(error))
+      mockGetPriorData(anyYear, nino = "some-nino", aUser.mtditid, Left(ApiServiceError("some-error")))
 
       val result = await(underTest.getPriorData(nino = "some-nino", anyYear)(fakeGetRequest))
 
-      result.header.status shouldBe BAD_REQUEST
-      Json.parse(consumeBody(result)) shouldBe error.toJson
+      result.header.status shouldBe INTERNAL_SERVER_ERROR
     }
   }
 }

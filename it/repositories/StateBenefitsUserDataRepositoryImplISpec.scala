@@ -45,14 +45,12 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
   private val repoWithInvalidEncryption = GuiceApplicationBuilder().configure(config + ("mongodb.encryption.key" -> "key")).build()
     .injector.instanceOf[StateBenefitsUserDataRepositoryImpl]
 
-  private def count(): Long = await(underTest.collection.countDocuments().toFuture())
-
   private val underTest: StateBenefitsUserDataRepositoryImpl = app.injector.instanceOf[StateBenefitsUserDataRepositoryImpl]
 
   class EmptyDatabase {
     await(underTest.collection.drop().toFuture())
     await(underTest.ensureIndexes)
-    count() shouldBe 0
+    await(underTest.collection.countDocuments().toFuture()) shouldBe 0
   }
 
   "the set indexes" should {
@@ -62,7 +60,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
 
       implicit val textAndKey: TextAndKey = TextAndKey(data_1.mtdItId, appConfig.encryptionKey)
       await(underTest.createOrUpdate(data_1))
-      count shouldBe 1
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 1
 
       private val encryptedUserData: EncryptedStateBenefitsUserData = data_2.encrypted
 
@@ -78,7 +76,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
 
       implicit val textAndKey: TextAndKey = TextAndKey(data_1.mtdItId, appConfig.encryptionKey)
       await(underTest.createOrUpdate(data_1))
-      count shouldBe 1
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 1
 
       private val encryptedUserData: EncryptedStateBenefitsUserData = data_2.encrypted
 
@@ -100,9 +98,9 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
   "find with invalid encryption" should {
     "fail to find data" in new EmptyDatabase {
       implicit val textAndKey: TextAndKey = TextAndKey(aStateBenefitsUserData.mtdItId, appConfig.encryptionKey)
-      count() shouldBe 0
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 0
       await(repoWithInvalidEncryption.collection.insertOne(aStateBenefitsUserData.encrypted).toFuture())
-      count() shouldBe 1
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 1
       await(repoWithInvalidEncryption.find(nino, aStateBenefitsUserData.sessionDataId.get)) shouldBe Left(EncryptionDecryptionError(
         "Key being used is not valid. It could be due to invalid encoding, wrong length or uninitialized for decrypt Invalid AES key length: 2 bytes"
       ))
@@ -123,32 +121,32 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
       }
 
       await(ensureIndexes)
-      count shouldBe 0
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 0
 
       await(underTest.createOrUpdate(aStateBenefitsUserData)) shouldBe Right(aStateBenefitsUserData.sessionDataId.get)
-      count shouldBe 1
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 1
 
       private val errorOrUuid = await(underTest.createOrUpdate(aStateBenefitsUserData.copy(sessionDataId = Some(UUID.randomUUID()))))
 
-      errorOrUuid.left.get.message must include("Command failed with error 11000 (DuplicateKey)")
-      count shouldBe 1
+      errorOrUuid.swap.map(_.message).getOrElse("") must include("Command failed with error 11000 (DuplicateKey)")
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 1
     }
 
     "create a document in collection when one does not exist" in new EmptyDatabase {
-      count shouldBe 0
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 0
       await(underTest.createOrUpdate(aStateBenefitsUserData.copy(sessionDataId = None)))
-      count shouldBe 1
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 1
     }
 
     "update a document in collection when one already exists" in new EmptyDatabase {
       await(underTest.createOrUpdate(aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel)))) shouldBe Right(aStateBenefitsUserData.sessionDataId.get)
-      count shouldBe 1
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 1
 
       private val updatedCisUserData = aStateBenefitsUserData.copy(claim = None)
 
       await(underTest.createOrUpdate(updatedCisUserData)) shouldBe Right(aStateBenefitsUserData.sessionDataId.get)
-      count shouldBe 1
-      await(underTest.find(nino, updatedCisUserData.sessionDataId.get)).right.get.claim shouldBe None
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 1
+      await(underTest.find(nino, updatedCisUserData.sessionDataId.get)).map(_.claim) shouldBe Right(None)
     }
   }
 
@@ -158,12 +156,12 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
       private val data = aStateBenefitsUserData.copy(lastUpdated = now)
 
       await(underTest.createOrUpdate(data))
-      count shouldBe 1
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 1
 
       private val result = await(underTest.find(nino, data.sessionDataId.get))
 
-      result.right.map(_.copy(lastUpdated = data.lastUpdated)) shouldBe Right(data)
-      result.right.get.lastUpdated.isAfter(data.lastUpdated) shouldBe true
+      result.map(_.copy(lastUpdated = data.lastUpdated)) shouldBe Right(data)
+      result.map(_.lastUpdated.isAfter(data.lastUpdated)) shouldBe Right(true)
     }
 
     "return DataNotFoundError when find operation did not find data for the given inputs" in new EmptyDatabase {
@@ -195,12 +193,12 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
 
   "clear" should {
     "remove a record" in new EmptyDatabase {
-      count mustBe 0
+      await(underTest.collection.countDocuments().toFuture()) mustBe 0
       await(underTest.createOrUpdate(aStateBenefitsUserData.copy(sessionId = "some-session-id"))) mustBe Right(aStateBenefitsUserData.sessionDataId.get)
-      count mustBe 1
+      await(underTest.collection.countDocuments().toFuture()) mustBe 1
 
-      await(underTest.clear("some-session-id")) mustBe true
-      count mustBe 0
+      await(underTest.clear("some-session-id")) mustBe Right(())
+      await(underTest.collection.countDocuments().toFuture()) mustBe 0
     }
   }
 }

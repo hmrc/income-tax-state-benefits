@@ -60,6 +60,13 @@ class UserSessionDataController @Inject()(authorisedAction: AuthorisedAction,
     }
   }
 
+  def restoreClaim(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
+    stateBenefitsService.restoreClaim(nino, sessionDataId).map {
+      case Left(_) => InternalServerError
+      case Right(_) => NoContent
+    }
+  }
+
   private def handleCreateOrUpdateWithResponse(stateBenefitsUserData: StateBenefitsUserData): Future[Result] = {
     stateBenefitsService.createOrUpdateUserData(stateBenefitsUserData).map {
       case Left(_) => InternalServerError

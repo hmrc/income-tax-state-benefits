@@ -129,4 +129,26 @@ class UserSessionDataControllerSpec extends ControllerUnitTest
       status(result) shouldBe NO_CONTENT
     }
   }
+
+  ".restoreClaim" should {
+    val userData = aStateBenefitsUserData
+
+    "return INTERNAL_SERVER_ERROR when restoreClaim returns an error" in {
+      mockAuthorisation()
+      mockRestoreClaim(userData.nino, sessionDataId, Left(DataNotUpdatedError))
+
+      val result = underTest.restoreClaim(userData.nino, sessionDataId)(fakeDeleteRequest)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return NoContent when restoreClaim returns Right(None)" in {
+      mockAuthorisation()
+      mockRestoreClaim(userData.nino, sessionDataId, Right(()))
+
+      val result = underTest.restoreClaim(userData.nino, sessionDataId)(fakeDeleteRequest)
+
+      status(result) shouldBe NO_CONTENT
+    }
+  }
 }

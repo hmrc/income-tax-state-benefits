@@ -28,7 +28,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class IntegrationFrameworkService @Inject()(val integrationFrameworkConnector: IntegrationFrameworkConnector)
+class IntegrationFrameworkService @Inject()(integrationFrameworkConnector: IntegrationFrameworkConnector)
                                            (implicit ec: ExecutionContext) {
 
   def getAllStateBenefitsData(taxYear: Int, nino: String)
@@ -56,6 +56,15 @@ class IntegrationFrameworkService @Inject()(val integrationFrameworkConnector: I
       integrationFrameworkConnector.deleteStateBenefit(userData.taxYear, userData.nino, benefitId)
     }
     eventualIgnoreOrDelete.map {
+      case Left(error) => Left(ApiServiceError(error.status.toString))
+      case Right(_) => Right(())
+    }
+  }
+
+  def unIgnoreClaim(userData: StateBenefitsUserData)
+                   (implicit hc: HeaderCarrier): Future[Either[ApiServiceError, Unit]] = {
+    val benefitId = userData.claim.get.benefitId.get
+    integrationFrameworkConnector.unIgnoreStateBenefit(userData.taxYear, userData.nino, benefitId).map {
       case Left(error) => Left(ApiServiceError(error.status.toString))
       case Right(_) => Right(())
     }

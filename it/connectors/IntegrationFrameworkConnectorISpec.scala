@@ -43,7 +43,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
   private val pagerDutyLoggerService = mock[PagerDutyLoggerService]
   private val underTest = new IntegrationFrameworkConnector(httpClient, pagerDutyLoggerService, appConfigStub)
 
-  private def toTaxYearParameter(taxYear: Int) = {
+  private def toTaxYearParameter(taxYear: Int): String = {
     s"${taxYear - 1}-${taxYear.toString takeRight 2}"
   }
 
@@ -101,7 +101,6 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.updateStateBenefit(taxYear, nino, benefitId, anUpdateStateBenefit)(hc)) shouldBe Right(())
     }
-
 
     "return IF error and perform a pagerDutyLog when Left is returned" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())

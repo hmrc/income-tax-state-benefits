@@ -17,7 +17,6 @@
 package controllers
 
 import actions.AuthorisedAction
-import connectors.errors.ApiError
 import models.IncomeTaxUserData
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
@@ -36,7 +35,7 @@ class GetUserPriorDataController @Inject()(stateBenefitsService: StateBenefitsSe
     stateBenefitsService.getPriorData(taxYear, nino, request.user.mtditid).map {
       case Right(IncomeTaxUserData(None)) => NotFound
       case Right(IncomeTaxUserData(Some(allStateBenefitsData))) => Ok(Json.toJson(allStateBenefitsData))
-      case Left(errorModel: ApiError) => Status(errorModel.status)(errorModel.toJson)
+      case Left(_) => InternalServerError
     }
   }
 }
