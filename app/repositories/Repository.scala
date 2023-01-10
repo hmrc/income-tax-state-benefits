@@ -20,7 +20,6 @@ import models.errors.{EncryptionDecryptionError, ServiceError}
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters.{and, equal}
 import uk.gov.hmrc.mongo.play.json.Codecs.toBson
-import utils.EncryptionDecryptionException
 import utils.PagerDutyHelper.PagerDutyKeys.ENCRYPTION_DECRYPTION_ERROR
 import utils.PagerDutyHelper.pagerDutyLog
 
@@ -38,13 +37,8 @@ trait Repository {
   )
 
   def handleEncryptionDecryptionException[T](exception: Exception, startOfMessage: String): Left[ServiceError, T] = {
-    val message: String = exception match {
-      case exception: EncryptionDecryptionException => s"${exception.failureReason} ${exception.failureMessage}"
-      case _ => exception.getMessage
-    }
-
-    pagerDutyLog(ENCRYPTION_DECRYPTION_ERROR, s"$startOfMessage $message")
-    Left(EncryptionDecryptionError(message))
+    pagerDutyLog(ENCRYPTION_DECRYPTION_ERROR, s"$startOfMessage ${exception.getMessage}")
+    Left(EncryptionDecryptionError(exception.getMessage))
   }
 }
 

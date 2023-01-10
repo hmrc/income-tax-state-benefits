@@ -20,7 +20,6 @@ import com.google.inject.ImplementedBy
 import com.mongodb.client.model.ReturnDocument
 import com.mongodb.client.model.Updates.set
 import config.AppConfig
-import models.encryption.TextAndKey
 import models.errors.{DataNotFoundError, DataNotUpdatedError, MongoError, ServiceError}
 import models.mongo._
 import org.mongodb.scala.MongoException
@@ -32,9 +31,9 @@ import uk.gov.hmrc.mongo.play.json.Codecs.toBson
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.play.http.logging.Mdc
+import utils.AesGcmAdCrypto
 import utils.PagerDutyHelper.PagerDutyKeys._
 import utils.PagerDutyHelper.{PagerDutyKeys, pagerDutyLog}
-import utils.SecureGCMCipher
 
 import java.time.{LocalDateTime, ZoneOffset}
 import java.util.UUID
@@ -44,7 +43,7 @@ import scala.util.Try
 
 @Singleton
 class StateBenefitsUserDataRepositoryImpl @Inject()(mongo: MongoComponent, appConfig: AppConfig)
-                                                   (implicit secureGCMCipher: SecureGCMCipher, ec: ExecutionContext)
+                                                   (implicit aesGcmAdCrypto: AesGcmAdCrypto, ec: ExecutionContext)
   extends PlayMongoRepository[EncryptedStateBenefitsUserData](
     mongoComponent = mongo,
     collectionName = "stateBenefitsUserData",
@@ -109,7 +108,7 @@ class StateBenefitsUserDataRepositoryImpl @Inject()(mongo: MongoComponent, appCo
   }
 
   private def decryptedFrom(encryptedData: EncryptedStateBenefitsUserData): Either[ServiceError, StateBenefitsUserData] = {
-    implicit lazy val textAndKey: TextAndKey = TextAndKey(encryptedData.mtdItId, appConfig.encryptionKey)
+    implicit lazy val associatedText: String = encryptedData.mtdItId
     Try(encryptedData.decrypted).toEither match {
       case Left(throwable: Throwable) => handleEncryptionDecryptionException(throwable.asInstanceOf[Exception], findMessageStart)
       case Right(decryptedData) => Right(decryptedData)
@@ -117,7 +116,7 @@ class StateBenefitsUserDataRepositoryImpl @Inject()(mongo: MongoComponent, appCo
   }
 
   private def encryptedFrom(userData: StateBenefitsUserData): Either[ServiceError, EncryptedStateBenefitsUserData] = {
-    implicit val textAndKey: TextAndKey = TextAndKey(userData.mtdItId, appConfig.encryptionKey)
+    implicit val associatedText: String = userData.mtdItId
     Try(userData.encrypted).toEither match {
       case Left(throwable: Throwable) => handleEncryptionDecryptionException(throwable.asInstanceOf[Exception], createOrUpdateMessageStart)
       case Right(encryptedData) => Right(encryptedData)

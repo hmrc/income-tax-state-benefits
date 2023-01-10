@@ -16,12 +16,11 @@
 
 package models.mongo
 
-import models.encryption.TextAndKey
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import utils.AesGcmAdCrypto
 import utils.JsonUtils.jsonObjNoNulls
-import utils.SecureGCMCipher
 
 import java.time.{LocalDateTime, ZoneOffset}
 import java.util.UUID
@@ -40,7 +39,7 @@ case class StateBenefitsUserData(benefitType: String,
 
   lazy val isNewClaim: Boolean = claim.exists(_.benefitId.isEmpty)
 
-  def encrypted(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedStateBenefitsUserData = EncryptedStateBenefitsUserData(
+  def encrypted(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): EncryptedStateBenefitsUserData = EncryptedStateBenefitsUserData(
     benefitType: String,
     sessionDataId = sessionDataId,
     sessionId = sessionId,
@@ -80,7 +79,7 @@ object StateBenefitsUserData {
       (JsPath \ "isPriorSubmission").read[Boolean] and
       (JsPath \ "claim").readNullable[ClaimCYAModel] and
       (JsPath \ "lastUpdated").readWithDefault[LocalDateTime](LocalDateTime.now(ZoneOffset.UTC))
-    )(StateBenefitsUserData.apply _)
+    ) (StateBenefitsUserData.apply _)
 }
 
 case class EncryptedStateBenefitsUserData(benefitType: String,
@@ -93,7 +92,7 @@ case class EncryptedStateBenefitsUserData(benefitType: String,
                                           claim: Option[EncryptedClaimCYAModel],
                                           lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)) {
 
-  def decrypted(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): StateBenefitsUserData = StateBenefitsUserData(
+  def decrypted(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): StateBenefitsUserData = StateBenefitsUserData(
     benefitType = benefitType,
     sessionDataId = sessionDataId,
     sessionId = sessionId,

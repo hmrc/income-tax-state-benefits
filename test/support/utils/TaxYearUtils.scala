@@ -23,6 +23,6 @@ object TaxYearUtils {
   private val dateNow: LocalDate = LocalDate.now()
   private val taxYearCutoffDate: LocalDate = LocalDate.parse(s"${dateNow.getYear}-04-05")
 
-  val taxYear: Int = if (dateNow.isAfter(taxYearCutoffDate)) LocalDate.now().getYear + 1 else LocalDate.now().getYear
+  val taxYear: Int = if (dateNow.isAfter(taxYearCutoffDate)) dateNow.getYear + 1 else dateNow.getYear
   val taxYearEOY: Int = taxYear - 1
 }
