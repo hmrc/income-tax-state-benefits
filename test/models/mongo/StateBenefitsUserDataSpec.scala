@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,20 @@
 
 package models.mongo
 
-import models.encryption.TextAndKey
 import org.scalamock.scalatest.MockFactory
 import play.api.libs.json.Json
 import support.UnitTest
 import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 import support.builders.mongo.StateBenefitsUserDataBuilder.{aStateBenefitsUserData, aStateBenefitsUserDataJson}
-import utils.SecureGCMCipher
+import utils.AesGcmAdCrypto
 
 import java.util.UUID
 
 class StateBenefitsUserDataSpec extends UnitTest
   with MockFactory {
 
-  private implicit val secureGCMCipher: SecureGCMCipher = mock[SecureGCMCipher]
-  private implicit val textAndKey: TextAndKey = TextAndKey("some-associated-text", "some-aes-key")
+  private implicit val aesGcmAdCrypto: AesGcmAdCrypto = mock[AesGcmAdCrypto]
+  private implicit val associatedText: String = "some-associated-text"
 
   private val claimCYAModel = mock[ClaimCYAModel]
   private val encryptedClaimCYAModel = mock[EncryptedClaimCYAModel]
@@ -79,7 +78,7 @@ class StateBenefitsUserDataSpec extends UnitTest
     "return EncryptedStateBenefitsUserData" in {
       val underTest = aStateBenefitsUserData.copy(claim = Some(claimCYAModel))
 
-      (claimCYAModel.encrypted(_: SecureGCMCipher, _: TextAndKey)).expects(*, *).returning(encryptedClaimCYAModel)
+      (claimCYAModel.encrypted(_: AesGcmAdCrypto, _: String)).expects(*, *).returning(encryptedClaimCYAModel)
 
       underTest.encrypted shouldBe EncryptedStateBenefitsUserData(
         benefitType = underTest.benefitType,
@@ -97,7 +96,7 @@ class StateBenefitsUserDataSpec extends UnitTest
 
   "EncryptedStateBenefitsUserData.decrypted" should {
     "return StateBenefitsUserData" in {
-      (encryptedClaimCYAModel.decrypted(_: SecureGCMCipher, _: TextAndKey)).expects(*, *).returning(claimCYAModel)
+      (encryptedClaimCYAModel.decrypted(_: AesGcmAdCrypto, _: String)).expects(*, *).returning(claimCYAModel)
 
       val encryptedData = EncryptedStateBenefitsUserData(
         benefitType = aStateBenefitsUserData.benefitType,

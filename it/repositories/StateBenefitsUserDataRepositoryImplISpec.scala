@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package repositories
 
 import com.mongodb.MongoTimeoutException
-import models.encryption.TextAndKey
 import models.errors.{DataNotFoundError, EncryptionDecryptionError}
 import models.mongo.{EncryptedStateBenefitsUserData, StateBenefitsUserData}
 import org.mongodb.scala.model.Indexes.ascending
@@ -29,8 +28,8 @@ import support.IntegrationTest
 import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
 import uk.gov.hmrc.mongo.MongoUtils
+import utils.AesGcmAdCrypto
 import utils.PagerDutyHelper.PagerDutyKeys.FAILED_TO_CREATE_UPDATE_STATE_BENEFITS_DATA
-import utils.SecureGCMCipher
 
 import java.time.{LocalDateTime, ZoneOffset}
 import java.util.UUID
@@ -38,7 +37,7 @@ import scala.concurrent.Future
 
 class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
 
-  protected implicit val secureGCMCipher: SecureGCMCipher = app.injector.instanceOf[SecureGCMCipher]
+  protected implicit val aesGcmAdCrypto: AesGcmAdCrypto = app.injector.instanceOf[AesGcmAdCrypto]
 
   private val nino = "AA123456A"
 
@@ -58,7 +57,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
       private val data_1: StateBenefitsUserData = aStateBenefitsUserData.copy(sessionId = "session-1")
       private val data_2: StateBenefitsUserData = aStateBenefitsUserData.copy(sessionId = "session-2")
 
-      implicit val textAndKey: TextAndKey = TextAndKey(data_1.mtdItId, appConfig.encryptionKey)
+      implicit val associatedText: String = data_1.mtdItId
       await(underTest.createOrUpdate(data_1))
       await(underTest.collection.countDocuments().toFuture()) shouldBe 1
 
@@ -74,7 +73,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
       private val data_1: StateBenefitsUserData = aStateBenefitsUserData.copy(sessionId = "session-test")
       private val data_2: StateBenefitsUserData = aStateBenefitsUserData.copy(sessionId = "session-test", nino = "some-nino")
 
-      implicit val textAndKey: TextAndKey = TextAndKey(data_1.mtdItId, appConfig.encryptionKey)
+      implicit val associatedText: String = data_1.mtdItId
       await(underTest.createOrUpdate(data_1))
       await(underTest.collection.countDocuments().toFuture()) shouldBe 1
 
@@ -89,21 +88,19 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
 
   "createOrUpdate with invalid encryption" should {
     "fail to add data" in new EmptyDatabase {
-      await(repoWithInvalidEncryption.createOrUpdate(aStateBenefitsUserData)) shouldBe Left(EncryptionDecryptionError(
-        "Key being used is not valid. It could be due to invalid encoding, wrong length or uninitialized for encrypt Invalid AES key length: 2 bytes"
-      ))
+      await(repoWithInvalidEncryption.createOrUpdate(aStateBenefitsUserData)) shouldBe
+        Left(EncryptionDecryptionError("Failed encrypting data"))
     }
   }
 
   "find with invalid encryption" should {
     "fail to find data" in new EmptyDatabase {
-      implicit val textAndKey: TextAndKey = TextAndKey(aStateBenefitsUserData.mtdItId, appConfig.encryptionKey)
+      implicit val associatedText: String = aStateBenefitsUserData.mtdItId
       await(underTest.collection.countDocuments().toFuture()) shouldBe 0
       await(repoWithInvalidEncryption.collection.insertOne(aStateBenefitsUserData.encrypted).toFuture())
       await(underTest.collection.countDocuments().toFuture()) shouldBe 1
-      await(repoWithInvalidEncryption.find(nino, aStateBenefitsUserData.sessionDataId.get)) shouldBe Left(EncryptionDecryptionError(
-        "Key being used is not valid. It could be due to invalid encoding, wrong length or uninitialized for decrypt Invalid AES key length: 2 bytes"
-      ))
+      await(repoWithInvalidEncryption.find(nino, aStateBenefitsUserData.sessionDataId.get)) shouldBe
+        Left(EncryptionDecryptionError("Failed encrypting data"))
     }
   }
 
