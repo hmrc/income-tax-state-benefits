@@ -14,6 +14,17 @@
  * limitations under the License.
  */
 
-package models.encryption
+package utils
 
-case class TextAndKey(associatedText: String, aesKey: String)
+import config.AppConfig
+import uk.gov.hmrc.crypto.{AdDecrypter, AdEncrypter, SymmetricCryptoFactory}
+
+import javax.inject.{Inject, Singleton}
+
+@Singleton
+class AesGcmAdCryptoFactory @Inject()(appConfig: AppConfig) {
+
+  private lazy val aesGcmAdCrypto = SymmetricCryptoFactory.aesGcmAdCrypto(appConfig.encryptionKey)
+
+  def instance(): AdEncrypter with AdDecrypter = aesGcmAdCrypto
+}
