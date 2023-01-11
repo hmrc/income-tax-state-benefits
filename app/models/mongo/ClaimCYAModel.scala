@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package models.mongo
 
-import models.encryption.TextAndKey
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.crypto.EncryptedValue
+import utils.AesGcmAdCrypto
 import utils.CypherSyntax.{DecryptableOps, EncryptableOps}
-import utils.{EncryptedValue, SecureGCMCipher}
 
 import java.time.{Instant, LocalDate}
 import java.util.UUID
@@ -35,7 +35,7 @@ case class ClaimCYAModel(benefitId: Option[UUID] = None,
                          taxPaid: Option[BigDecimal] = None,
                          isHmrcData: Boolean) {
 
-  def encrypted(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedClaimCYAModel = EncryptedClaimCYAModel(
+  def encrypted(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): EncryptedClaimCYAModel = EncryptedClaimCYAModel(
     benefitId = benefitId.map(_.encrypted),
     startDate = startDate.encrypted,
     endDateQuestion = endDateQuestion.map(_.encrypted),
@@ -64,7 +64,7 @@ case class EncryptedClaimCYAModel(benefitId: Option[EncryptedValue],
                                   taxPaid: Option[EncryptedValue] = None,
                                   isHmrcData: EncryptedValue) {
 
-  def decrypted(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): ClaimCYAModel = ClaimCYAModel(
+  def decrypted(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): ClaimCYAModel = ClaimCYAModel(
     benefitId = benefitId.map(_.decrypted[UUID]),
     startDate = startDate.decrypted[LocalDate],
     endDateQuestion = endDateQuestion.map(_.decrypted[Boolean]),
@@ -79,5 +79,6 @@ case class EncryptedClaimCYAModel(benefitId: Option[EncryptedValue],
 }
 
 object EncryptedClaimCYAModel {
-  implicit val format: OFormat[EncryptedClaimCYAModel] = Json.format[EncryptedClaimCYAModel]
+  implicit lazy val encryptedValueOFormat: OFormat[EncryptedValue] = Json.format[EncryptedValue]
+  implicit lazy val format: OFormat[EncryptedClaimCYAModel] = Json.format[EncryptedClaimCYAModel]
 }

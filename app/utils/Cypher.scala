@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package utils
 
-import models.encryption.TextAndKey
+import uk.gov.hmrc.crypto.EncryptedValue
 
 import java.time.{Instant, LocalDate}
 import java.util.UUID
@@ -24,15 +24,15 @@ import java.util.UUID
 trait Cypher[A] {
   self =>
 
-  def encrypt(value: A)(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedValue
+  def encrypt(value: A)(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): EncryptedValue
 
-  def decrypt(encryptedValue: EncryptedValue)(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): A
+  def decrypt(encryptedValue: EncryptedValue)(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): A
 
   def imap[B](dec: A => B, enc: B => A): Cypher[B] = new Cypher[B] {
-    override def encrypt(value: B)(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedValue =
+    override def encrypt(value: B)(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): EncryptedValue =
       self.encrypt(enc(value))
 
-    override def decrypt(encryptedValue: EncryptedValue)(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): B =
+    override def decrypt(encryptedValue: EncryptedValue)(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): B =
       dec(self.decrypt(encryptedValue))
   }
 }
@@ -40,10 +40,10 @@ trait Cypher[A] {
 object Cypher {
 
   implicit val stringCypher: Cypher[String] = new Cypher[String] {
-    override def encrypt(value: String)(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedValue = secureGCMCipher.encrypt(value)
+    override def encrypt(value: String)(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): EncryptedValue = aesGcmAdCrypto.encrypt(value)
 
-    override def decrypt(encryptedValue: EncryptedValue)(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): String =
-      secureGCMCipher.decrypt(encryptedValue.value, encryptedValue.nonce)
+    override def decrypt(encryptedValue: EncryptedValue)(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): String =
+      aesGcmAdCrypto.decrypt(encryptedValue)
   }
 
   implicit val booleanCypher: Cypher[Boolean] = stringCypher.imap(_.toBoolean, _.toString)
@@ -59,10 +59,10 @@ object Cypher {
 
 object CypherSyntax {
   implicit class EncryptableOps[A](value: A)(implicit cypher: Cypher[A]) {
-    def encrypted(implicit secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): EncryptedValue = cypher.encrypt(value)
+    def encrypted(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): EncryptedValue = cypher.encrypt(value)
   }
 
   implicit class DecryptableOps(encryptedValue: EncryptedValue) {
-    def decrypted[A](implicit cypher: Cypher[A], secureGCMCipher: SecureGCMCipher, textAndKey: TextAndKey): A = cypher.decrypt(encryptedValue)
+    def decrypted[A](implicit cypher: Cypher[A], aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): A = cypher.decrypt(encryptedValue)
   }
 }

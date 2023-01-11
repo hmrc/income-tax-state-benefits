@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package utils
 
-import models.encryption.TextAndKey
 import org.scalamock.scalatest.MockFactory
 import support.UnitTest
+import uk.gov.hmrc.crypto.EncryptedValue
 import utils.Cypher.{bigDecimalCypher, booleanCypher, instantCypher, localDateCypher, stringCypher, uuidCypher}
 
 import java.time.{Instant, LocalDate}
@@ -35,20 +35,20 @@ class CypherSpec extends UnitTest
   private val encryptedInstant = mock[EncryptedValue]
   private val encryptedValue = EncryptedValue("some-value", "some-nonce")
 
-  private implicit val secureGCMCipher: SecureGCMCipher = mock[SecureGCMCipher]
-  private implicit val textAndKey: TextAndKey = TextAndKey("some-associated-text", "some-aes-key")
+  private implicit val aesGcmAdCrypto: AesGcmAdCrypto = mock[AesGcmAdCrypto]
+  private implicit val associatedText: String = "some-associated-text"
 
   "stringCypher" should {
     val stringValue = "some-string-value"
     "encrypt string values" in {
-      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(stringValue, textAndKey).returning(encryptedString)
+      (aesGcmAdCrypto.encrypt(_: String)(_: String)).expects(stringValue, associatedText).returning(encryptedString)
 
       stringCypher.encrypt(stringValue) shouldBe encryptedString
     }
 
     "decrypt to string values" in {
-      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
-        .expects(encryptedValue.value, encryptedValue.nonce, textAndKey).returning(stringValue)
+      (aesGcmAdCrypto.decrypt(_: EncryptedValue)(_: String))
+        .expects(encryptedValue, associatedText).returning(stringValue)
 
       stringCypher.decrypt(encryptedValue) shouldBe stringValue
     }
@@ -57,14 +57,14 @@ class CypherSpec extends UnitTest
   "booleanCypher" should {
     val someBoolean = true
     "encrypt boolean values" in {
-      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(someBoolean.toString, textAndKey).returning(encryptedBoolean)
+      (aesGcmAdCrypto.encrypt(_: String)(_: String)).expects(someBoolean.toString, associatedText).returning(encryptedBoolean)
 
       booleanCypher.encrypt(someBoolean) shouldBe encryptedBoolean
     }
 
     "decrypt to boolean values" in {
-      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
-        .expects(encryptedValue.value, encryptedValue.nonce, textAndKey).returning(someBoolean.toString)
+      (aesGcmAdCrypto.decrypt(_: EncryptedValue)(_: String))
+        .expects(encryptedValue, associatedText).returning(someBoolean.toString)
 
       booleanCypher.decrypt(encryptedValue) shouldBe someBoolean
     }
@@ -73,14 +73,14 @@ class CypherSpec extends UnitTest
   "bigDecimalCypher" should {
     val bigDecimalValue: BigDecimal = 500.0
     "encrypt BigDecimal values" in {
-      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(bigDecimalValue.toString, textAndKey).returning(encryptedBigDecimal)
+      (aesGcmAdCrypto.encrypt(_: String)(_: String)).expects(bigDecimalValue.toString, associatedText).returning(encryptedBigDecimal)
 
       bigDecimalCypher.encrypt(bigDecimalValue) shouldBe encryptedBigDecimal
     }
 
     "decrypt to BigDecimal values" in {
-      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
-        .expects(encryptedValue.value, encryptedValue.nonce, textAndKey).returning(bigDecimalValue.toString)
+      (aesGcmAdCrypto.decrypt(_: EncryptedValue)(_: String))
+        .expects(encryptedValue, associatedText).returning(bigDecimalValue.toString)
 
       bigDecimalCypher.decrypt(encryptedValue) shouldBe bigDecimalValue
     }
@@ -89,14 +89,14 @@ class CypherSpec extends UnitTest
   "uuidCypher" should {
     val uuidValue: UUID = UUID.randomUUID()
     "encrypt UUID values" in {
-      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(uuidValue.toString, textAndKey).returning(encryptedUUID)
+      (aesGcmAdCrypto.encrypt(_: String)(_: String)).expects(uuidValue.toString, associatedText).returning(encryptedUUID)
 
       uuidCypher.encrypt(uuidValue) shouldBe encryptedUUID
     }
 
     "decrypt to UUID values" in {
-      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
-        .expects(encryptedValue.value, encryptedValue.nonce, textAndKey).returning(uuidValue.toString)
+      (aesGcmAdCrypto.decrypt(_: EncryptedValue)(_: String))
+        .expects(encryptedValue, associatedText).returning(uuidValue.toString)
 
       uuidCypher.decrypt(encryptedValue) shouldBe uuidValue
     }
@@ -105,14 +105,14 @@ class CypherSpec extends UnitTest
   "localDateCypher" should {
     val localDateValue: LocalDate = LocalDate.now()
     "encrypt LocalDate values" in {
-      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(localDateValue.toString, textAndKey).returning(encryptedLocalDate)
+      (aesGcmAdCrypto.encrypt(_: String)(_: String)).expects(localDateValue.toString, associatedText).returning(encryptedLocalDate)
 
       localDateCypher.encrypt(localDateValue) shouldBe encryptedLocalDate
     }
 
     "decrypt to LocalDate values" in {
-      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
-        .expects(encryptedValue.value, encryptedValue.nonce, textAndKey).returning(localDateValue.toString)
+      (aesGcmAdCrypto.decrypt(_: EncryptedValue)(_: String))
+        .expects(encryptedValue, associatedText).returning(localDateValue.toString)
 
       localDateCypher.decrypt(encryptedValue) shouldBe localDateValue
     }
@@ -121,14 +121,14 @@ class CypherSpec extends UnitTest
   "instantCypher" should {
     val instantValue: Instant = Instant.now()
     "encrypt Instance values" in {
-      (secureGCMCipher.encrypt(_: String)(_: TextAndKey)).expects(instantValue.toString, textAndKey).returning(encryptedInstant)
+      (aesGcmAdCrypto.encrypt(_: String)(_: String)).expects(instantValue.toString, associatedText).returning(encryptedInstant)
 
       instantCypher.encrypt(instantValue) shouldBe encryptedInstant
     }
 
     "decrypt to LocalDate values" in {
-      (secureGCMCipher.decrypt(_: String, _: String)(_: TextAndKey))
-        .expects(encryptedValue.value, encryptedValue.nonce, textAndKey).returning(instantValue.toString)
+      (aesGcmAdCrypto.decrypt(_: EncryptedValue)(_: String))
+        .expects(encryptedValue, associatedText).returning(instantValue.toString)
 
       instantCypher.decrypt(encryptedValue) shouldBe instantValue
     }
