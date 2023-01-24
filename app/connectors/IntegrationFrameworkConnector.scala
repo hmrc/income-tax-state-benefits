@@ -35,6 +35,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   private val createOrUpdateApiVersion = "1651"
   private val getApiVersion = "1652"
+  private val getApi2324Version = "1938"
   private val addApiVersion = "1676"
   private val updateApiVersion = "1677"
   private val deleteApiVersion = "1678"
@@ -45,8 +46,13 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   def getAllStateBenefitsData(taxYear: Int, nino: String)
                              (implicit hc: HeaderCarrier): Future[Either[ApiError, Option[AllStateBenefitsData]]] = {
-    val url = baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}"
-    val getRequestResponse = callGetStateBenefits(url)(ifHeaderCarrier(url, getApiVersion))
+    val (url, apiVersion) = if (shouldUse2324(taxYear)) {
+      (baseUrl + s"/income-tax/income/state-benefits/23-24/$nino", getApi2324Version)
+    } else {
+      (baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}", getApiVersion)
+    }
+
+    val getRequestResponse = callGetStateBenefits(url)(ifHeaderCarrier(url, apiVersion))
 
     getRequestResponse.map { apiResponse =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
@@ -161,5 +167,9 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   private def toTaxYearParam(taxYear: Int): String = {
     s"${taxYear - 1}-${taxYear.toString takeRight 2}"
+  }
+
+  private def shouldUse2324(taxYear: Int): Boolean = {
+    taxYear == 2024
   }
 }
