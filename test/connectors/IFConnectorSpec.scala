@@ -24,6 +24,8 @@ import support.stubs.AppConfigStub
 import uk.gov.hmrc.http.HeaderNames._
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, SessionId}
 
+import java.net.URL
+
 class IFConnectorSpec extends UnitTest
   with MockFactory
   with AppConfigStubProvider {
@@ -52,7 +54,7 @@ class IFConnectorSpec extends UnitTest
 
   ".ifHeaderCarrier" should {
     "return correct HeaderCarrier when internal host" in {
-      val internalHost = "http://localhost"
+      val internalHost = new URL("http://localhost")
 
       val result = underTest.ifHeaderCarrier(internalHost, "some-api-version")(HeaderCarrier())
 
@@ -61,7 +63,7 @@ class IFConnectorSpec extends UnitTest
     }
 
     "return correct HeaderCarrier when external host" in {
-      val externalHost = "http://127.0.0.1"
+      val externalHost = new URL("http://127.0.0.1")
       val hc = HeaderCarrier(sessionId = Some(SessionId("sessionIdHeaderValue")))
 
       val result = underTest.ifHeaderCarrier(externalHost, "some-api-version")(hc)

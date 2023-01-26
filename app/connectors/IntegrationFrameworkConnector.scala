@@ -23,6 +23,7 @@ import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOver
 import services.PagerDutyLoggerService
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
+import java.net.URL
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,6 +40,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
   private val addApiVersion = "1676"
   private val updateApiVersion = "1677"
   private val deleteApiVersion = "1678"
+  private val deleteApi2324Version = "1796"
   private val ignoreApiVersion = "1679"
   private val unIgnoreApiVersion = "1700"
 
@@ -47,9 +49,9 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
   def getAllStateBenefitsData(taxYear: Int, nino: String)
                              (implicit hc: HeaderCarrier): Future[Either[ApiError, Option[AllStateBenefitsData]]] = {
     val (url, apiVersion) = if (shouldUse2324(taxYear)) {
-      (baseUrl + s"/income-tax/income/state-benefits/23-24/$nino", getApi2324Version)
+      (new URL(s"$baseUrl/income-tax/income/state-benefits/23-24/$nino"), getApi2324Version)
     } else {
-      (baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}", getApiVersion)
+      (new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}"), getApiVersion)
     }
 
     val getRequestResponse = callGetStateBenefits(url)(ifHeaderCarrier(url, apiVersion))
@@ -62,7 +64,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   def addStateBenefit(taxYear: Int, nino: String, addStateBenefit: AddStateBenefit)
                      (implicit hc: HeaderCarrier): Future[Either[ApiError, UUID]] = {
-    val url = baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom"
+    val url = new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom")
     val getRequestResponse = callAddStateBenefit(url, addStateBenefit)(ifHeaderCarrier(url, addApiVersion))
 
     getRequestResponse.map { apiResponse =>
@@ -73,7 +75,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   def updateStateBenefit(taxYear: Int, nino: String, benefitId: UUID, updateStateBenefit: UpdateStateBenefit)
                         (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    val url = baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom/$benefitId"
+    val url = new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom/$benefitId")
     val eventualResponse = callUpdateStateBenefit(url, updateStateBenefit)(ifHeaderCarrier(url, updateApiVersion))
 
     eventualResponse.map { apiResponse =>
@@ -87,7 +89,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
                                                benefitId: UUID,
                                                stateBenefitDetailOverride: StateBenefitDetailOverride)
                                               (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    val url = baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/$benefitId"
+    val url = new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/$benefitId")
     val eventualResponse = callCreateOrUpdateDetailOverride(url, stateBenefitDetailOverride)(ifHeaderCarrier(url, createOrUpdateApiVersion))
 
     eventualResponse.map { apiResponse: CreateOrUpdateStateBenefitResponse =>
@@ -96,11 +98,20 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     }
   }
 
-  def deleteStateBenefit(taxYear: Int,
-                         nino: String,
-                         benefitId: UUID)
+  def deleteStateBenefitOverride(nino: String, benefitId: UUID)
+                                (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
+    val url = new URL(s"$baseUrl/income-tax/income/state-benefits/23-24/$nino/$benefitId")
+    val eventualResponse = callDeleteStateBenefit(url)(ifHeaderCarrier(url, deleteApi2324Version))
+
+    eventualResponse.map { apiResponse: DeleteStateBenefitResponse =>
+      if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
+      apiResponse.result
+    }
+  }
+
+  def deleteStateBenefit(taxYear: Int, nino: String, benefitId: UUID)
                         (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    val url = baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom/$benefitId"
+    val url = new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom/$benefitId")
     val eventualResponse = callDeleteStateBenefit(url)(ifHeaderCarrier(url, deleteApiVersion))
 
     eventualResponse.map { apiResponse: DeleteStateBenefitResponse =>
@@ -113,7 +124,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
                          nino: String,
                          benefitId: UUID)
                         (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    val url = baseUrl + s"/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/ignore/$benefitId"
+    val url = new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/ignore/$benefitId")
     val eventualResponse = callIgnoreStateBenefit(url)(ifHeaderCarrier(url, ignoreApiVersion))
 
     eventualResponse.map { apiResponse: IgnoreStateBenefitResponse =>
@@ -126,7 +137,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
                            nino: String,
                            benefitId: UUID)
                           (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    val url = baseUrl + s"/income-tax/state-benefits/$nino/${toTaxYearParam(taxYear)}/ignore/$benefitId"
+    val url = new URL(s"$baseUrl/income-tax/state-benefits/$nino/${toTaxYearParam(taxYear)}/ignore/$benefitId")
     val eventualResponse = callUnIgnoreStateBenefit(url)(ifHeaderCarrier(url, unIgnoreApiVersion))
 
     eventualResponse.map { apiResponse: UnIgnoreStateBenefitResponse =>
@@ -135,33 +146,33 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     }
   }
 
-  private def callCreateOrUpdateDetailOverride(url: String, stateBenefitDetailOverride: StateBenefitDetailOverride)
+  private def callCreateOrUpdateDetailOverride(url: URL, stateBenefitDetailOverride: StateBenefitDetailOverride)
                                               (implicit hc: HeaderCarrier): Future[CreateOrUpdateStateBenefitResponse] = {
     httpClient.PUT[StateBenefitDetailOverride, CreateOrUpdateStateBenefitResponse](url, stateBenefitDetailOverride)
   }
 
-  private def callGetStateBenefits(url: String)(implicit hc: HeaderCarrier): Future[GetStateBenefitsResponse] = {
+  private def callGetStateBenefits(url: URL)(implicit hc: HeaderCarrier): Future[GetStateBenefitsResponse] = {
     httpClient.GET[GetStateBenefitsResponse](url)
   }
 
-  private def callAddStateBenefit(url: String, addStateBenefit: AddStateBenefit)
+  private def callAddStateBenefit(url: URL, addStateBenefit: AddStateBenefit)
                                  (implicit hc: HeaderCarrier): Future[AddStateBenefitResponse] = {
     httpClient.POST[AddStateBenefit, AddStateBenefitResponse](url, addStateBenefit)
   }
 
-  private def callUpdateStateBenefit(url: String, updateStateBenefit: UpdateStateBenefit)(implicit hc: HeaderCarrier): Future[UpdateStateBenefitResponse] = {
+  private def callUpdateStateBenefit(url: URL, updateStateBenefit: UpdateStateBenefit)(implicit hc: HeaderCarrier): Future[UpdateStateBenefitResponse] = {
     httpClient.PUT[UpdateStateBenefit, UpdateStateBenefitResponse](url, updateStateBenefit)
   }
 
-  private def callDeleteStateBenefit(url: String)(implicit hc: HeaderCarrier): Future[DeleteStateBenefitResponse] = {
+  private def callDeleteStateBenefit(url: URL)(implicit hc: HeaderCarrier): Future[DeleteStateBenefitResponse] = {
     httpClient.DELETE[DeleteStateBenefitResponse](url)
   }
 
-  private def callIgnoreStateBenefit(url: String)(implicit hc: HeaderCarrier): Future[IgnoreStateBenefitResponse] = {
+  private def callIgnoreStateBenefit(url: URL)(implicit hc: HeaderCarrier): Future[IgnoreStateBenefitResponse] = {
     httpClient.PUT[Map[String, String], IgnoreStateBenefitResponse](url, Map[String, String]())
   }
 
-  private def callUnIgnoreStateBenefit(url: String)(implicit hc: HeaderCarrier): Future[UnIgnoreStateBenefitResponse] = {
+  private def callUnIgnoreStateBenefit(url: URL)(implicit hc: HeaderCarrier): Future[UnIgnoreStateBenefitResponse] = {
     httpClient.DELETE[UnIgnoreStateBenefitResponse](url)
   }
 

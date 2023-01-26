@@ -31,8 +31,8 @@ trait IFConnector {
 
   protected val headerCarrierConfig: Config = HeaderCarrier.Config.fromConfig(ConfigFactory.load())
 
-  protected[connectors] def ifHeaderCarrier(url: String, apiVersion: String)(implicit hc: HeaderCarrier): HeaderCarrier = {
-    val isInternalHost = headerCarrierConfig.internalHostPatterns.exists(_.pattern.matcher(new URL(url).getHost).matches())
+  protected[connectors] def ifHeaderCarrier(url: URL, apiVersion: String)(implicit hc: HeaderCarrier): HeaderCarrier = {
+    val isInternalHost = headerCarrierConfig.internalHostPatterns.exists(_.pattern.matcher(url.getHost).matches())
     val hcWithAuth = hc.copy(authorization = Some(Authorization(s"Bearer ${appConfig.authorisationTokenFor(apiVersion)}")))
 
     if (isInternalHost) {

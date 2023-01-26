@@ -101,7 +101,6 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
       await(underTest.addStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe Right(benefitId)
     }
 
-
     "return IF error and perform a pagerDutyLog when Left is returned" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
@@ -156,6 +155,27 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
       stubPutHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/$benefitId", jsValue.toString(), httpResponse)
 
       await(underTest.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe
+        Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+    }
+  }
+
+  ".deleteStateBenefitOverride" should {
+    "return correct IF response when correct parameters are passed" in {
+      val httpResponse = HttpResponse(NO_CONTENT, "")
+
+      stubDeleteHttpClientCall(s"/if/income-tax/income/state-benefits/23-24/$nino/$benefitId", httpResponse)
+
+      await(underTest.deleteStateBenefitOverride(nino, benefitId)(hc)) shouldBe Right(())
+    }
+
+    "return IF error and perform a pagerDutyLog when Left is returned" in {
+      val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
+
+      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "DeleteStateBenefitResponse")
+
+      stubDeleteHttpClientCall(s"/if/income-tax/income/state-benefits/23-24/$nino/$benefitId", httpResponse)
+
+      await(underTest.deleteStateBenefitOverride(nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
     }
   }
