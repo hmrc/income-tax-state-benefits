@@ -1,0 +1,15 @@
+{
+  "benefitType": "jobSeekersAllowance",
+  "previousStateBenefitData": {
+    "startDate": "2021-01-01",
+    "endDate": "2022-04-01",
+    "amount": 123,
+    "taxPaid": 100
+  },
+  "stateBenefitData": {
+    "startDate": "2021-01-01",
+    "endDate": "2022-03-01",
+    "amount": 123,
+    "taxPaid": 23
+  }
+}

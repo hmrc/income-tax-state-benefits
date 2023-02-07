@@ -1,0 +1,88 @@
+{
+  "payload": "ewoJImVtcGxveW1lbnREYXRhIjogewoJCSJlbXBsb3llck5hbWUiOiAiTmV3IEVtcGxveW1lbnQiLAoJCSJlbXBsb3llclJlZiI6ICI3NTQvU1owMDAzMiIsCgkJInN0YXJ0RGF0ZSI6ICIyMDE5LTA0LTIyIiwKCQkiY2Vzc2F0aW9uRGF0ZSI6ICIyMDE5LTA0LTIzIiwKCQkidGF4YWJsZVBheVRvRGF0ZSI6IDU1NTAuOTksCgkJInRvdGFsVGF4VG9EYXRlIjogNTUwLjk5LAoJCSJwYXlyb2xsSWQiOiAiMTIzNDUiCgl9LAoJImV4aXN0aW5nRW1wbG95bWVudHMiOiBbewoJCQkiZW1wbG95ZXJOYW1lIjogIkVtcGxveW1lbnQgMSIsCgkJCSJlbXBsb3llclJlZiI6ICIwMDEvU1owMDAzMiIKCQl9LAoJCXsKCQkJImVtcGxveWVyTmFtZSI6ICJFbXBsb3ltZW50IDIiLAoJCQkiZW1wbG95ZXJSZWYiOiAiMDAyL1NaMDAwMzIiCgkJfQoJXQp9",
+  "metadata": {
+    "businessId": "itsa",
+    "notableEvent": "itsa-personal-income-submission",
+    "payloadContentType": "application/json",
+    "payloadSha256Checksum": "0a71f0ad33837ea141b14bfb86722387503aeb784bcebafa052d89c5fb916592",
+    "userSubmissionTimestamp": "2021-11-17T12:00:12Z",
+    "identityData": {
+      "internalId": "Int-4fe90e86-f8b2-4ccb-9899-7baab2c2f302",
+      "externalId": "Ext-a085bcad-660b-4840-a869-f139cb258587",
+      "agentCode": "",
+      "credentials": {
+        "providerId": "7110130754268757",
+        "providerType": "GovernmentGateway"
+      },
+      "confidenceLevel": 250,
+      "nino": "AA123459A",
+      "saUtr": "1234567890",
+      "name": {
+        "name": "TestUser"
+      },
+      "email": "user@test.com",
+      "agentInformation": {},
+      "groupIdentifier": "testGroupId-e14504f2-77e2-410e-9a84-dd4e0ca25131",
+      "credentialRole": "User",
+      "itmpName": {
+        "givenName": "jb",
+        "middleName": "j",
+        "familyName": "gg"
+      },
+      "itmpDateOfBirth": "1999-02-18",
+      "itmpAddress": {
+        "line1": "45 xford Avenue",
+        "line2": "SouthSide World",
+        "postCode": "SL0 0EE",
+        "countryName": "United Kingdom",
+        "countryCode": "UK"
+      },
+      "affinityGroup": "Individual",
+      "credentialStrength": "strong",
+      "loginTimes": {
+        "currentLogin": "2021-11-17T11:55:14Z"
+      }
+    },
+    "userAuthToken": "Bearer BXQ3/Treo4kQCZvVcCqKPsjSQipRDSOuApIWmrZu7AHbmI3QVNWwQNDkEfnBpKmFFRn6b9Takn0Fl92SCkIS7HKhSsSAvHqYYyVWAWDjakgX7xSvk1L+MFqYZaEoSOKrLDfz3wmciyLYSmtjO90AnfFi+WsaZ51D3KGelKrZKKr9KwIkeIPK/mMlBESjue4V",
+    "headerData": {
+      "deviceid": "mdtpdi#a17bdd71-86e1-4232-83f2-670645793674#1611747343685_GeQDZBNAFWtTm85yo6WEpQ==",
+      "x-request-id": "r-arKA8Kt34EPWiheaKSYOh_ULCblslcps_AxaVct_s6glABCsLyIg==",
+      "true-client-port": "59451",
+      "user-agent": "income-tax-employment-frontend",
+      "x-forwarded-proto": "https",
+      "true-client-ip": "35.178.118.245",
+      "Timeout-Access": "<function1>",
+      "Tls-Session-Info": "Session(1639414625255|SSL_NULL_WITH_NULL_NULL)",
+      "x-session-id": "session-51fcd429-7ee0-4cd3-bb82-62ac900977fd",
+      "authorization": "Bearer 8KNIXbr3VVsSEP0CJKYPym42+ItRm1cdSNvpI73xRX+crtP70uegu7Dy3JjQrEvRrLRRScECF9vST8AUG3Kk5sCDYfvyWcspVhpo9eBXhCZoRxwGEbBHT4Gpxss6N3dapnrpVImgCXuvZelN7tPaBOW/yXuUP/CPCCpLWbfRVoD/f7Ox2YRht7vJBTxJtTKf",
+      "Content-Length": "525",
+      "clientip": "35.178.118.245",
+      "Accept": "*/*",
+      "mtditid": "XGIT00000003623",
+      "Content-Type": "application/json",
+      "clientport": "59451",
+      "x-real-ip": "127.0.0.1",
+      "x-envoy-expected-rq-timeout-ms": "60000",
+      "x-request-chain": "738a",
+      "Host": "income-tax-nrs-proxy.protected.mdtp",
+      "Raw-Request-URI": "/income-tax-nrs-proxy/PW174033A/itsa-personal-income-submission",
+      "x-forwarded-for": "35.178.118.245, 64.252.82.230, 10.220.65.244, 172.18.14.109, 127.0.0.1, 127.0.0.1",
+      "Remote-Address": "127.0.0.1:39546"
+    },
+    "enrolments": [
+      {
+        "enrolment": "ITSA",
+        "identifiers": [
+          {
+            "key": "MTDITID",
+            "value": "1234567890"
+          }
+        ],
+        "state": "active"
+      }
+    ],
+    "searchKeys": {
+      "nino": "AA123459A"
+    }
+  }
+}
