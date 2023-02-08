@@ -21,57 +21,49 @@ import org.scalamock.scalatest.MockFactory
 import support.UnitTest
 import support.providers.AppConfigStubProvider
 import support.stubs.AppConfigStub
-import uk.gov.hmrc.http.HeaderNames._
+import uk.gov.hmrc.http.HeaderNames.{authorisation, xRequestChain, xSessionId}
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, SessionId}
 
 import java.net.URL
 
-class IFConnectorSpec extends UnitTest
+class DESConnectorSpec extends UnitTest
   with MockFactory
   with AppConfigStubProvider {
 
-  private val underTest = new IFConnector {
+  private val underTest = new DESConnector {
     override protected val appConfig: AppConfig = appConfigStub
   }
 
   ".baseUrl" should {
-    "return the app config + '/if' value when environment is test" in {
-      val underTest = new IFConnector {
-        override protected val appConfig: AppConfig = new AppConfigStub().config("test")
-      }
-
-      underTest.baseUrl shouldBe appConfigStub.ifBaseUrl + "/if"
-    }
-
-    "return the app config value when environment is not test" in {
-      val underTest = new IFConnector {
+    "return the app config value" in {
+      val underTest = new DESConnector {
         override protected val appConfig: AppConfig = new AppConfigStub().config("not-test")
       }
 
-      underTest.baseUrl shouldBe appConfigStub.ifBaseUrl
+      underTest.baseUrl shouldBe appConfigStub.desBaseUrl
     }
   }
 
-  ".ifHeaderCarrier" should {
+  ".desHeaderCarrier" should {
     "return correct HeaderCarrier when internal host" in {
       val internalHost = new URL("http://localhost")
 
-      val result = underTest.ifHeaderCarrier(internalHost, "some-api-version")(HeaderCarrier())
+      val result = underTest.desHeaderCarrier(internalHost)(HeaderCarrier())
 
-      result.authorization shouldBe Some(Authorization(s"Bearer ${appConfigStub.authorisationTokenFor("some-api-version")}"))
-      result.extraHeaders shouldBe Seq("Environment" -> appConfigStub.ifEnvironment)
+      result.authorization shouldBe Some(Authorization(s"Bearer ${appConfigStub.desAuthorisationToken}"))
+      result.extraHeaders shouldBe Seq("Environment" -> appConfigStub.desEnvironment)
     }
 
     "return correct HeaderCarrier when external host" in {
       val externalHost = new URL("http://127.0.0.1")
       val hc = HeaderCarrier(sessionId = Some(SessionId("sessionIdHeaderValue")))
 
-      val result = underTest.ifHeaderCarrier(externalHost, "some-api-version")(hc)
+      val result = underTest.desHeaderCarrier(externalHost)(hc)
 
       result.extraHeaders.size shouldBe 4
       result.extraHeaders.contains(xSessionId -> "sessionIdHeaderValue") shouldBe true
-      result.extraHeaders.contains(authorisation -> s"Bearer ${appConfigStub.authorisationTokenFor("some-api-version")}") shouldBe true
-      result.extraHeaders.contains("Environment" -> appConfigStub.ifEnvironment) shouldBe true
+      result.extraHeaders.contains(authorisation -> s"Bearer ${appConfigStub.desAuthorisationToken}") shouldBe true
+      result.extraHeaders.contains("Environment" -> appConfigStub.desEnvironment) shouldBe true
       result.extraHeaders.exists(x => x._1.equalsIgnoreCase(xRequestChain)) shouldBe true
     }
   }
