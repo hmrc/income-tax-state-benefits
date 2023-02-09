@@ -98,12 +98,12 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     }
   }
 
-  def deleteStateBenefitOverride(nino: String, benefitId: UUID)
-                                (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
+  def deleteStateBenefitDetailOverride(nino: String, benefitId: UUID)
+                                      (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
     val url = new URL(s"$baseUrl/income-tax/income/state-benefits/23-24/$nino/$benefitId")
-    val eventualResponse = callDeleteStateBenefit(url)(ifHeaderCarrier(url, deleteApi2324Version))
+    val eventualResponse = callDeleteStateBenefitDetailOverride(url)(ifHeaderCarrier(url, deleteApi2324Version))
 
-    eventualResponse.map { apiResponse: DeleteStateBenefitResponse =>
+    eventualResponse.map { apiResponse: DeleteStateBenefitDetailOverrideResponse =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
       apiResponse.result
     }
@@ -166,6 +166,10 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   private def callDeleteStateBenefit(url: URL)(implicit hc: HeaderCarrier): Future[DeleteStateBenefitResponse] = {
     httpClient.DELETE[DeleteStateBenefitResponse](url)
+  }
+
+  private def callDeleteStateBenefitDetailOverride(url: URL)(implicit hc: HeaderCarrier): Future[DeleteStateBenefitDetailOverrideResponse] = {
+    httpClient.DELETE[DeleteStateBenefitDetailOverrideResponse](url)
   }
 
   private def callIgnoreStateBenefit(url: URL)(implicit hc: HeaderCarrier): Future[IgnoreStateBenefitResponse] = {

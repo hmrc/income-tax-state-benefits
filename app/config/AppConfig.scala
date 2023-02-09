@@ -38,4 +38,8 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   lazy val useEncryption: Boolean = servicesConfig.getBoolean("useEncryption")
 
   def authorisationTokenFor(apiVersion: String): String = servicesConfig.getString(authorisationTokenKey + s".$apiVersion")
+
+  lazy val desBaseUrl: String = servicesConfig.baseUrl(serviceName = "des")
+  lazy val desEnvironment: String = servicesConfig.getString(key = "microservice.services.des.environment")
+  lazy val desAuthorisationToken: String = servicesConfig.getString(key = "microservice.services.des.authorisation-token")
 }
