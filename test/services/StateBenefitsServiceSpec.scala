@@ -62,36 +62,40 @@ class StateBenefitsServiceSpec extends UnitTest
     }
   }
 
-  ".getUserData" should {
+  ".getSessionData" should {
     "delegate to stateBenefitsUserDataRepository and return the result" in {
       mockFind(anyNino, sessionDataId, Right(aStateBenefitsUserData))
 
-      await(underTest.getUserData(anyNino, sessionDataId)) shouldBe Right(aStateBenefitsUserData)
+      await(underTest.getSessionData(anyNino, sessionDataId)) shouldBe Right(aStateBenefitsUserData)
     }
   }
 
-  ".createOrUpdateUserData" should {
-    "delegate to createOrUpdate and return result when clear succeeds for given sessionId" in {
+  ".createSessionData" should {
+    "delegate to repository createOrUpdate and return result when clear succeeds for given sessionId" in {
       val userData = aStateBenefitsUserData.copy(sessionDataId = None, sessionId = "some-session-id")
 
       mockClear("some-session-id", result = Right(()))
       mockCreateOrUpdate(userData, Right(sessionDataId))
 
-      await(underTest.createOrUpdateUserData(userData)) shouldBe Right(sessionDataId)
+      await(underTest.createSessionData(userData)) shouldBe Right(sessionDataId)
     }
 
-    "return DataNotUpdatedError when clear data fails" in {
+    "return DataNotUpdatedError when clear session data fails" in {
       val userData = aStateBenefitsUserData.copy(sessionDataId = None, sessionId = "some-session-id")
 
       mockClear("some-session-id", result = Left(ApiServiceError("some-error")))
 
-      await(underTest.createOrUpdateUserData(userData)) shouldBe Left(ApiServiceError("some-error"))
+      await(underTest.createSessionData(userData)) shouldBe Left(ApiServiceError("some-error"))
     }
+  }
 
-    "update existing data when already exists" in {
-      mockCreateOrUpdate(aStateBenefitsUserData, Right(sessionDataId))
+  ".updateSessionData" should {
+    "delegate to repository createOrUpdate update existing data when already exists" in {
+      val stateBenefitsUserData = aStateBenefitsUserData.copy(sessionDataId = Some(sessionDataId))
 
-      await(underTest.createOrUpdateUserData(aStateBenefitsUserData)) shouldBe Right(sessionDataId)
+      mockCreateOrUpdate(stateBenefitsUserData, Right(sessionDataId))
+
+      await(underTest.updateSessionData(aStateBenefitsUserData)) shouldBe Right(sessionDataId)
     }
   }
 

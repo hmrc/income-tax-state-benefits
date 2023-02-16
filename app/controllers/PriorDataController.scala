@@ -26,10 +26,10 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class GetUserPriorDataController @Inject()(stateBenefitsService: StateBenefitsService,
-                                           authorisedAction: AuthorisedAction,
-                                           cc: ControllerComponents)
-                                          (implicit ec: ExecutionContext) extends BackendController(cc) {
+class PriorDataController @Inject()(stateBenefitsService: StateBenefitsService,
+                                    authorisedAction: AuthorisedAction,
+                                    cc: ControllerComponents)
+                                   (implicit ec: ExecutionContext) extends BackendController(cc) {
 
   def getPriorData(nino: String, taxYear: Int): Action[AnyContent] = authorisedAction.async { implicit request =>
     stateBenefitsService.getPriorData(taxYear, nino, request.user.mtditid).map {

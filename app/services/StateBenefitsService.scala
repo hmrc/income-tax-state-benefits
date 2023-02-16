@@ -44,7 +44,7 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
     submissionService.getIncomeTaxUserData(taxYear, nino, mtdtid)
   }
 
-  def getUserData(nino: String, sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]] = {
+  def getSessionData(nino: String, sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]] = {
     findSessionData(nino, sessionDataId).value
   }
 
@@ -79,19 +79,19 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
     response.value
   }
 
-  def createOrUpdateUserData(userData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] =
-    if (isCreate(userData)) deleteAndCreateNewSessionData(userData).value else updateExistingSessionData(userData).value
+  def createSessionData(userData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] =
+    deleteAndCreateNewSessionData(userData).value
 
-  private def isCreate(stateBenefitsUserData: StateBenefitsUserData): Boolean =
-    stateBenefitsUserData.sessionDataId.isEmpty
+  def updateSessionData(userData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] =
+    updateExistingSessionData(userData).value
 
   private def deleteAndCreateNewSessionData(stateBenefitsUserData: StateBenefitsUserData): EitherT[Future, ServiceError, UUID] = for {
     _ <- clearSessionData(stateBenefitsUserData)
-    result <- createOrUpdateSessionData(stateBenefitsUserData)
+    result <- createOrUpdateUserSessionData(stateBenefitsUserData)
   } yield result
 
   private def updateExistingSessionData(stateBenefitsUserData: StateBenefitsUserData): EitherT[Future, ServiceError, UUID] =
-    createOrUpdateSessionData(stateBenefitsUserData)
+    createOrUpdateUserSessionData(stateBenefitsUserData)
 
   private def handleClaimRemovalFor(userData: StateBenefitsUserData)
                                    (implicit hc: HeaderCarrier): EitherT[Future, ServiceError, Unit] =
@@ -128,6 +128,6 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
   private def clearSessionData(userData: StateBenefitsUserData): EitherT[Future, ServiceError, Unit] =
     EitherT(stateBenefitsUserDataRepository.clear(userData.sessionId))
 
-  private def createOrUpdateSessionData(stateBenefitsUserData: StateBenefitsUserData): EitherT[Future, ServiceError, UUID] =
+  private def createOrUpdateUserSessionData(stateBenefitsUserData: StateBenefitsUserData): EitherT[Future, ServiceError, UUID] =
     EitherT(stateBenefitsUserDataRepository.createOrUpdate(stateBenefitsUserData))
 }

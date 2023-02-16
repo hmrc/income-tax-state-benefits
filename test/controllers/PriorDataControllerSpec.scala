@@ -30,14 +30,14 @@ import support.providers.FakeRequestProvider
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class GetUserPriorDataControllerSpec extends ControllerUnitTest
+class PriorDataControllerSpec extends ControllerUnitTest
   with MockStateBenefitsService
   with MockAuthorisedAction
   with FakeRequestProvider {
 
   private val anyYear = 2022
 
-  private val underTest = new GetUserPriorDataController(
+  private val underTest = new PriorDataController(
     mockStateBenefitsService,
     mockAuthorisedAction,
     cc
