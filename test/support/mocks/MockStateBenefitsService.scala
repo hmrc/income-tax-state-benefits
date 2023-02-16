@@ -55,14 +55,21 @@ trait MockStateBenefitsService extends MockFactory {
                                    sessionDataId: UUID,
                                    result: Either[ServiceError, StateBenefitsUserData]
                                   ): CallHandler2[String, UUID, Future[Either[ServiceError, StateBenefitsUserData]]] = {
-    (mockStateBenefitsService.getUserData(_: String, _: UUID))
+    (mockStateBenefitsService.getSessionData(_: String, _: UUID))
       .expects(nino, sessionDataId)
       .returning(Future.successful(result))
   }
 
-  def mockCreateOrUpdateStateBenefitsUserData(stateBenefitsUserData: StateBenefitsUserData,
-                                              result: Either[ServiceError, UUID]): CallHandler1[StateBenefitsUserData, Future[Either[ServiceError, UUID]]] = {
-    (mockStateBenefitsService.createOrUpdateUserData(_: StateBenefitsUserData))
+  def mockCreateSessionData(stateBenefitsUserData: StateBenefitsUserData,
+                            result: Either[ServiceError, UUID]): CallHandler1[StateBenefitsUserData, Future[Either[ServiceError, UUID]]] = {
+    (mockStateBenefitsService.createSessionData(_: StateBenefitsUserData))
+      .expects(stateBenefitsUserData)
+      .returning(Future.successful(result))
+  }
+
+  def mockUpdateSessionData(stateBenefitsUserData: StateBenefitsUserData,
+                            result: Either[ServiceError, UUID]): CallHandler1[StateBenefitsUserData, Future[Either[ServiceError, UUID]]] = {
+    (mockStateBenefitsService.updateSessionData(_: StateBenefitsUserData))
       .expects(stateBenefitsUserData)
       .returning(Future.successful(result))
   }

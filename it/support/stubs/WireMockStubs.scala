@@ -30,7 +30,7 @@ trait WireMockStubs {
                             httpResponse: HttpResponse,
                             requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
     val mappingBuilder = get(urlMatching(url))
-    getStubMapping(httpResponse, requestHeaders, mappingBuilder)
+    stubMapping(httpResponse, requestHeaders, mappingBuilder)
   }
 
   def stubPostHttpClientCall(url: String,
@@ -38,7 +38,7 @@ trait WireMockStubs {
                              httpResponse: HttpResponse,
                              requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
     val mappingBuilder = post(urlMatching(url)).withRequestBody(equalToJson(httpRequestBodyJson))
-    getStubMapping(httpResponse, requestHeaders, mappingBuilder)
+    stubMapping(httpResponse, requestHeaders, mappingBuilder)
   }
 
   def stubPutHttpClientCall(url: String,
@@ -46,19 +46,19 @@ trait WireMockStubs {
                             httpResponse: HttpResponse,
                             requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
     val mappingBuilder = put(urlMatching(url)).withRequestBody(equalToJson(httpRequestBodyJson))
-    getStubMapping(httpResponse, requestHeaders, mappingBuilder)
+    stubMapping(httpResponse, requestHeaders, mappingBuilder)
   }
 
   def stubDeleteHttpClientCall(url: String,
                                httpResponse: HttpResponse,
                                requestHeaders: Seq[HttpHeader] = Seq.empty): StubMapping = {
     val mappingBuilder = delete(urlMatching(url))
-    getStubMapping(httpResponse, requestHeaders, mappingBuilder)
+    stubMapping(httpResponse, requestHeaders, mappingBuilder)
   }
 
-  private def getStubMapping(httpResponse: HttpResponse,
-                             requestHeaders: Seq[HttpHeader],
-                             mappingBuilder: MappingBuilder): StubMapping = {
+  private def stubMapping(httpResponse: HttpResponse,
+                          requestHeaders: Seq[HttpHeader],
+                          mappingBuilder: MappingBuilder): StubMapping = {
     val responseBuilder = aResponse()
       .withStatus(httpResponse.status)
       .withBody(httpResponse.body)
