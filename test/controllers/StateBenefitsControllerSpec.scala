@@ -26,6 +26,7 @@ import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserDat
 import support.mocks.{MockAuthorisedAction, MockStateBenefitsService}
 import support.providers.FakeRequestProvider
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class StateBenefitsControllerSpec extends ControllerUnitTest
@@ -34,6 +35,8 @@ class StateBenefitsControllerSpec extends ControllerUnitTest
   with FakeRequestProvider {
 
   private val anyYear = 2022
+  private val sessionDataId = aStateBenefitsUserData.sessionDataId.get
+  private val nino = aStateBenefitsUserData.nino
 
   private val underTest = new StateBenefitsController(
     mockStateBenefitsService,
@@ -72,19 +75,37 @@ class StateBenefitsControllerSpec extends ControllerUnitTest
   }
 
   ".saveUserData" should {
-    "return BadRequest when data received is in invalid format" in {
-      mockAuthorisation()
+    "return BadRequest" when {
+      "when data received is in invalid format" in {
+        mockAuthorisation()
 
-      val result = underTest.saveUserData()(fakePutRequest.withJsonBody(Json.parse("""{"wrongFormat": "wrong-value"}""")))
+        val result = underTest.saveUserData(nino, sessionDataId)(fakePutRequest.withJsonBody(Json.parse("""{"wrongFormat": "wrong-value"}""")))
 
-      status(result) shouldBe BAD_REQUEST
+        status(result) shouldBe BAD_REQUEST
+      }
+
+      "when nino is different" in {
+        mockAuthorisation()
+
+        val result = underTest.saveUserData("some-nino", sessionDataId)(fakePostRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
+
+        status(result) shouldBe BAD_REQUEST
+      }
+
+      "when sessionDataId is different" in {
+        mockAuthorisation()
+
+        val result = underTest.saveUserData(nino, UUID.randomUUID())(fakePostRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
+
+        status(result) shouldBe BAD_REQUEST
+      }
     }
 
     "return INTERNAL_SERVER_ERROR when saveUserData returns an error" in {
       mockAuthorisation()
       mockSaveUserData(aStateBenefitsUserData, Left(DataNotUpdatedError))
 
-      val result = underTest.saveUserData()(fakePutRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
+      val result = underTest.saveUserData(nino, sessionDataId)(fakePutRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -93,7 +114,7 @@ class StateBenefitsControllerSpec extends ControllerUnitTest
       mockAuthorisation()
       mockSaveUserData(aStateBenefitsUserData, Right(()))
 
-      val result = underTest.saveUserData()(fakePutRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
+      val result = underTest.saveUserData(nino, sessionDataId)(fakePutRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
 
       status(result) shouldBe NO_CONTENT
     }
