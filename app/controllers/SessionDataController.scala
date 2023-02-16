@@ -34,6 +34,9 @@ class SessionDataController @Inject()(authorisedAction: AuthorisedAction,
                                       cc: ControllerComponents)
                                      (implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
+  lazy private val invalidCreateLogMessage = "[SessionDataController][create] Create state benefits request is invalid"
+  lazy private val invalidUpdateLogMessage = "[SessionDataController][update] Update state benefits request is invalid"
+
   def getSessionData(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { _ =>
     stateBenefitsService.getSessionData(nino, sessionDataId).map {
       case Right(data) => Ok(Json.toJson(data))
@@ -46,8 +49,7 @@ class SessionDataController @Inject()(authorisedAction: AuthorisedAction,
     authRequest.request.body.asJson.map(_.validate[StateBenefitsUserData]) match {
       case Some(data: JsSuccess[StateBenefitsUserData]) => handleCreate(data.value)
       case _ =>
-        val logMessage = "[SessionDataController][create] Create state benefits request is invalid"
-        logger.warn(logMessage)
+        logger.warn(invalidCreateLogMessage)
         Future.successful(BadRequest)
     }
   }
@@ -56,24 +58,8 @@ class SessionDataController @Inject()(authorisedAction: AuthorisedAction,
     authRequest.request.body.asJson.map(_.validate[StateBenefitsUserData]) match {
       case Some(data: JsSuccess[StateBenefitsUserData]) => handleUpdate(nino, sessionDataId, data.value)
       case _ =>
-        val logMessage = "[SessionDataController][update] Update state benefits request is invalid"
-        logger.warn(logMessage)
+        logger.warn(invalidUpdateLogMessage)
         Future.successful(BadRequest)
-    }
-  }
-
-  def removeClaim(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
-    stateBenefitsService.removeClaim(nino, sessionDataId).map {
-      case Left(DataNotFoundError) => NotFound
-      case Left(_) => InternalServerError
-      case Right(_) => NoContent
-    }
-  }
-
-  def restoreClaim(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
-    stateBenefitsService.restoreClaim(nino, sessionDataId).map {
-      case Left(_) => InternalServerError
-      case Right(_) => NoContent
     }
   }
 
@@ -86,8 +72,7 @@ class SessionDataController @Inject()(authorisedAction: AuthorisedAction,
 
   private def handleUpdate(nino: String, sessionDataId: UUID, stateBenefitsUserData: StateBenefitsUserData): Future[Result] = {
     if (stateBenefitsUserData.nino != nino || !stateBenefitsUserData.sessionDataId.contains(sessionDataId)) {
-      val logMessage = "[SessionDataController][update] Update state benefits request is invalid"
-      logger.warn(logMessage)
+      logger.warn(invalidUpdateLogMessage)
       Future.successful(BadRequest)
     } else {
       stateBenefitsService.updateSessionData(stateBenefitsUserData).map {
