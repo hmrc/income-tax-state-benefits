@@ -18,21 +18,35 @@ package controllers
 
 import actions.AuthorisedAction
 import models.errors.DataNotFoundError
+import models.mongo.StateBenefitsUserData
 import play.api.Logging
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.libs.json.JsSuccess
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import services.StateBenefitsService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.util.UUID
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class ClaimDataController @Inject()(authorisedAction: AuthorisedAction,
                                     stateBenefitsService: StateBenefitsService,
                                     cc: ControllerComponents)
                                    (implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
-  def removeClaim(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
+  private val invalidRequestLogMessage = "[ClaimDataController][saveUserData] Save state benefits request is invalid"
+
+  def save(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit authRequest =>
+    authRequest.request.body.asJson.map(_.validate[StateBenefitsUserData]) match {
+      case Some(data: JsSuccess[StateBenefitsUserData]) => handleSaveUserData(nino, sessionDataId, data.value)
+      case _ =>
+        logger.warn(invalidRequestLogMessage)
+        Future.successful(BadRequest)
+    }
+  }
+
+  def remove(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
     stateBenefitsService.removeClaim(nino, sessionDataId).map {
       case Left(DataNotFoundError) => NotFound
       case Left(_) => InternalServerError
@@ -40,10 +54,23 @@ class ClaimDataController @Inject()(authorisedAction: AuthorisedAction,
     }
   }
 
-  def restoreClaim(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
+  def restore(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
     stateBenefitsService.restoreClaim(nino, sessionDataId).map {
       case Left(_) => InternalServerError
       case Right(_) => NoContent
+    }
+  }
+
+  private def handleSaveUserData(nino: String, sessionDataId: UUID, userData: StateBenefitsUserData)
+                                (implicit hc: HeaderCarrier): Future[Result] = {
+    if (userData.nino != nino || !userData.sessionDataId.contains(sessionDataId)) {
+      logger.warn(invalidRequestLogMessage)
+      Future.successful(BadRequest)
+    } else {
+      stateBenefitsService.saveClaim(userData).map {
+        case Left(_) => InternalServerError
+        case Right(_) => NoContent
+      }
     }
   }
 }

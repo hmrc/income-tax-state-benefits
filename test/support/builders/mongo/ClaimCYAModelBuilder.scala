@@ -34,8 +34,7 @@ object ClaimCYAModelBuilder {
     submittedOn = Some(Instant.parse(s"$taxYearEOY-03-13T19:23:00Z")),
     amount = Some(300.00),
     taxPaidQuestion = Some(true),
-    taxPaid = Some(400.00),
-    isHmrcData = true
+    taxPaid = Some(400.00)
   )
 
   val aClaimCYAModelJson: JsObject = Json.obj(
@@ -47,7 +46,6 @@ object ClaimCYAModelBuilder {
     "submittedOn" -> aClaimCYAModel.submittedOn,
     "amount" -> aClaimCYAModel.amount,
     "taxPaidQuestion" -> aClaimCYAModel.taxPaidQuestion,
-    "taxPaid" -> aClaimCYAModel.taxPaid,
-    "isHmrcData" -> aClaimCYAModel.isHmrcData
+    "taxPaid" -> aClaimCYAModel.taxPaid
   )
 }

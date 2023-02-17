@@ -16,6 +16,7 @@
 
 package models.mongo
 
+import models.mongo.BenefitDataType.{CustomerAdded, CustomerOverride, HmrcData}
 import org.scalamock.scalatest.MockFactory
 import play.api.libs.json.Json
 import support.UnitTest
@@ -33,32 +34,91 @@ class StateBenefitsUserDataSpec extends UnitTest
 
   private val claimCYAModel = mock[ClaimCYAModel]
   private val encryptedClaimCYAModel = mock[EncryptedClaimCYAModel]
+  private val benefitId = UUID.randomUUID()
 
-  ".isHmrcData" should {
-    "return false when claim is None" in {
-      aStateBenefitsUserData.copy(claim = None).isHmrcData shouldBe false
+  ".isPriorSubmission" should {
+    "return true when claim has benefitId" in {
+      val underTest = aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = Some(benefitId))))
+
+      underTest.isPriorSubmission shouldBe true
     }
 
-    "return false when claim.isHmrcData is false" in {
-      aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(isHmrcData = false))).isHmrcData shouldBe false
-    }
+    "return false" when {
+      "claim has no benefitId" in {
+        val underTest = aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = None)))
 
-    "return false when claim.isHmrcData is true" in {
-      aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(isHmrcData = true))).isHmrcData shouldBe true
+        underTest.isPriorSubmission shouldBe false
+      }
+
+      "claim is empty" in {
+        val underTest = aStateBenefitsUserData.copy(claim = None)
+
+        underTest.isPriorSubmission shouldBe false
+      }
     }
   }
 
   ".isNewClaim" should {
-    "return false when claim is None" in {
-      aStateBenefitsUserData.copy(claim = None).isNewClaim shouldBe false
+    "return false when claim has benefitId" in {
+      val underTest = aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = Some(benefitId))))
+
+      underTest.isNewClaim shouldBe false
     }
 
-    "return false when claim.benefitId is Some(...)" in {
-      aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = Some(UUID.randomUUID())))).isNewClaim shouldBe false
+    "return true" when {
+      "claim has no benefitId" in {
+        val underTest = aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = None)))
+
+        underTest.isNewClaim shouldBe true
+      }
+
+      "claim is empty" in {
+        val underTest = aStateBenefitsUserData.copy(claim = None)
+
+        underTest.isNewClaim shouldBe true
+      }
+    }
+  }
+
+  ".isHmrcData" should {
+    s"return true when benefitDataType is ${HmrcData.name}" in {
+      val underTest = aStateBenefitsUserData.copy(benefitDataType = HmrcData.name)
+
+      underTest.isHmrcData shouldBe true
     }
 
-    "return false when claim.benefitId is None" in {
-      aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = None))).isNewClaim shouldBe true
+    "return false when benefitDataType is any other string" in {
+      val underTest = aStateBenefitsUserData.copy(benefitDataType = "some-string")
+
+      underTest.isHmrcData shouldBe false
+    }
+  }
+
+  ".isCustomerAdded" should {
+    s"return true when benefitDataType is ${CustomerAdded.name}" in {
+      val underTest = aStateBenefitsUserData.copy(benefitDataType = CustomerAdded.name)
+
+      underTest.isCustomerAdded shouldBe true
+    }
+
+    "return false when benefitDataType is any other string" in {
+      val underTest = aStateBenefitsUserData.copy(benefitDataType = "some-string")
+
+      underTest.isCustomerAdded shouldBe false
+    }
+  }
+
+  ".isCustomerOverride" should {
+    s"return true when benefitDataType is ${CustomerOverride.name}" in {
+      val underTest = aStateBenefitsUserData.copy(benefitDataType = CustomerOverride.name)
+
+      underTest.isCustomerOverride shouldBe true
+    }
+
+    "return false when benefitDataType is any other string" in {
+      val underTest = aStateBenefitsUserData.copy(benefitDataType = "some-string")
+
+      underTest.isCustomerOverride shouldBe false
     }
   }
 
@@ -87,7 +147,7 @@ class StateBenefitsUserDataSpec extends UnitTest
         mtdItId = underTest.mtdItId,
         nino = underTest.nino,
         taxYear = underTest.taxYear,
-        isPriorSubmission = underTest.isPriorSubmission,
+        benefitDataType = underTest.benefitDataType,
         claim = Some(encryptedClaimCYAModel),
         lastUpdated = underTest.lastUpdated,
       )
@@ -105,7 +165,7 @@ class StateBenefitsUserDataSpec extends UnitTest
         mtdItId = aStateBenefitsUserData.mtdItId,
         nino = aStateBenefitsUserData.nino,
         taxYear = aStateBenefitsUserData.taxYear,
-        isPriorSubmission = aStateBenefitsUserData.isPriorSubmission,
+        benefitDataType = aStateBenefitsUserData.benefitDataType,
         claim = Some(encryptedClaimCYAModel),
         lastUpdated = aStateBenefitsUserData.lastUpdated
       )
@@ -117,7 +177,7 @@ class StateBenefitsUserDataSpec extends UnitTest
         mtdItId = aStateBenefitsUserData.mtdItId,
         nino = aStateBenefitsUserData.nino,
         taxYear = aStateBenefitsUserData.taxYear,
-        isPriorSubmission = aStateBenefitsUserData.isPriorSubmission,
+        benefitDataType = aStateBenefitsUserData.benefitDataType,
         claim = Some(claimCYAModel),
         lastUpdated = aStateBenefitsUserData.lastUpdated
       )

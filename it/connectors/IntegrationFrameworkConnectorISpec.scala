@@ -91,14 +91,14 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     }
   }
 
-  ".addStateBenefit" should {
+  ".addCustomerStateBenefit" should {
     "return correct IF data when correct parameters are passed" in {
       val httpResponse = HttpResponse(OK, s"""{"benefitId": "$benefitId"}""")
 
       val url = s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/custom"
       stubPostHttpClientCall(url, Json.toJson(anAddStateBenefit).toString(), httpResponse)
 
-      await(underTest.addStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe Right(benefitId)
+      await(underTest.addCustomerStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe Right(benefitId)
     }
 
     "return IF error and perform a pagerDutyLog when Left is returned" in {
@@ -109,19 +109,19 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
       val url = s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/custom"
       stubPostHttpClientCall(url, Json.toJson(anAddStateBenefit).toString(), httpResponse)
 
-      await(underTest.addStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe
+      await(underTest.addCustomerStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
     }
   }
 
-  ".updateStateBenefit" should {
+  ".updateCustomerStateBenefit" should {
     val url = s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/custom/$benefitId"
     "return correct IF data when correct parameters are passed" in {
       val httpResponse = HttpResponse(CREATED, "")
 
       stubPutHttpClientCall(url, Json.toJson(anUpdateStateBenefit).toString(), httpResponse)
 
-      await(underTest.updateStateBenefit(taxYear, nino, benefitId, anUpdateStateBenefit)(hc)) shouldBe Right(())
+      await(underTest.updateCustomerStateBenefit(taxYear, nino, benefitId, anUpdateStateBenefit)(hc)) shouldBe Right(())
     }
 
     "return IF error and perform a pagerDutyLog when Left is returned" in {
@@ -131,7 +131,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       stubPutHttpClientCall(url, Json.toJson(anUpdateStateBenefit).toString(), httpResponse)
 
-      await(underTest.updateStateBenefit(taxYear, nino, benefitId, anUpdateStateBenefit)(hc)) shouldBe
+      await(underTest.updateCustomerStateBenefit(taxYear, nino, benefitId, anUpdateStateBenefit)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
     }
   }

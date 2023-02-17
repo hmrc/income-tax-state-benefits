@@ -17,52 +17,25 @@
 package controllers
 
 import actions.AuthorisedAction
-import models.mongo.StateBenefitsUserData
 import play.api.Logging
-import play.api.libs.json.{JsSuccess, Json}
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import play.api.libs.json.Json
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import services.StateBenefitsService
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import java.util.UUID
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class StateBenefitsController @Inject()(stateBenefitsService: StateBenefitsService,
                                         authorisedAction: AuthorisedAction,
                                         cc: ControllerComponents)
                                        (implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
-  private val invalidRequestLogMessage = "[ClaimDataController][saveUserData] Save state benefits request is invalid"
-
   def getAllStateBenefitsData(nino: String, taxYear: Int): Action[AnyContent] = authorisedAction.async { implicit request =>
     stateBenefitsService.getAllStateBenefitsData(taxYear, nino).map {
       case Right(None) => NoContent
       case Right(Some(allStateBenefitsData)) => Ok(Json.toJson(allStateBenefitsData))
       case Left(_) => InternalServerError
-    }
-  }
-
-  def saveUserData(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit authRequest =>
-    authRequest.request.body.asJson.map(_.validate[StateBenefitsUserData]) match {
-      case Some(data: JsSuccess[StateBenefitsUserData]) => handleSaveUserData(nino, sessionDataId, data.value)
-      case _ =>
-        logger.warn(invalidRequestLogMessage)
-        Future.successful(BadRequest)
-    }
-  }
-
-  private def handleSaveUserData(nino: String, sessionDataId: UUID, userData: StateBenefitsUserData)
-                                (implicit hc: HeaderCarrier): Future[Result] = {
-    if (userData.nino != nino || !userData.sessionDataId.contains(sessionDataId)) {
-      logger.warn(invalidRequestLogMessage)
-      Future.successful(BadRequest)
-    } else {
-      stateBenefitsService.saveUserData(userData).map {
-        case Left(_) => InternalServerError
-        case Right(_) => NoContent
-      }
     }
   }
 }

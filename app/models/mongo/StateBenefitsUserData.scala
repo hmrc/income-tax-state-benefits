@@ -16,6 +16,7 @@
 
 package models.mongo
 
+import models.mongo.BenefitDataType.{CustomerAdded, CustomerOverride, HmrcData}
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
@@ -31,13 +32,15 @@ case class StateBenefitsUserData(benefitType: String,
                                  mtdItId: String,
                                  nino: String,
                                  taxYear: Int,
-                                 isPriorSubmission: Boolean,
+                                 benefitDataType: String,
                                  claim: Option[ClaimCYAModel],
                                  lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)) {
 
-  lazy val isHmrcData: Boolean = claim.exists(_.isHmrcData)
-
-  lazy val isNewClaim: Boolean = claim.exists(_.benefitId.isEmpty)
+  lazy val isPriorSubmission: Boolean = claim.exists(_.benefitId.isDefined)
+  lazy val isNewClaim: Boolean = !isPriorSubmission
+  lazy val isHmrcData: Boolean = benefitDataType == HmrcData.name
+  lazy val isCustomerAdded: Boolean = benefitDataType == CustomerAdded.name
+  lazy val isCustomerOverride: Boolean = benefitDataType == CustomerOverride.name
 
   def encrypted(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): EncryptedStateBenefitsUserData = EncryptedStateBenefitsUserData(
     benefitType: String,
@@ -46,7 +49,7 @@ case class StateBenefitsUserData(benefitType: String,
     mtdItId = mtdItId,
     nino = nino,
     taxYear = taxYear,
-    isPriorSubmission = isPriorSubmission,
+    benefitDataType = benefitDataType,
     claim = claim.map(_.encrypted),
     lastUpdated = lastUpdated
   )
@@ -63,7 +66,7 @@ object StateBenefitsUserData {
       "mtdItId" -> data.mtdItId,
       "nino" -> data.nino,
       "taxYear" -> data.taxYear,
-      "isPriorSubmission" -> data.isPriorSubmission,
+      "benefitDataType" -> data.benefitDataType,
       "claim" -> data.claim,
       "lastUpdated" -> data.lastUpdated
     )
@@ -76,10 +79,10 @@ object StateBenefitsUserData {
       (JsPath \ "mtdItId").read[String] and
       (JsPath \ "nino").read[String] and
       (JsPath \ "taxYear").read[Int] and
-      (JsPath \ "isPriorSubmission").read[Boolean] and
+      (JsPath \ "benefitDataType").read[String] and
       (JsPath \ "claim").readNullable[ClaimCYAModel] and
       (JsPath \ "lastUpdated").readWithDefault[LocalDateTime](LocalDateTime.now(ZoneOffset.UTC))
-    ) (StateBenefitsUserData.apply _)
+    )(StateBenefitsUserData.apply _)
 }
 
 case class EncryptedStateBenefitsUserData(benefitType: String,
@@ -88,7 +91,7 @@ case class EncryptedStateBenefitsUserData(benefitType: String,
                                           mtdItId: String,
                                           nino: String,
                                           taxYear: Int,
-                                          isPriorSubmission: Boolean,
+                                          benefitDataType: String,
                                           claim: Option[EncryptedClaimCYAModel],
                                           lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)) {
 
@@ -99,7 +102,7 @@ case class EncryptedStateBenefitsUserData(benefitType: String,
     mtdItId = mtdItId,
     nino = nino,
     taxYear = taxYear,
-    isPriorSubmission = isPriorSubmission,
+    benefitDataType = benefitDataType,
     claim = claim.map(_.decrypted),
     lastUpdated = lastUpdated
   )

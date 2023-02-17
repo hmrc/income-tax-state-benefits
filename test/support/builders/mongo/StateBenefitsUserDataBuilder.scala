@@ -17,6 +17,7 @@
 package support.builders.mongo
 
 import models.api.BenefitType
+import models.mongo.BenefitDataType.HmrcData
 import models.mongo.StateBenefitsUserData
 import play.api.libs.json.{Format, JsObject, Json}
 import support.builders.UserBuilder.aUser
@@ -36,7 +37,7 @@ object StateBenefitsUserDataBuilder {
     mtdItId = aUser.mtditid,
     nino = "AA123456A",
     taxYear = taxYear,
-    isPriorSubmission = false,
+    benefitDataType = HmrcData.name,
     claim = Some(aClaimCYAModel)
   )
 
@@ -49,7 +50,7 @@ object StateBenefitsUserDataBuilder {
     "mtdItId" -> aStateBenefitsUserData.mtdItId,
     "nino" -> aStateBenefitsUserData.nino,
     "taxYear" -> aStateBenefitsUserData.taxYear,
-    "isPriorSubmission" -> aStateBenefitsUserData.isPriorSubmission,
+    "benefitDataType" -> aStateBenefitsUserData.benefitDataType,
     "claim" -> aClaimCYAModelJson,
     "lastUpdated" -> Json.toJson(aStateBenefitsUserData.lastUpdated)
   )
