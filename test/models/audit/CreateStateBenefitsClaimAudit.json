@@ -1,0 +1,32 @@
+{
+  "auditSource": "income-tax-state-benefits-frontend",
+  "auditType": "CreateStateBenefitsClaim",
+  "eventId": "e777d1d4-7366-4b58-a215-c8c2cd21ffc3",
+  "generatedAt": "2023-01-20T08:53:53.385Z",
+  "metadata": {
+    "metricsKey": "play.income-tax-state-benefits-frontend."
+  },
+  "tags": {
+    "clientIP": "-",
+    "path": "/update-and-submit-income-tax-return/state-benefits/2022/jobseekers-allowance/b766adef-af2f-45f6-9315-a41329d679f3/review-claim",
+    "X-Session-ID": "session-51cfb733-97cc-4551-96b3-175137272ef6",
+    "Akamai-Reputation": "-",
+    "X-Request-ID": "c9b32595-748b-429e-a2fe-1cf2351fe000",
+    "deviceID": "mdtpdi#4a6cca43-7b95-4eaf-ac29-2961e06d50c3#1623076452832_bFA0omyvnugvZ2MEb4M3Kg==",
+    "clientPort": "-",
+    "transactionName": "CreateStateBenefitsClaim"
+  },
+  "detail": {
+    "taxYear": 2022,
+    "userType": "Individual",
+    "nino": "AA123456A",
+    "mtdItId": "1234567890",
+    "benefitType": "jobSeekersAllowance",
+    "claimDetails": {
+      "startDate": "2021-01-01",
+      "endDate": "2022-04-01",
+      "amount": 123,
+      "taxPaid": 100
+    }
+  }
+}
