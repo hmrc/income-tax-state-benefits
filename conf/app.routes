@@ -1,7 +1,6 @@
 # microservice specific routes
 
 GET     /benefits/nino/:nino/tax-year/:taxYear                      controllers.StateBenefitsController.getAllStateBenefitsData(nino: String, taxYear: Int)
-PUT     /benefits/nino/:nino/session/:sessionDataId                 controllers.StateBenefitsController.saveUserData(nino: String, sessionDataId: java.util.UUID)
 
 GET     /prior-data/nino/:nino/tax-year/:taxYear                    controllers.PriorDataController.getPriorData(nino: String, taxYear: Int)
 
@@ -9,5 +8,6 @@ GET     /session-data/nino/:nino/session/:sessionDataId             controllers.
 POST    /session-data                                               controllers.SessionDataController.create()
 PUT     /session-data/nino/:nino/session/:sessionDataId             controllers.SessionDataController.update(nino: String, sessionDataId: java.util.UUID)
 
-DELETE  /claim-data/nino/:nino/session/:sessionDataId               controllers.ClaimDataController.removeClaim(nino: String, sessionDataId: java.util.UUID)
-DELETE  /claim-data/nino/:nino/session/:sessionDataId/ignore        controllers.ClaimDataController.restoreClaim(nino: String, sessionDataId: java.util.UUID)
+PUT     /claim-data/nino/:nino/session/:sessionDataId               controllers.ClaimDataController.save(nino: String, sessionDataId: java.util.UUID)
+DELETE  /claim-data/nino/:nino/session/:sessionDataId               controllers.ClaimDataController.remove(nino: String, sessionDataId: java.util.UUID)
+DELETE  /claim-data/nino/:nino/session/:sessionDataId/ignore        controllers.ClaimDataController.restore(nino: String, sessionDataId: java.util.UUID)

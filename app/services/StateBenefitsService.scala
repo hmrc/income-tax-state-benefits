@@ -30,6 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
+                                     desService: DESService,
                                      submissionService: SubmissionService,
                                      stateBenefitsUserDataRepository: StateBenefitsUserDataRepository)
                                     (implicit ec: ExecutionContext) {
@@ -48,14 +49,25 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
     findSessionData(nino, sessionDataId).value
   }
 
-  def saveUserData(userData: StateBenefitsUserData)
-                  (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
+  def createSessionData(stateBenefitsUserData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] = {
     val response = for {
-      data <- findSessionData(userData.nino, userData.sessionDataId.get)
-      _ <- createOrUpdateStateBenefit(data)
-      _ <- refreshSubmissionServiceData(data)
-      result <- clearSessionData(data)
+      _ <- clearSessionData(stateBenefitsUserData)
+      result <- createOrUpdateUserSessionData(stateBenefitsUserData)
     } yield result
+    response.value
+  }
+
+  def updateSessionData(userData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] =
+    createOrUpdateUserSessionData(userData).value
+
+  def saveClaim(stateBenefitsUserData: StateBenefitsUserData)
+               (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
+    val response = for {
+      data <- findSessionData(stateBenefitsUserData.nino, stateBenefitsUserData.sessionDataId.get)
+      _ <- saveStateBenefitsUserData(data)
+      _ <- refreshSubmissionServiceData(data)
+      _ <- clearSessionData(data)
+    } yield ()
     response.value
   }
 
@@ -63,8 +75,10 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
                  (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
     val response = for {
       userData <- findSessionData(nino, sessionDataId)
-      result <- handleClaimRemovalFor(userData)
-    } yield result
+      _ <- removeStateBenefitUserData(userData)
+      _ <- refreshSubmissionServiceData(userData)
+      _ <- clearSessionData(userData)
+    } yield ()
     response.value
   }
 
@@ -74,37 +88,10 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
       userData <- findSessionData(nino, sessionDataId)
       _ <- unIgnoreClaim(userData)
       _ <- refreshSubmissionServiceData(userData)
-      result <- clearSessionData(userData)
-    } yield result
+      _ <- clearSessionData(userData)
+    } yield ()
     response.value
   }
-
-  def createSessionData(userData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] =
-    deleteAndCreateNewSessionData(userData).value
-
-  def updateSessionData(userData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] =
-    updateExistingSessionData(userData).value
-
-  private def deleteAndCreateNewSessionData(stateBenefitsUserData: StateBenefitsUserData): EitherT[Future, ServiceError, UUID] = for {
-    _ <- clearSessionData(stateBenefitsUserData)
-    result <- createOrUpdateUserSessionData(stateBenefitsUserData)
-  } yield result
-
-  private def updateExistingSessionData(stateBenefitsUserData: StateBenefitsUserData): EitherT[Future, ServiceError, UUID] =
-    createOrUpdateUserSessionData(stateBenefitsUserData)
-
-  private def handleClaimRemovalFor(userData: StateBenefitsUserData)
-                                   (implicit hc: HeaderCarrier): EitherT[Future, ServiceError, Unit] =
-    if (userData.isPriorSubmission) {
-      val benefitId = userData.claim.flatMap(_.benefitId).get
-      for {
-        _ <- removeOrIgnoreClaim(userData, benefitId)
-        _ <- refreshSubmissionServiceData(userData)
-        result <- clearSessionData(userData)
-      } yield result
-    } else {
-      clearSessionData(userData)
-    }
 
   private def findSessionData(nino: String, sessionDataId: UUID): EitherT[Future, ServiceError, StateBenefitsUserData] =
     EitherT(stateBenefitsUserDataRepository.find(nino, sessionDataId))
@@ -113,17 +100,20 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
                                           (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
     EitherT(submissionService.refreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId))
 
-  private def removeOrIgnoreClaim(userData: StateBenefitsUserData, benefitId: UUID)
-                                 (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
-    EitherT(ifService.removeOrIgnoreClaim(userData, benefitId))
+  private def removeStateBenefitUserData(userData: StateBenefitsUserData)
+                                        (implicit hc: HeaderCarrier): EitherT[Future, ServiceError, Unit] = userData match {
+    case _ if userData.isNewClaim => EitherT(Future.successful[Either[ServiceError, Unit]](Right(())))
+    case _ if userData.isCustomerAdded || userData.isHmrcData => EitherT(ifService.removeOrIgnoreClaim(userData))
+    case _ => EitherT(desService.removeCustomerOverride(userData))
+  }
 
   private def unIgnoreClaim(userData: StateBenefitsUserData)
                            (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
     EitherT(ifService.unIgnoreClaim(userData))
 
-  private def createOrUpdateStateBenefit(userData: StateBenefitsUserData)
-                                        (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
-    EitherT(ifService.createOrUpdateStateBenefit(userData))
+  private def saveStateBenefitsUserData(userData: StateBenefitsUserData)
+                                       (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, UUID] =
+    EitherT(ifService.saveStateBenefitsUserData(userData))
 
   private def clearSessionData(userData: StateBenefitsUserData): EitherT[Future, ServiceError, Unit] =
     EitherT(stateBenefitsUserDataRepository.clear(userData.sessionId))

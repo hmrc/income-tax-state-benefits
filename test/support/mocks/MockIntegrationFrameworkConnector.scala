@@ -39,22 +39,22 @@ trait MockIntegrationFrameworkConnector extends MockFactory {
       .returning(Future.successful(result))
   }
 
-  def mockAddStateBenefit(taxYear: Int,
-                          nino: String,
-                          addStateBenefit: AddStateBenefit,
-                          result: Either[ApiError, UUID]): CallHandler4[Int, String, AddStateBenefit, HeaderCarrier, Future[Either[ApiError, UUID]]] = {
-    (mockIntegrationFrameworkConnector.addStateBenefit(_: Int, _: String, _: AddStateBenefit)(_: HeaderCarrier))
+  def mockAddCustomerStateBenefit(taxYear: Int,
+                                  nino: String,
+                                  addStateBenefit: AddStateBenefit,
+                                  result: Either[ApiError, UUID]): CallHandler4[Int, String, AddStateBenefit, HeaderCarrier, Future[Either[ApiError, UUID]]] = {
+    (mockIntegrationFrameworkConnector.addCustomerStateBenefit(_: Int, _: String, _: AddStateBenefit)(_: HeaderCarrier))
       .expects(taxYear, nino, addStateBenefit, *)
       .returning(Future.successful(result))
   }
 
-  def mockUpdateStateBenefit(taxYear: Int,
-                             nino: String,
-                             benefitId: UUID,
-                             updateStateBenefit: UpdateStateBenefit,
-                             result: Either[ApiError, Unit])
+  def mockUpdateCustomerStateBenefit(taxYear: Int,
+                                     nino: String,
+                                     benefitId: UUID,
+                                     updateStateBenefit: UpdateStateBenefit,
+                                     result: Either[ApiError, Unit])
   : CallHandler5[Int, String, UUID, UpdateStateBenefit, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
-    (mockIntegrationFrameworkConnector.updateStateBenefit(_: Int, _: String, _: UUID, _: UpdateStateBenefit)(_: HeaderCarrier))
+    (mockIntegrationFrameworkConnector.updateCustomerStateBenefit(_: Int, _: String, _: UUID, _: UpdateStateBenefit)(_: HeaderCarrier))
       .expects(taxYear, nino, benefitId, updateStateBenefit, *)
       .returning(Future.successful(result))
   }

@@ -18,6 +18,7 @@ package services
 
 import connectors.errors.{ApiError, SingleErrorBody}
 import models.errors.ApiServiceError
+import models.mongo.BenefitDataType.{CustomerAdded, CustomerOverride, HmrcData}
 import play.api.http.Status.INTERNAL_SERVER_ERROR
 import support.UnitTest
 import support.builders.api.AddStateBenefitBuilder.anAddStateBenefit
@@ -57,96 +58,136 @@ class IntegrationFrameworkServiceSpec extends UnitTest
     }
   }
 
-  ".createOrUpdateStateBenefit" when {
-    "new claim" should {
-      "and addStateBenefit returns error then return error" in {
-        val userData = aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = None)))
+  ".saveStateBenefitsUserData" when {
+    "is HMRC data" should {
+      val userData = aStateBenefitsUserData.copy(benefitDataType = HmrcData.name)
+      "return error when" when {
+        "createOrUpdateStateBenefitDetailOverride returns error" in {
+          mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Left(apiError))
 
-        mockAddStateBenefit(userData.taxYear, userData.nino, anAddStateBenefit, Left(apiError))
-
-        await(underTest.createOrUpdateStateBenefit(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+        }
       }
 
-      "and createOrUpdateStateBenefitDetailOverride returns error then return error" in {
-        val userData = aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = None)))
+      "return successful response" when {
+        "all calls succeed" in {
+          mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Right(()))
 
-        mockAddStateBenefit(userData.taxYear, userData.nino, anAddStateBenefit, Right(benefitId))
-        mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Left(apiError))
-
-        await(underTest.createOrUpdateStateBenefit(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
-      }
-
-      "succeed when all calls succeed" in {
-        val userData = aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = None)))
-
-        mockAddStateBenefit(userData.taxYear, userData.nino, anAddStateBenefit, Right(benefitId))
-        mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Right(()))
-
-        await(underTest.createOrUpdateStateBenefit(userData)) shouldBe Right(())
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Right(benefitId)
+        }
       }
     }
 
-    "existing claim" should {
-      "and updateStateBenefit returns error then return error" in {
-        mockUpdateStateBenefit(aStateBenefitsUserData.taxYear, aStateBenefitsUserData.nino, benefitId, anUpdateStateBenefit, Left(apiError))
+    "new claim" should {
+      val userData = aStateBenefitsUserData.copy(benefitDataType = CustomerAdded.name, claim = Some(aClaimCYAModel.copy(benefitId = None)))
+      "return error when" when {
+        "addCustomerStateBenefit returns error" in {
+          mockAddCustomerStateBenefit(userData.taxYear, userData.nino, anAddStateBenefit, Left(apiError))
 
-        await(underTest.createOrUpdateStateBenefit(aStateBenefitsUserData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+        }
+
+        "createOrUpdateStateBenefitDetailOverride returns error" in {
+          mockAddCustomerStateBenefit(userData.taxYear, userData.nino, anAddStateBenefit, Right(benefitId))
+          mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Left(apiError))
+
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+        }
       }
 
-      "and createOrUpdateStateBenefitDetailOverride returns error then return error" in {
-        val userData = aStateBenefitsUserData
+      "return successful response" when {
+        "all calls succeed" in {
+          mockAddCustomerStateBenefit(userData.taxYear, userData.nino, anAddStateBenefit, Right(benefitId))
+          mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Right(()))
 
-        mockUpdateStateBenefit(aStateBenefitsUserData.taxYear, aStateBenefitsUserData.nino, benefitId, anUpdateStateBenefit, Right(()))
-        mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, aStateBenefitsUserData.nino, benefitId, aStateBenefitDetailOverride, Left(apiError))
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Right(benefitId)
+        }
+      }
+    }
 
-        await(underTest.createOrUpdateStateBenefit(aStateBenefitsUserData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+    "is customer added data" should {
+      val userData = aStateBenefitsUserData.copy(benefitDataType = CustomerAdded.name)
+      "return error when" when {
+        "updateCustomerStateBenefit returns error" in {
+          mockUpdateCustomerStateBenefit(userData.taxYear, userData.nino, benefitId, anUpdateStateBenefit, Left(apiError))
+
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+        }
+
+        "createOrUpdateStateBenefitDetailOverride returns error" in {
+          mockUpdateCustomerStateBenefit(userData.taxYear, userData.nino, benefitId, anUpdateStateBenefit, Right(()))
+          mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Left(apiError))
+
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+        }
       }
 
-      "succeed when all calls succeed" in {
-        val userData = aStateBenefitsUserData
+      "return successful response" when {
+        "all calls succeed" in {
+          mockUpdateCustomerStateBenefit(userData.taxYear, userData.nino, benefitId, anUpdateStateBenefit, Right(()))
+          mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Right(()))
 
-        mockUpdateStateBenefit(userData.taxYear, userData.nino, benefitId, anUpdateStateBenefit, Right(()))
-        mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Right(()))
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Right(benefitId)
+        }
+      }
+    }
 
-        await(underTest.createOrUpdateStateBenefit(userData)) shouldBe Right(())
+    "is customer override" should {
+      val userData = aStateBenefitsUserData.copy(benefitDataType = CustomerOverride.name)
+      "return error when" when {
+        "updateCustomerStateBenefit returns error" in {
+          mockUpdateCustomerStateBenefit(userData.taxYear, userData.nino, benefitId, anUpdateStateBenefit, Left(apiError))
+
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+        }
+
+        "createOrUpdateStateBenefitDetailOverride returns error" in {
+          mockUpdateCustomerStateBenefit(userData.taxYear, userData.nino, benefitId, anUpdateStateBenefit, Right(()))
+          mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Left(apiError))
+
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+        }
+      }
+
+      "return successful response" when {
+        "all calls succeed" in {
+          mockUpdateCustomerStateBenefit(userData.taxYear, userData.nino, benefitId, anUpdateStateBenefit, Right(()))
+          mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Right(()))
+
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Right(benefitId)
+        }
       }
     }
   }
 
   ".removeOrIgnoreClaim" when {
+    val userData = aStateBenefitsUserData.copy(benefitDataType = HmrcData.name)
     "is HMRC data" should {
       "and ignoreStateBenefit returns error then return error" in {
-        val userData = aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(isHmrcData = true)))
+        mockIgnoreStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Left(apiError))
 
-        mockIgnoreStateBenefit(userData.taxYear, userData.nino, benefitId, Left(apiError))
-
-        await(underTest.removeOrIgnoreClaim(userData, benefitId)) shouldBe Left(ApiServiceError(apiError.status.toString))
+        await(underTest.removeOrIgnoreClaim(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
       }
 
       "and ignoreStateBenefit succeeds then return success" in {
-        val userData = aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(benefitId = None)))
+        mockIgnoreStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Right(()))
 
-        mockIgnoreStateBenefit(userData.taxYear, userData.nino, benefitId, Right(()))
-
-        await(underTest.removeOrIgnoreClaim(userData, benefitId)) shouldBe Right(())
+        await(underTest.removeOrIgnoreClaim(userData)) shouldBe Right(())
       }
     }
 
     "is customer added data" should {
+      val userData = aStateBenefitsUserData.copy(benefitDataType = CustomerAdded.name)
       "and deleteStateBenefit returns error then return error" in {
-        val userData = aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(isHmrcData = false)))
+        mockDeleteStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Left(apiError))
 
-        mockDeleteStateBenefit(userData.taxYear, userData.nino, benefitId, Left(apiError))
-
-        await(underTest.removeOrIgnoreClaim(userData, benefitId)) shouldBe Left(ApiServiceError(apiError.status.toString))
+        await(underTest.removeOrIgnoreClaim(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
       }
 
       "and deleteStateBenefit succeeds then return success" in {
-        val userData = aStateBenefitsUserData.copy(claim = Some(aClaimCYAModel.copy(isHmrcData = false)))
+        mockDeleteStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Right(()))
 
-        mockDeleteStateBenefit(userData.taxYear, userData.nino, benefitId, Right(()))
-
-        await(underTest.removeOrIgnoreClaim(userData, benefitId)) shouldBe Right(())
+        await(underTest.removeOrIgnoreClaim(userData)) shouldBe Right(())
       }
     }
   }

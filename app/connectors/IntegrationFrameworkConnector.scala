@@ -62,8 +62,8 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     }
   }
 
-  def addStateBenefit(taxYear: Int, nino: String, addStateBenefit: AddStateBenefit)
-                     (implicit hc: HeaderCarrier): Future[Either[ApiError, UUID]] = {
+  def addCustomerStateBenefit(taxYear: Int, nino: String, addStateBenefit: AddStateBenefit)
+                             (implicit hc: HeaderCarrier): Future[Either[ApiError, UUID]] = {
     val url = new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom")
     val getRequestResponse = callAddStateBenefit(url, addStateBenefit)(ifHeaderCarrier(url, addApiVersion))
 
@@ -73,8 +73,8 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     }
   }
 
-  def updateStateBenefit(taxYear: Int, nino: String, benefitId: UUID, updateStateBenefit: UpdateStateBenefit)
-                        (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
+  def updateCustomerStateBenefit(taxYear: Int, nino: String, benefitId: UUID, updateStateBenefit: UpdateStateBenefit)
+                                (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
     val url = new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom/$benefitId")
     val eventualResponse = callUpdateStateBenefit(url, updateStateBenefit)(ifHeaderCarrier(url, updateApiVersion))
 

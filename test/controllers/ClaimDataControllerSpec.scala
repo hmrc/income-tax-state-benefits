@@ -17,13 +17,15 @@
 package controllers
 
 import models.errors.{DataNotFoundError, DataNotUpdatedError}
-import play.api.http.Status.{INTERNAL_SERVER_ERROR, NOT_FOUND, NO_CONTENT}
+import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND, NO_CONTENT}
+import play.api.libs.json.Json
 import play.api.test.Helpers.status
 import support.ControllerUnitTest
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
 import support.mocks.{MockAuthorisedAction, MockStateBenefitsService}
 import support.providers.FakeRequestProvider
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ClaimDataControllerSpec extends ControllerUnitTest
@@ -40,12 +42,58 @@ class ClaimDataControllerSpec extends ControllerUnitTest
     cc = cc
   )
 
-  ".removeClaim" should {
+  ".save" should {
+    "return BadRequest" when {
+      "when data received is in invalid format" in {
+        mockAuthorisation()
+
+        val result = underTest.save(nino, sessionDataId)(fakePutRequest.withJsonBody(Json.parse("""{"wrongFormat": "wrong-value"}""")))
+
+        status(result) shouldBe BAD_REQUEST
+      }
+
+      "when nino is different" in {
+        mockAuthorisation()
+
+        val result = underTest.save("some-nino", sessionDataId)(fakePostRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
+
+        status(result) shouldBe BAD_REQUEST
+      }
+
+      "when sessionDataId is different" in {
+        mockAuthorisation()
+
+        val result = underTest.save(nino, UUID.randomUUID())(fakePostRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
+
+        status(result) shouldBe BAD_REQUEST
+      }
+    }
+
+    "return INTERNAL_SERVER_ERROR when saveUserData returns an error" in {
+      mockAuthorisation()
+      mockSaveUserData(aStateBenefitsUserData, Left(DataNotUpdatedError))
+
+      val result = underTest.save(nino, sessionDataId)(fakePutRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return NoContent when stateBenefitsService returns Right(None)" in {
+      mockAuthorisation()
+      mockSaveUserData(aStateBenefitsUserData, Right(()))
+
+      val result = underTest.save(nino, sessionDataId)(fakePutRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
+
+      status(result) shouldBe NO_CONTENT
+    }
+  }
+
+  ".remove" should {
     "return NotFound when stateBenefitsService.removeClaim(...) returns DataNotFoundError" in {
       mockAuthorisation()
       mockRemoveClaim(nino, sessionDataId, Left(DataNotFoundError))
 
-      val result = underTest.removeClaim(nino, sessionDataId)(fakeDeleteRequest)
+      val result = underTest.remove(nino, sessionDataId)(fakeDeleteRequest)
 
       status(result) shouldBe NOT_FOUND
     }
@@ -54,7 +102,7 @@ class ClaimDataControllerSpec extends ControllerUnitTest
       mockAuthorisation()
       mockRemoveClaim(nino, sessionDataId, Left(DataNotUpdatedError))
 
-      val result = underTest.removeClaim(nino, sessionDataId)(fakeDeleteRequest)
+      val result = underTest.remove(nino, sessionDataId)(fakeDeleteRequest)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -63,20 +111,20 @@ class ClaimDataControllerSpec extends ControllerUnitTest
       mockAuthorisation()
       mockRemoveClaim(nino, sessionDataId, Right(()))
 
-      val result = underTest.removeClaim(nino, sessionDataId)(fakeDeleteRequest)
+      val result = underTest.remove(nino, sessionDataId)(fakeDeleteRequest)
 
       status(result) shouldBe NO_CONTENT
     }
   }
 
-  ".restoreClaim" should {
+  ".restore" should {
     val userData = aStateBenefitsUserData
 
     "return INTERNAL_SERVER_ERROR when restoreClaim returns an error" in {
       mockAuthorisation()
       mockRestoreClaim(userData.nino, sessionDataId, Left(DataNotUpdatedError))
 
-      val result = underTest.restoreClaim(userData.nino, sessionDataId)(fakeDeleteRequest)
+      val result = underTest.restore(userData.nino, sessionDataId)(fakeDeleteRequest)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -85,7 +133,7 @@ class ClaimDataControllerSpec extends ControllerUnitTest
       mockAuthorisation()
       mockRestoreClaim(userData.nino, sessionDataId, Right(()))
 
-      val result = underTest.restoreClaim(userData.nino, sessionDataId)(fakeDeleteRequest)
+      val result = underTest.restore(userData.nino, sessionDataId)(fakeDeleteRequest)
 
       status(result) shouldBe NO_CONTENT
     }

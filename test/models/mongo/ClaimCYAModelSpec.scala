@@ -38,7 +38,6 @@ class ClaimCYAModelSpec extends UnitTest
   private val encryptedAmount = EncryptedValue("encryptedAmount", "some-nonce")
   private val encryptedTaxPaidQuestion = EncryptedValue("encryptedTaxPaidQuestion", "some-nonce")
   private val encryptedTaxPaid = EncryptedValue("encryptedTaxPaid", "some-nonce")
-  private val encryptedIsHmrcData = EncryptedValue("encryptedIsHmrcData", "some-nonce")
 
   "ClaimCYAModel.format" should {
     "write to Json correctly when using implicit formatter" in {
@@ -63,7 +62,6 @@ class ClaimCYAModelSpec extends UnitTest
       (aesGcmAdCrypto.encrypt(_: String)(_: String)).expects(aClaimCYAModel.amount.get.toString, associatedText).returning(encryptedAmount)
       (aesGcmAdCrypto.encrypt(_: String)(_: String)).expects(aClaimCYAModel.taxPaidQuestion.get.toString, associatedText).returning(encryptedTaxPaidQuestion)
       (aesGcmAdCrypto.encrypt(_: String)(_: String)).expects(aClaimCYAModel.taxPaid.get.toString, associatedText).returning(encryptedTaxPaid)
-      (aesGcmAdCrypto.encrypt(_: String)(_: String)).expects(aClaimCYAModel.isHmrcData.toString, associatedText).returning(encryptedIsHmrcData)
 
       aClaimCYAModel.encrypted shouldBe EncryptedClaimCYAModel(
         benefitId = Some(encryptedBenefitId),
@@ -74,8 +72,7 @@ class ClaimCYAModelSpec extends UnitTest
         submittedOn = Some(encryptedSubmittedOn),
         amount = Some(encryptedAmount),
         taxPaidQuestion = Some(encryptedTaxPaidQuestion),
-        taxPaid = Some(encryptedTaxPaid),
-        isHmrcData = encryptedIsHmrcData
+        taxPaid = Some(encryptedTaxPaid)
       )
     }
   }
@@ -100,8 +97,6 @@ class ClaimCYAModelSpec extends UnitTest
         .expects(encryptedTaxPaidQuestion, associatedText).returning(aClaimCYAModel.taxPaidQuestion.get.toString)
       (aesGcmAdCrypto.decrypt(_: EncryptedValue)(_: String))
         .expects(encryptedTaxPaid, associatedText).returning(aClaimCYAModel.taxPaid.get.toString)
-      (aesGcmAdCrypto.decrypt(_: EncryptedValue)(_: String))
-        .expects(encryptedIsHmrcData, associatedText).returning(aClaimCYAModel.isHmrcData.toString)
 
       val encryptedData = EncryptedClaimCYAModel(
         benefitId = Some(encryptedBenefitId),
@@ -112,8 +107,7 @@ class ClaimCYAModelSpec extends UnitTest
         submittedOn = Some(encryptedSubmittedOn),
         amount = Some(encryptedAmount),
         taxPaidQuestion = Some(encryptedTaxPaidQuestion),
-        taxPaid = Some(encryptedTaxPaid),
-        isHmrcData = encryptedIsHmrcData
+        taxPaid = Some(encryptedTaxPaid)
       )
 
       encryptedData.decrypted shouldBe ClaimCYAModel(
@@ -125,8 +119,7 @@ class ClaimCYAModelSpec extends UnitTest
         submittedOn = aClaimCYAModel.submittedOn,
         amount = aClaimCYAModel.amount,
         taxPaidQuestion = aClaimCYAModel.taxPaidQuestion,
-        taxPaid = aClaimCYAModel.taxPaid,
-        isHmrcData = aClaimCYAModel.isHmrcData
+        taxPaid = aClaimCYAModel.taxPaid
       )
     }
   }

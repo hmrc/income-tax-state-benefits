@@ -40,20 +40,19 @@ trait MockIntegrationFrameworkService extends MockFactory {
       .returning(Future.successful(result))
   }
 
-  def mockCreateOrUpdateStateBenefit(userData: StateBenefitsUserData,
-                                     result: Either[ApiServiceError, Unit])
-  : CallHandler2[StateBenefitsUserData, HeaderCarrier, Future[Either[ApiServiceError, Unit]]] = {
-    (mockIntegrationFrameworkService.createOrUpdateStateBenefit(_: StateBenefitsUserData)(_: HeaderCarrier))
+  def mockSaveStateBenefitsUserData(userData: StateBenefitsUserData,
+                                    result: Either[ApiServiceError, UUID])
+  : CallHandler2[StateBenefitsUserData, HeaderCarrier, Future[Either[ApiServiceError, UUID]]] = {
+    (mockIntegrationFrameworkService.saveStateBenefitsUserData(_: StateBenefitsUserData)(_: HeaderCarrier))
       .expects(userData, *)
       .returning(Future.successful(result))
   }
 
   def mockRemoveOrIgnoreClaim(userData: StateBenefitsUserData,
-                              benefitId: UUID,
                               result: Either[ApiServiceError, Unit])
-  : CallHandler3[StateBenefitsUserData, UUID, HeaderCarrier, Future[Either[ApiServiceError, Unit]]] = {
-    (mockIntegrationFrameworkService.removeOrIgnoreClaim(_: StateBenefitsUserData, _: UUID)(_: HeaderCarrier))
-      .expects(userData, benefitId, *)
+  : CallHandler2[StateBenefitsUserData, HeaderCarrier, Future[Either[ApiServiceError, Unit]]] = {
+    (mockIntegrationFrameworkService.removeOrIgnoreClaim(_: StateBenefitsUserData)(_: HeaderCarrier))
+      .expects(userData, *)
       .returning(Future.successful(result))
   }
 

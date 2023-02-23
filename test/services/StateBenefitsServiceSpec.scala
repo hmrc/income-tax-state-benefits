@@ -17,18 +17,20 @@
 package services
 
 import models.errors.{ApiServiceError, DataNotUpdatedError, MongoError}
+import models.mongo.BenefitDataType.{CustomerAdded, CustomerOverride, HmrcData}
 import support.UnitTest
 import support.builders.IncomeTaxUserDataBuilder.anIncomeTaxUserData
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
 import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
-import support.mocks.{MockIntegrationFrameworkService, MockStateBenefitsUserDataRepository, MockSubmissionService}
+import support.mocks.{MockDESService, MockIntegrationFrameworkService, MockStateBenefitsUserDataRepository, MockSubmissionService}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class StateBenefitsServiceSpec extends UnitTest
   with MockIntegrationFrameworkService
+  with MockDESService
   with MockSubmissionService
   with MockStateBenefitsUserDataRepository {
 
@@ -37,9 +39,11 @@ class StateBenefitsServiceSpec extends UnitTest
   private val anyTaxYear = 2022
   private val anyNino = "any-nino"
   private val sessionDataId = aStateBenefitsUserData.sessionDataId.get
+  private val benefitId = aStateBenefitsUserData.claim.get.benefitId.get
 
   private val underTest = new StateBenefitsService(
     mockIntegrationFrameworkService,
+    mockDESService,
     mockSubmissionService,
     mockStateBenefitsUserDataRepository
   )
@@ -99,161 +103,257 @@ class StateBenefitsServiceSpec extends UnitTest
     }
   }
 
-  ".saveUserData" should {
+  ".saveClaim" should {
     "return error when stateBenefitsUserDataRepository.find(...) returns error" in {
       mockFind(aStateBenefitsUserData.nino, aStateBenefitsUserData.sessionDataId.get, Left(DataNotUpdatedError))
 
-      await(underTest.saveUserData(aStateBenefitsUserData)) shouldBe Left(DataNotUpdatedError)
+      await(underTest.saveClaim(aStateBenefitsUserData)) shouldBe Left(DataNotUpdatedError)
     }
 
-    "return error when createOrUpdateStateBenefit fails" in {
+    "return error when ifService.saveStateBenefitsUserData(...) fails" in {
       mockFind(aStateBenefitsUserData.nino, sessionDataId, Right(aStateBenefitsUserData))
-      mockCreateOrUpdateStateBenefit(aStateBenefitsUserData, Left(ApiServiceError("some-error")))
+      mockSaveStateBenefitsUserData(aStateBenefitsUserData, Left(ApiServiceError("some-error")))
 
-      await(underTest.saveUserData(aStateBenefitsUserData)) shouldBe Left(ApiServiceError("some-error"))
+      await(underTest.saveClaim(aStateBenefitsUserData)) shouldBe Left(ApiServiceError("some-error"))
     }
 
-    "return error when refreshStateBenefits fails" in {
+    "return error when submissionService.refreshStateBenefits(...) fails" in {
       val userData = aStateBenefitsUserData
       mockFind(userData.nino, sessionDataId, Right(userData))
-      mockCreateOrUpdateStateBenefit(aStateBenefitsUserData, Right(()))
+      mockSaveStateBenefitsUserData(userData, Right(benefitId))
       mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Left(ApiServiceError("some-error")))
 
-      await(underTest.saveUserData(userData)) shouldBe Left(ApiServiceError("some-error"))
+      await(underTest.saveClaim(userData)) shouldBe Left(ApiServiceError("some-error"))
     }
 
     "return error when clear fails" in {
       val userData = aStateBenefitsUserData
       mockFind(userData.nino, sessionDataId, Right(userData))
-      mockCreateOrUpdateStateBenefit(aStateBenefitsUserData, Right(()))
+      mockSaveStateBenefitsUserData(userData, Right(benefitId))
       mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
       mockClear(userData.sessionId, result = Left(MongoError("some-error")))
 
-      await(underTest.saveUserData(userData)) shouldBe Left(MongoError("some-error"))
+      await(underTest.saveClaim(userData)) shouldBe Left(MongoError("some-error"))
     }
 
-    "perform proper saveUserData when all subsequent calls succeed" in {
+    "perform save a claim when all calls succeed" in {
       val userData = aStateBenefitsUserData
       mockFind(userData.nino, sessionDataId, Right(userData))
-      mockCreateOrUpdateStateBenefit(aStateBenefitsUserData, Right(()))
+      mockSaveStateBenefitsUserData(userData, Right(benefitId))
       mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
       mockClear(userData.sessionId, result = Right(()))
 
-      await(underTest.saveUserData(userData)) shouldBe Right(())
+      await(underTest.saveClaim(userData)) shouldBe Right(())
     }
   }
 
-  ".removeClaim(...)" should {
-    "return error when stateBenefitsUserDataRepository.find(...) returns error" in {
-      mockFind(anyNino, sessionDataId, Left(DataNotUpdatedError))
+  ".removeClaim(...) when" when {
+    "is new claim" should {
+      val userData = aStateBenefitsUserData.copy(benefitDataType = CustomerAdded.name, claim = Some(aClaimCYAModel.copy(benefitId = None)))
+      "return error when" when {
+        "stateBenefitsUserDataRepository.find(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Left(DataNotUpdatedError))
 
-      await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Left(DataNotUpdatedError)
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(DataNotUpdatedError)
+        }
+
+        "submissionService.refreshStateBenefits(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+          mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Left(ApiServiceError("some-error")))
+
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
+        }
+
+        "stateBenefitsUserDataRepository.clear(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+          mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
+          mockClear(userData.sessionId, result = Left(ApiServiceError("some-error")))
+
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
+        }
+      }
+
+      "succeed when all calls succeed" in {
+        mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+        mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
+        mockClear(userData.sessionId, result = Right(()))
+
+        await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Right(())
+      }
     }
 
-    "return error when isPriorSubmission is false and clear from repository fails" in {
-      val userData = aStateBenefitsUserData.copy(isPriorSubmission = false)
-      mockFind(anyNino, sessionDataId, Right(userData))
-      mockClear(userData.sessionId, result = Left(ApiServiceError("some-error")))
+    "is customer added" should {
+      val userData = aStateBenefitsUserData.copy(benefitDataType = CustomerAdded.name)
+      "return error when" when {
+        "stateBenefitsUserDataRepository.find(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Left(DataNotUpdatedError))
 
-      await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Left(ApiServiceError("some-error"))
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(DataNotUpdatedError)
+        }
+
+        "ifService.removeOrIgnoreClaim(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+          mockRemoveOrIgnoreClaim(userData, Left(ApiServiceError("some-error")))
+
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
+        }
+
+        "submissionService.refreshStateBenefits(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+          mockRemoveOrIgnoreClaim(userData, Right(()))
+          mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Left(ApiServiceError("some-error")))
+
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
+        }
+
+        "stateBenefitsUserDataRepository.clear(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+          mockRemoveOrIgnoreClaim(userData, Right(()))
+          mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
+          mockClear(userData.sessionId, result = Left(ApiServiceError("some-error")))
+
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
+        }
+      }
+
+      "succeed when all calls succeed" in {
+        mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+        mockRemoveOrIgnoreClaim(userData, Right(()))
+        mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
+        mockClear(userData.sessionId, result = Right(()))
+
+        await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Right(())
+      }
     }
 
-    "clear repository data when isPriorSubmission is false and clear succeeds" in {
-      val userData = aStateBenefitsUserData.copy(isPriorSubmission = false)
-      mockFind(anyNino, sessionDataId, Right(userData))
-      mockClear(userData.sessionId, result = Right(()))
+    "is HMRC data" should {
+      val userData = aStateBenefitsUserData.copy(benefitDataType = HmrcData.name)
+      "return error when" when {
+        "stateBenefitsUserDataRepository.find(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Left(DataNotUpdatedError))
 
-      await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Right(())
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(DataNotUpdatedError)
+        }
+
+        "ifService.removeOrIgnoreClaim(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+          mockRemoveOrIgnoreClaim(userData, Left(ApiServiceError("some-error")))
+
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
+        }
+
+        "submissionService.refreshStateBenefits(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+          mockRemoveOrIgnoreClaim(userData, Right(()))
+          mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Left(ApiServiceError("some-error")))
+
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
+        }
+
+        "stateBenefitsUserDataRepository.clear(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+          mockRemoveOrIgnoreClaim(userData, Right(()))
+          mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
+          mockClear(userData.sessionId, result = Left(ApiServiceError("some-error")))
+
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
+        }
+      }
+
+      "succeed when all calls succeed" in {
+        mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+        mockRemoveOrIgnoreClaim(userData, Right(()))
+        mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
+        mockClear(userData.sessionId, result = Right(()))
+
+        await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Right(())
+      }
     }
 
-    "return error when isPriorSubmission is true and removeOrIgnoreClaim fails" in {
-      val userData = aStateBenefitsUserData.copy(isPriorSubmission = true)
-      mockFind(anyNino, sessionDataId, Right(userData))
-      mockRemoveOrIgnoreClaim(userData, userData.claim.get.benefitId.get, Left(ApiServiceError("some-error")))
+    "is customer override" should {
+      val userData = aStateBenefitsUserData.copy(benefitDataType = CustomerOverride.name)
+      "return error when" when {
+        "stateBenefitsUserDataRepository.find(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Left(DataNotUpdatedError))
 
-      await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Left(ApiServiceError("some-error"))
-    }
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(DataNotUpdatedError)
+        }
 
-    "return error when isPriorSubmission is true and refreshStateBenefits fails" in {
-      val userData = aStateBenefitsUserData.copy(isPriorSubmission = true)
-      mockFind(anyNino, sessionDataId, Right(userData))
-      mockRemoveOrIgnoreClaim(userData, userData.claim.get.benefitId.get, Right(()))
-      mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Left(ApiServiceError("some-error")))
+        "desService.removeOrIgnoreClaim(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+          mockRemoveCustomerOverride(userData, Left(ApiServiceError("some-error")))
 
-      await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Left(ApiServiceError("some-error"))
-    }
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
+        }
 
-    "return error when isPriorSubmission is true and clear fails" in {
-      val userData = aStateBenefitsUserData.copy(isPriorSubmission = true)
-      mockFind(anyNino, sessionDataId, Right(userData))
-      mockRemoveOrIgnoreClaim(userData, userData.claim.get.benefitId.get, Right(()))
-      mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
-      mockClear(userData.sessionId, result = Left(ApiServiceError("some-error")))
+        "submissionService.refreshStateBenefits(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+          mockRemoveCustomerOverride(userData, Right(()))
+          mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Left(ApiServiceError("some-error")))
 
-      await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Left(ApiServiceError("some-error"))
-    }
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
+        }
 
-    "perform proper remove when isPriorSubmission is true all subsequent calls succeed" in {
-      val userData = aStateBenefitsUserData.copy(isPriorSubmission = true)
-      mockFind(anyNino, sessionDataId, Right(userData))
-      mockRemoveOrIgnoreClaim(userData, userData.claim.get.benefitId.get, Right(()))
-      mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
-      mockClear(userData.sessionId, result = Right(()))
+        "stateBenefitsUserDataRepository.clear(...) fails" in {
+          mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+          mockRemoveCustomerOverride(userData, Right(()))
+          mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
+          mockClear(userData.sessionId, result = Left(ApiServiceError("some-error")))
 
-      await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Right(())
-    }
+          await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
+        }
+      }
 
-    "perform proper remove when isPriorSubmission is true all subsequent calls succeed for Customer added data" in {
-      val userData = aStateBenefitsUserData.copy(isPriorSubmission = true, claim = Some(aClaimCYAModel.copy(isHmrcData = false)))
-      mockFind(anyNino, sessionDataId, Right(userData))
-      mockRemoveOrIgnoreClaim(userData, userData.claim.get.benefitId.get, Right(()))
-      mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
-      mockClear(userData.sessionId, result = Right(()))
+      "succeed when all calls succeed" in {
+        mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
+        mockRemoveCustomerOverride(userData, Right(()))
+        mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
+        mockClear(userData.sessionId, result = Right(()))
 
-      await(underTest.removeClaim(anyNino, sessionDataId)) shouldBe Right(())
+        await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Right(())
+      }
     }
   }
 
   ".restoreClaim(...)" should {
     val userData = aStateBenefitsUserData
-
     "return error when stateBenefitsUserDataRepository.find(...) returns error" in {
-      mockFind(anyNino, sessionDataId, Left(DataNotUpdatedError))
+      mockFind(userData.nino, userData.sessionDataId.get, Left(DataNotUpdatedError))
 
-      await(underTest.restoreClaim(anyNino, sessionDataId)) shouldBe Left(DataNotUpdatedError)
+      await(underTest.restoreClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(DataNotUpdatedError)
     }
 
     "return error when unIgnoreClaim fails" in {
-      mockFind(userData.nino, sessionDataId, Right(userData))
+      mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
       mockUnIgnoreClaim(userData, Left(ApiServiceError("some-error")))
 
-      await(underTest.restoreClaim(userData.nino, sessionDataId)) shouldBe Left(ApiServiceError("some-error"))
+      await(underTest.restoreClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
     }
 
     "return error when refreshStateBenefits fails" in {
-      mockFind(userData.nino, sessionDataId, Right(userData))
+      mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
       mockUnIgnoreClaim(userData, Right(()))
       mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Left(ApiServiceError("some-error")))
 
-      await(underTest.restoreClaim(userData.nino, sessionDataId)) shouldBe Left(ApiServiceError("some-error"))
+      await(underTest.restoreClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
     }
 
     "return error when clear fails" in {
-      mockFind(userData.nino, sessionDataId, Right(userData))
+      mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
       mockUnIgnoreClaim(userData, Right(()))
       mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
       mockClear(userData.sessionId, result = Left(ApiServiceError("some-error")))
 
-      await(underTest.restoreClaim(userData.nino, sessionDataId)) shouldBe Left(ApiServiceError("some-error"))
+      await(underTest.restoreClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(ApiServiceError("some-error"))
     }
 
     "perform unIgnoreClaim when all calls succeed" in {
-      mockFind(userData.nino, sessionDataId, Right(userData))
+      mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
       mockUnIgnoreClaim(userData, Right(()))
       mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
       mockClear(userData.sessionId, result = Right(()))
 
-      await(underTest.restoreClaim(userData.nino, sessionDataId)) shouldBe Right(())
+      await(underTest.restoreClaim(userData.nino, userData.sessionDataId.get)) shouldBe Right(())
     }
   }
 }
