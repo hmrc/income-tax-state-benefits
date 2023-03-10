@@ -29,7 +29,7 @@ trait DatabaseHelper {
 
   def dropStateBenefitsDB(): Unit = {
     await(stateBenefitsDatabase.collection.deleteMany(filter = Document()).toFuture())
-    await(stateBenefitsDatabase.ensureIndexes)
+    await(stateBenefitsDatabase.ensureIndexes())
   }
 
   def insertSessionData(stateBenefitsUserData: StateBenefitsUserData): Unit = {
