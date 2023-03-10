@@ -31,7 +31,7 @@ import uk.gov.hmrc.mongo.MongoUtils
 import utils.AesGcmAdCrypto
 import utils.PagerDutyHelper.PagerDutyKeys.FAILED_TO_CREATE_UPDATE_STATE_BENEFITS_DATA
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.Instant
 import java.util.UUID
 import scala.concurrent.Future
 
@@ -48,7 +48,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
 
   class EmptyDatabase {
     await(underTest.collection.drop().toFuture())
-    await(underTest.ensureIndexes)
+    await(underTest.ensureIndexes())
     await(underTest.collection.countDocuments().toFuture()) shouldBe 0
   }
 
@@ -149,7 +149,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
 
   "find" should {
     "get a document and update the TTL" in new EmptyDatabase {
-      private val now = LocalDateTime.now(ZoneOffset.UTC)
+      private val now = Instant.now()
       private val data = aStateBenefitsUserData.copy(lastUpdated = now)
 
       await(underTest.createOrUpdate(data))

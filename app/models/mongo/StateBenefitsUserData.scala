@@ -23,7 +23,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import utils.AesGcmAdCrypto
 import utils.JsonUtils.jsonObjNoNulls
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.Instant
 import java.util.UUID
 
 case class StateBenefitsUserData(benefitType: String,
@@ -34,7 +34,7 @@ case class StateBenefitsUserData(benefitType: String,
                                  taxYear: Int,
                                  benefitDataType: String,
                                  claim: Option[ClaimCYAModel],
-                                 lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)) {
+                                 lastUpdated: Instant = Instant.now()) {
 
   lazy val isPriorSubmission: Boolean = claim.exists(_.benefitId.isDefined)
   lazy val isNewClaim: Boolean = !isPriorSubmission
@@ -56,7 +56,7 @@ case class StateBenefitsUserData(benefitType: String,
 }
 
 object StateBenefitsUserData {
-  implicit val mongoLocalDateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+  implicit val mongoLocalDateTimeFormats: Format[Instant] = MongoJavatimeFormats.instantFormat
 
   implicit val stateBenefitsUserDataWrites: OWrites[StateBenefitsUserData] = (data: StateBenefitsUserData) => {
     jsonObjNoNulls(
@@ -81,7 +81,7 @@ object StateBenefitsUserData {
       (JsPath \ "taxYear").read[Int] and
       (JsPath \ "benefitDataType").read[String] and
       (JsPath \ "claim").readNullable[ClaimCYAModel] and
-      (JsPath \ "lastUpdated").readWithDefault[LocalDateTime](LocalDateTime.now(ZoneOffset.UTC))
+      (JsPath \ "lastUpdated").readWithDefault[Instant](Instant.now())
     )(StateBenefitsUserData.apply _)
 }
 
@@ -93,7 +93,7 @@ case class EncryptedStateBenefitsUserData(benefitType: String,
                                           taxYear: Int,
                                           benefitDataType: String,
                                           claim: Option[EncryptedClaimCYAModel],
-                                          lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)) {
+                                          lastUpdated: Instant = Instant.now()) {
 
   def decrypted(implicit aesGcmAdCrypto: AesGcmAdCrypto, associatedText: String): StateBenefitsUserData = StateBenefitsUserData(
     benefitType = benefitType,
@@ -109,6 +109,6 @@ case class EncryptedStateBenefitsUserData(benefitType: String,
 }
 
 object EncryptedStateBenefitsUserData {
-  implicit val mongoLocalDateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+  implicit val mongoLocalDateTimeFormats: Format[Instant] = MongoJavatimeFormats.instantFormat
   implicit val format: OFormat[EncryptedStateBenefitsUserData] = Json.format[EncryptedStateBenefitsUserData]
 }

@@ -35,7 +35,7 @@ import utils.AesGcmAdCrypto
 import utils.PagerDutyHelper.PagerDutyKeys._
 import utils.PagerDutyHelper.{PagerDutyKeys, pagerDutyLog}
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.Instant
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -62,7 +62,7 @@ class StateBenefitsUserDataRepositoryImpl @Inject()(mongo: MongoComponent, appCo
 
   override def createOrUpdate(stateBenefitsUserData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] = {
     val userData = stateBenefitsUserData.sessionDataId.fold(stateBenefitsUserData.copy(sessionDataId = Some(UUID.randomUUID())))(_ => stateBenefitsUserData)
-      .copy(lastUpdated = LocalDateTime.now(ZoneOffset.UTC))
+      .copy(lastUpdated = Instant.now())
 
     encryptedFrom(userData) match {
       case Left(error: ServiceError) => Future.successful(Left(error))
@@ -93,7 +93,7 @@ class StateBenefitsUserDataRepositoryImpl @Inject()(mongo: MongoComponent, appCo
   }
 
   private def findBy(sessionDataId: UUID, nino: String): Future[Either[ServiceError, EncryptedStateBenefitsUserData]] = {
-    val update = set("lastUpdated", toBson(LocalDateTime.now(ZoneOffset.UTC))(MongoJavatimeFormats.localDateTimeFormat))
+    val update = set("lastUpdated", toBson(Instant.now())(MongoJavatimeFormats.instantFormat))
     val options = FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
     val eventualResult = collection.findOneAndUpdate(filter(nino, sessionDataId), update, options).toFutureOption().map {
       case Some(data) => Right(data)

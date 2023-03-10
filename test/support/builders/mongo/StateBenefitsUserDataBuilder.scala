@@ -25,7 +25,7 @@ import support.builders.mongo.ClaimCYAModelBuilder.{aClaimCYAModel, aClaimCYAMod
 import support.utils.TaxYearUtils.taxYear
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 object StateBenefitsUserDataBuilder {
@@ -41,7 +41,7 @@ object StateBenefitsUserDataBuilder {
     claim = Some(aClaimCYAModel)
   )
 
-  implicit val mongoLocalDateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+  implicit val mongoLocalDateTimeFormats: Format[Instant] = MongoJavatimeFormats.instantFormat
 
   val aStateBenefitsUserDataJson: JsObject = Json.obj(
     "benefitType" -> aStateBenefitsUserData.benefitType,
