@@ -34,7 +34,7 @@ case class StateBenefitsUserData(benefitType: String,
                                  taxYear: Int,
                                  benefitDataType: String,
                                  claim: Option[ClaimCYAModel],
-                                 lastUpdated: Instant = Instant.now()) {
+                                 lastUpdated: Instant = Instant.ofEpochMilli(Instant.now().toEpochMilli)) {
 
   lazy val isPriorSubmission: Boolean = claim.exists(_.benefitId.isDefined)
   lazy val isNewClaim: Boolean = !isPriorSubmission

@@ -20,7 +20,7 @@ import sbt._
 
 object AppDependencies {
 
-  private val bootstrapBackendPlay28Version = "7.14.0"
+  private val bootstrapBackendPlay28Version = "7.15.0"
   private val hmrcMongoPlay28Version = "1.1.0"
 
   val compile: Seq[ModuleID] = Seq(
@@ -36,7 +36,7 @@ object AppDependencies {
     "uk.gov.hmrc.mongo"       %% "hmrc-mongo-test-play-28"    % hmrcMongoPlay28Version        % Test,
     "org.scalamock"           %% "scalamock"                  % "5.2.0"                       % Test,
     "org.scalatest"           %% "scalatest"                  % "3.2.15"                      % Test,
-    "com.vladsch.flexmark"    %  "flexmark-all"               % "0.62.2"                      % "test, it",
+    "com.vladsch.flexmark"    %  "flexmark-all"               % "0.64.0"                      % "test, it",
     "com.github.tomakehurst"  %  "wiremock-jre8"              % "2.35.0"                      % "test, it"
   )
 }
