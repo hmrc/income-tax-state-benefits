@@ -17,6 +17,7 @@
 package services
 
 import connectors.errors.{ApiError, SingleErrorBody}
+import models.api.UpdateStateBenefit
 import models.errors.ApiServiceError
 import models.mongo.BenefitDataType.{CustomerAdded, CustomerOverride, HmrcData}
 import play.api.http.Status.INTERNAL_SERVER_ERROR
@@ -67,10 +68,19 @@ class IntegrationFrameworkServiceSpec extends UnitTest
 
           await(underTest.saveStateBenefitsUserData(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
         }
+
+        "updateCustomerStateBenefit returns error" in {
+          mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Right(()))
+          mockUpdateCustomerStateBenefit(userData.taxYear, userData.nino, benefitId, UpdateStateBenefit(aClaimCYAModel), Left(apiError))
+
+          await(underTest.saveStateBenefitsUserData(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+        }
       }
 
       "return successful response" when {
         "all calls succeed" in {
+          mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Right(()))
+          mockUpdateCustomerStateBenefit(userData.taxYear, userData.nino, benefitId, UpdateStateBenefit(aClaimCYAModel), Right(()))
           mockCreateOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, aStateBenefitDetailOverride, Right(()))
 
           await(underTest.saveStateBenefitsUserData(userData)) shouldBe Right(benefitId)

@@ -74,7 +74,7 @@ class IntegrationFrameworkService @Inject()(connector: IntegrationFrameworkConne
 
   private def createOrUpdateStateBenefit(userData: StateBenefitsUserData)
                                         (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, UUID] = userData match {
-    case _ if userData.isHmrcData => EitherT(Future.successful[Either[ApiServiceError, UUID]](Right(userData.claim.get.benefitId.get)))
+    case _ if userData.isHmrcData => createCustomerOverride(userData)
     case _ if userData.isNewClaim => addCustomerStateBenefit(userData)
     case _ => updateCustomerStateBenefit(userData)
   }
@@ -97,6 +97,14 @@ class IntegrationFrameworkService @Inject()(connector: IntegrationFrameworkConne
       case Left(error) => Left(ApiServiceError(error.status.toString))
       case Right(_) => Right(benefitId)
     }
+  }
+
+  private def createCustomerOverride(userData: StateBenefitsUserData)
+                                    (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, UUID] = {
+    for {
+      benefitId <- createOrUpdateBenefitDetails(userData, userData.claim.get.benefitId.get)
+      _ <- updateCustomerStateBenefit(userData)
+    } yield benefitId
   }
 
   private def addCustomerStateBenefit(userData: StateBenefitsUserData)
