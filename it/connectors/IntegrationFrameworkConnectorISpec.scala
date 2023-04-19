@@ -52,9 +52,9 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
       "return correct IF data when correct parameters are passed" in {
         val httpResponse = HttpResponse(OK, Json.toJson(anAllStateBenefitsData).toString())
 
-        stubGetHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}", httpResponse)
+        stubGetHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(2023)}", httpResponse)
 
-        await(underTest.getAllStateBenefitsData(taxYear, nino)(hc)) shouldBe Right(Some(anAllStateBenefitsData))
+        await(underTest.getAllStateBenefitsData(2023, nino)(hc)) shouldBe Right(Some(anAllStateBenefitsData))
       }
 
       "return IF error and perform a pagerDutyLog when Left is returned" in {
@@ -62,9 +62,9 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
         (pagerDutyLoggerService.pagerDutyLog _).expects(*, "GetStateBenefitsResponse")
 
-        stubGetHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}", httpResponse)
+        stubGetHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(2023)}", httpResponse)
 
-        await(underTest.getAllStateBenefitsData(taxYear, nino)(hc)) shouldBe
+        await(underTest.getAllStateBenefitsData(2023, nino)(hc)) shouldBe
           Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
       }
     }
