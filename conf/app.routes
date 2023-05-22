@@ -9,5 +9,6 @@ POST    /session-data                                               controllers.
 PUT     /session-data/nino/:nino/session/:sessionDataId             controllers.SessionDataController.update(nino: String, sessionDataId: java.util.UUID)
 
 PUT     /claim-data/nino/:nino/session/:sessionDataId               controllers.ClaimDataController.save(nino: String, sessionDataId: java.util.UUID)
+PUT     /claim-data/nino/:nino                                      controllers.ClaimDataController.saveByData(nino: String)
 DELETE  /claim-data/nino/:nino/session/:sessionDataId               controllers.ClaimDataController.remove(nino: String, sessionDataId: java.util.UUID)
 DELETE  /claim-data/nino/:nino/session/:sessionDataId/ignore        controllers.ClaimDataController.restore(nino: String, sessionDataId: java.util.UUID)

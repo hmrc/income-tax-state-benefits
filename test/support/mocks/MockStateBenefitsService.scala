@@ -75,9 +75,9 @@ trait MockStateBenefitsService extends MockFactory {
   }
 
   def mockSaveUserData(userData: StateBenefitsUserData,
-                       result: Either[ServiceError, Unit]): CallHandler2[StateBenefitsUserData, HeaderCarrier, Future[Either[ServiceError, Unit]]] = {
-    (mockStateBenefitsService.saveClaim(_: StateBenefitsUserData)(_: HeaderCarrier))
-      .expects(userData, *)
+                       result: Either[ServiceError, Unit]): CallHandler3[StateBenefitsUserData, Boolean, HeaderCarrier, Future[Either[ServiceError, Unit]]] = {
+    (mockStateBenefitsService.saveClaim(_: StateBenefitsUserData, _:Boolean)(_: HeaderCarrier))
+      .expects(userData, *, *)
       .returning(Future.successful(result))
   }
 

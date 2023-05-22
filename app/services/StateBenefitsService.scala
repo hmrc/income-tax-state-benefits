@@ -60,10 +60,11 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
   def updateSessionData(userData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] =
     createOrUpdateUserSessionData(userData).value
 
-  def saveClaim(stateBenefitsUserData: StateBenefitsUserData)
+  def saveClaim(stateBenefitsUserData: StateBenefitsUserData, useSessionData: Boolean = true)
                (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
     val response = for {
-      data <- findSessionData(stateBenefitsUserData.nino, stateBenefitsUserData.sessionDataId.get)
+      data <- if (useSessionData) { findSessionData(stateBenefitsUserData.nino, stateBenefitsUserData.sessionDataId.get) }
+                 else {EitherT(Future(Either.cond(test = true, stateBenefitsUserData, ApiServiceError("saveClaim with StateBenefitsUserData"))))}
       _ <- saveStateBenefitsUserData(data)
       _ <- refreshSubmissionServiceData(data)
       _ <- clearSessionData(data)
