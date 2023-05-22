@@ -136,7 +136,7 @@ class StateBenefitsServiceSpec extends UnitTest
       await(underTest.saveClaim(userData)) shouldBe Left(MongoError("some-error"))
     }
 
-    "perform save a claim when all calls succeed" in {
+    "perform save a claim when all calls succeed when provided with a sessionId" in {
       val userData = aStateBenefitsUserData
       mockFind(userData.nino, sessionDataId, Right(userData))
       mockSaveStateBenefitsUserData(userData, Right(benefitId))
@@ -144,6 +144,15 @@ class StateBenefitsServiceSpec extends UnitTest
       mockClear(userData.sessionId, result = Right(()))
 
       await(underTest.saveClaim(userData)) shouldBe Right(())
+    }
+
+    "perform save a claim when all calls succeed when a sessionId is not provided" in {
+      val userData = aStateBenefitsUserData
+      mockSaveStateBenefitsUserData(userData, Right(benefitId))
+      mockRefreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId, Right(()))
+      mockClear(userData.sessionId, result = Right(()))
+
+      await(underTest.saveClaim(userData, useSessionData = false)) shouldBe Right(())
     }
   }
 
