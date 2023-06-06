@@ -44,36 +44,38 @@ class ClaimDataControllerSpec extends ControllerUnitTest
 
   ".save" should {
     for (saveType <- Seq("save by sessionId", "save by userData")) {
-      
+
+      val userData = if (saveType.contains("save by sessionId")) aStateBenefitsUserData else aStateBenefitsUserData.copy(sessionDataId = None)
+
       s"$saveType" should {
 
         "return BadRequest" when {
           s"when data received is in invalid format" in {
             mockAuthorisation()
-            
+
             val request = fakePutRequest.withJsonBody(Json.parse("""{"wrongFormat": "wrong-value"}"""))
             val result =
               if (saveType.contains("save by sessionId")) underTest.save(nino, sessionDataId)(request) else underTest.saveByData(nino)(request)
-              
+
             status(result) shouldBe BAD_REQUEST
           }
 
           s"when nino is different" in {
             mockAuthorisation()
-            
-            val request = fakePostRequest.withJsonBody(Json.toJson(aStateBenefitsUserData))
+
+            val request = fakePostRequest.withJsonBody(Json.toJson(userData))
             val result =
               if (saveType.contains("save by sessionId")) underTest.save("some-nino", sessionDataId)(request) else underTest.saveByData("some-nino")(request)
-              
+
             status(result) shouldBe BAD_REQUEST
           }
 
           if (saveType.contains("save by sessionId")) {
             "when sessionDataId is different" in {
               mockAuthorisation()
-              
-              val result = underTest.save(nino, UUID.randomUUID())(fakePostRequest.withJsonBody(Json.toJson(aStateBenefitsUserData)))
-              
+
+              val result = underTest.save(nino, UUID.randomUUID())(fakePostRequest.withJsonBody(Json.toJson(userData)))
+
               status(result) shouldBe BAD_REQUEST
             }
           }
@@ -81,9 +83,9 @@ class ClaimDataControllerSpec extends ControllerUnitTest
 
         s"should return INTERNAL_SERVER_ERROR when saveUserData returns an error" in {
           mockAuthorisation()
-          mockSaveUserData(aStateBenefitsUserData, Left(DataNotUpdatedError))
+          mockSaveUserData(userData, Left(DataNotUpdatedError))
 
-          val request = fakePutRequest.withJsonBody(Json.toJson(aStateBenefitsUserData))
+          val request = fakePutRequest.withJsonBody(Json.toJson(userData))
           val result =
             if (saveType.contains("save by sessionId")) underTest.save(nino, sessionDataId)(request) else underTest.saveByData(nino)(request)
 
@@ -92,9 +94,9 @@ class ClaimDataControllerSpec extends ControllerUnitTest
 
         s"should return NoContent when stateBenefitsService returns Right(None)" in {
           mockAuthorisation()
-          mockSaveUserData(aStateBenefitsUserData, Right(()))
+          mockSaveUserData(userData, Right(()))
 
-          val request = fakePutRequest.withJsonBody(Json.toJson(aStateBenefitsUserData))
+          val request = fakePutRequest.withJsonBody(Json.toJson(userData))
           val result =
             if (saveType.contains("save by sessionId")) underTest.save(nino, sessionDataId)(request) else underTest.saveByData(nino)(request)
 
