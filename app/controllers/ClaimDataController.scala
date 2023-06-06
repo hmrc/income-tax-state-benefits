@@ -63,7 +63,7 @@ class ClaimDataController @Inject()(authorisedAction: AuthorisedAction,
 
   private def handleSaveUserData(nino: String, sessionDataId: Option[UUID], userData: StateBenefitsUserData)
                                 (implicit hc: HeaderCarrier): Future[Result] = {
-    if (userData.nino != nino || !userData.sessionDataId.exists(sId => sId == sessionDataId.getOrElse(sId))) {
+    if (userData.nino != nino || !userData.sessionDataId.equals(sessionDataId)) {
       logger.warn(invalidRequestLogMessage)
       Future.successful(BadRequest)
     } else {
