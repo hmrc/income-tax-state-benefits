@@ -74,8 +74,8 @@ class IntegrationFrameworkService @Inject()(connector: IntegrationFrameworkConne
 
   private def createOrUpdateStateBenefit(userData: StateBenefitsUserData)
                                         (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, UUID] = userData match {
-    case _ if userData.isHmrcData => createCustomerOverride(userData)
     case _ if userData.isNewClaim => addCustomerStateBenefit(userData)
+    case _ if userData.isHmrcData => createCustomerOverride(userData)
     case _ => updateCustomerStateBenefit(userData)
   }
 
