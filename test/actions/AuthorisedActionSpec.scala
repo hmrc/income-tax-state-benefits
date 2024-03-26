@@ -16,8 +16,8 @@
 
 package actions
 
-import akka.actor.ActorSystem
-import akka.stream.SystemMaterializer
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.SystemMaterializer
 import models.authorisation.Enrolment.{Agent, Individual, Nino}
 import models.requests.AuthorisationRequest
 import play.api.http.Status._
