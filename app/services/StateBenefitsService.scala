@@ -78,8 +78,7 @@ class StateBenefitsService @Inject() (ifService: IntegrationFrameworkService,
     response.value
   }
 
-  def removeClaimNoSession(nino: String, taxYear: Int, mtdItId: String, benefitId: UUID)(implicit
-      hc: HeaderCarrier): Future[Either[ServiceError, Unit]] =
+  def removeClaimById(nino: String, taxYear: Int, mtdItId: String, benefitId: UUID)(implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] =
     (for {
       _ <- EitherT(ifService.removeClaim(nino, taxYear, benefitId))
       _ <- EitherT(submissionService.refreshStateBenefits(taxYear, nino, mtdItId))
