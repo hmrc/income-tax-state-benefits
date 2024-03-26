@@ -54,6 +54,14 @@ class ClaimDataController @Inject()(authorisedAction: AuthorisedAction,
     }
   }
 
+  def removeClaim(nino: String, taxYear: Int, benefitId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
+    stateBenefitsService.removeClaimNoSession(nino, taxYear, request.user.mtditid, benefitId).map {
+      case Left(DataNotFoundError) => NotFound
+      case Left(_) => InternalServerError
+      case Right(_) => NoContent
+    }
+  }
+
   def restore(nino: String, sessionDataId: UUID): Action[AnyContent] = authorisedAction.async { implicit request =>
     stateBenefitsService.restoreClaim(nino, sessionDataId).map {
       case Left(_) => InternalServerError
