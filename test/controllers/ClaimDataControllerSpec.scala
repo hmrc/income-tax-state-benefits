@@ -24,17 +24,15 @@ import support.ControllerUnitTest
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
 import support.mocks.{MockAuthorisedAction, MockStateBenefitsService}
 import support.providers.FakeRequestProvider
+import support.utils.TaxYearUtils.taxYear
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ClaimDataControllerSpec extends ControllerUnitTest
-  with MockAuthorisedAction
-  with MockStateBenefitsService
-  with FakeRequestProvider {
+class ClaimDataControllerSpec extends ControllerUnitTest with MockAuthorisedAction with MockStateBenefitsService with FakeRequestProvider {
 
   private val sessionDataId = aStateBenefitsUserData.sessionDataId.get
-  private val nino = aStateBenefitsUserData.nino
+  private val nino          = aStateBenefitsUserData.nino
 
   private val underTest = new ClaimDataController(
     authorisedAction = mockAuthorisedAction,
@@ -65,7 +63,8 @@ class ClaimDataControllerSpec extends ControllerUnitTest
 
             val request = fakePostRequest.withJsonBody(Json.toJson(userData))
             val result =
-              if (saveType.contains("save by sessionId")) underTest.save("some-nino", sessionDataId)(request) else underTest.saveByData("some-nino")(request)
+              if (saveType.contains("save by sessionId")) underTest.save("some-nino", sessionDataId)(request)
+              else underTest.saveByData("some-nino")(request)
 
             status(result) shouldBe BAD_REQUEST
           }
@@ -130,6 +129,41 @@ class ClaimDataControllerSpec extends ControllerUnitTest
       mockRemoveClaim(nino, sessionDataId, Right(()))
 
       val result = underTest.remove(nino, sessionDataId)(fakeDeleteRequest)
+
+      status(result) shouldBe NO_CONTENT
+    }
+  }
+
+  ".removeClaim" should {
+    "return NotFound when the service returns DataNotFoundError" in {
+      mockAuthorisation()
+      mockRemoveClaimById(nino, sessionDataId, taxYear, mtdItId)(
+        result = Left(DataNotFoundError)
+      )
+
+      val result = underTest.removeClaim(nino, taxYear, sessionDataId)(fakeDeleteRequest)
+
+      status(result) shouldBe NOT_FOUND
+    }
+
+    "return InternalServerError when the service returns any error different than DataNotFoundError" in {
+      mockAuthorisation()
+      mockRemoveClaimById(nino, sessionDataId, taxYear, mtdItId)(
+        result = Left(DataNotUpdatedError)
+      )
+
+      val result = underTest.removeClaim(nino, taxYear, sessionDataId)(fakeDeleteRequest)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return NoContent when the service returns a successful response" in {
+      mockAuthorisation()
+      mockRemoveClaimById(nino, sessionDataId, taxYear, mtdItId)(
+        result = Right(())
+      )
+
+      val result = underTest.removeClaim(nino, taxYear, sessionDataId)(fakeDeleteRequest)
 
       status(result) shouldBe NO_CONTENT
     }
