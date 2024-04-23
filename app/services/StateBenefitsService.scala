@@ -29,29 +29,23 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
-                                     desService: DESService,
-                                     submissionService: SubmissionService,
-                                     stateBenefitsUserDataRepository: StateBenefitsUserDataRepository)
-                                    (implicit ec: ExecutionContext) {
+class StateBenefitsService @Inject() (ifService: IntegrationFrameworkService,
+                                      desService: DESService,
+                                      submissionService: SubmissionService,
+                                      stateBenefitsUserDataRepository: StateBenefitsUserDataRepository)(implicit ec: ExecutionContext) {
 
-  def getAllStateBenefitsData(taxYear: Int, nino: String)
-                             (implicit hc: HeaderCarrier): Future[Either[ServiceError, Option[AllStateBenefitsData]]] = {
+  def getAllStateBenefitsData(taxYear: Int, nino: String)(implicit hc: HeaderCarrier): Future[Either[ServiceError, Option[AllStateBenefitsData]]] =
     ifService.getAllStateBenefitsData(taxYear, nino)
-  }
 
-  def getPriorData(taxYear: Int, nino: String, mtdtid: String)
-                  (implicit hc: HeaderCarrier): Future[Either[ApiServiceError, IncomeTaxUserData]] = {
+  def getPriorData(taxYear: Int, nino: String, mtdtid: String)(implicit hc: HeaderCarrier): Future[Either[ApiServiceError, IncomeTaxUserData]] =
     submissionService.getIncomeTaxUserData(taxYear, nino, mtdtid)
-  }
 
-  def getSessionData(nino: String, sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]] = {
+  def getSessionData(nino: String, sessionDataId: UUID): Future[Either[ServiceError, StateBenefitsUserData]] =
     findSessionData(nino, sessionDataId).value
-  }
 
   def createSessionData(stateBenefitsUserData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] = {
     val response = for {
-      _ <- clearSessionData(stateBenefitsUserData)
+      _      <- clearSessionData(stateBenefitsUserData)
       result <- createOrUpdateUserSessionData(stateBenefitsUserData)
     } yield result
     response.value
@@ -60,11 +54,13 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
   def updateSessionData(userData: StateBenefitsUserData): Future[Either[ServiceError, UUID]] =
     createOrUpdateUserSessionData(userData).value
 
-  def saveClaim(stateBenefitsUserData: StateBenefitsUserData, useSessionData: Boolean = true)
-               (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
+  def saveClaim(stateBenefitsUserData: StateBenefitsUserData, useSessionData: Boolean = true)(implicit
+      hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
     val response = for {
-      data <- if (useSessionData) { findSessionData(stateBenefitsUserData.nino, stateBenefitsUserData.sessionDataId.get) }
-                 else {EitherT(Future(Either.cond(test = true, stateBenefitsUserData, ApiServiceError("saveClaim with StateBenefitsUserData"))))}
+      data <-
+        if (useSessionData) {
+          findSessionData(stateBenefitsUserData.nino, stateBenefitsUserData.sessionDataId.get)
+        } else { EitherT(Future(Either.cond(test = true, stateBenefitsUserData, ApiServiceError("saveClaim with StateBenefitsUserData")))) }
       _ <- saveStateBenefitsUserData(data)
       _ <- refreshSubmissionServiceData(data)
       _ <- clearSessionData(data)
@@ -72,24 +68,28 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
     response.value
   }
 
-  def removeClaim(nino: String, sessionDataId: UUID)
-                 (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
+  def removeClaim(nino: String, sessionDataId: UUID)(implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
     val response = for {
       userData <- findSessionData(nino, sessionDataId)
-      _ <- removeStateBenefitUserData(userData)
-      _ <- refreshSubmissionServiceData(userData)
-      _ <- clearSessionData(userData)
+      _        <- removeStateBenefitUserData(userData)
+      _        <- refreshSubmissionServiceData(userData)
+      _        <- clearSessionData(userData)
     } yield ()
     response.value
   }
 
-  def restoreClaim(nino: String, sessionDataId: UUID)
-                  (implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
+  def removeClaimById(nino: String, taxYear: Int, mtdItId: String, benefitId: UUID)(implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] =
+    (for {
+      _ <- EitherT(ifService.removeClaim(nino, taxYear, benefitId))
+      _ <- EitherT(submissionService.refreshStateBenefits(taxYear, nino, mtdItId))
+    } yield ()).value
+
+  def restoreClaim(nino: String, sessionDataId: UUID)(implicit hc: HeaderCarrier): Future[Either[ServiceError, Unit]] = {
     val response = for {
       userData <- findSessionData(nino, sessionDataId)
-      _ <- unIgnoreClaim(userData)
-      _ <- refreshSubmissionServiceData(userData)
-      _ <- clearSessionData(userData)
+      _        <- unIgnoreClaim(userData)
+      _        <- refreshSubmissionServiceData(userData)
+      _        <- clearSessionData(userData)
     } yield ()
     response.value
   }
@@ -97,23 +97,20 @@ class StateBenefitsService @Inject()(ifService: IntegrationFrameworkService,
   private def findSessionData(nino: String, sessionDataId: UUID): EitherT[Future, ServiceError, StateBenefitsUserData] =
     EitherT(stateBenefitsUserDataRepository.find(nino, sessionDataId))
 
-  private def refreshSubmissionServiceData(userData: StateBenefitsUserData)
-                                          (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
+  private def refreshSubmissionServiceData(userData: StateBenefitsUserData)(implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
     EitherT(submissionService.refreshStateBenefits(userData.taxYear, userData.nino, userData.mtdItId))
 
-  private def removeStateBenefitUserData(userData: StateBenefitsUserData)
-                                        (implicit hc: HeaderCarrier): EitherT[Future, ServiceError, Unit] = userData match {
-    case _ if userData.isNewClaim => EitherT(Future.successful[Either[ServiceError, Unit]](Right(())))
-    case _ if userData.isCustomerAdded || userData.isHmrcData => EitherT(ifService.removeOrIgnoreClaim(userData))
-    case _ => EitherT(desService.removeCustomerOverride(userData))
-  }
+  private def removeStateBenefitUserData(userData: StateBenefitsUserData)(implicit hc: HeaderCarrier): EitherT[Future, ServiceError, Unit] =
+    userData match {
+      case _ if userData.isNewClaim                             => EitherT(Future.successful[Either[ServiceError, Unit]](Right(())))
+      case _ if userData.isCustomerAdded || userData.isHmrcData => EitherT(ifService.removeOrIgnoreClaim(userData))
+      case _                                                    => EitherT(desService.removeCustomerOverride(userData))
+    }
 
-  private def unIgnoreClaim(userData: StateBenefitsUserData)
-                           (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
+  private def unIgnoreClaim(userData: StateBenefitsUserData)(implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =
     EitherT(ifService.unIgnoreClaim(userData))
 
-  private def saveStateBenefitsUserData(userData: StateBenefitsUserData)
-                                       (implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, UUID] =
+  private def saveStateBenefitsUserData(userData: StateBenefitsUserData)(implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, UUID] =
     EitherT(ifService.saveStateBenefitsUserData(userData))
 
   private def clearSessionData(userData: StateBenefitsUserData): EitherT[Future, ServiceError, Unit] =

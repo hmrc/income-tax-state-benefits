@@ -18,6 +18,7 @@ package services
 
 import models.errors.{ApiServiceError, DataNotUpdatedError, MongoError}
 import models.mongo.BenefitDataType.{CustomerAdded, CustomerOverride, HmrcData}
+import org.scalatest.OptionValues.convertOptionToValuable
 import support.UnitTest
 import support.builders.IncomeTaxUserDataBuilder.anIncomeTaxUserData
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
@@ -28,18 +29,19 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class StateBenefitsServiceSpec extends UnitTest
-  with MockIntegrationFrameworkService
-  with MockDESService
-  with MockSubmissionService
-  with MockStateBenefitsUserDataRepository {
+class StateBenefitsServiceSpec
+    extends UnitTest
+    with MockIntegrationFrameworkService
+    with MockDESService
+    with MockSubmissionService
+    with MockStateBenefitsUserDataRepository {
 
   private implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
 
-  private val anyTaxYear = 2022
-  private val anyNino = "any-nino"
+  private val anyTaxYear    = 2022
+  private val anyNino       = "any-nino"
   private val sessionDataId = aStateBenefitsUserData.sessionDataId.get
-  private val benefitId = aStateBenefitsUserData.claim.get.benefitId.get
+  private val benefitId     = aStateBenefitsUserData.claim.get.benefitId.get
 
   private val underTest = new StateBenefitsService(
     mockIntegrationFrameworkService,
@@ -322,6 +324,35 @@ class StateBenefitsServiceSpec extends UnitTest
         await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Right(())
       }
     }
+  }
+
+  ".removeClaimById" should {
+    val userData  = aStateBenefitsUserData.copy(benefitDataType = CustomerAdded.name, claim = Some(aClaimCYAModel.copy(benefitId = None)))
+    val taxYear   = userData.taxYear
+    val nino      = userData.nino
+    val mtdItId   = userData.mtdItId
+    val benefitId = userData.sessionDataId.value
+    "return error when" when {
+      "update cache call fails" in {
+        mockRemoveClaim(nino, taxYear, benefitId)(result = Right(()))
+        mockRefreshStateBenefits(taxYear, nino, mtdItId, Left(ApiServiceError("some-error")))
+
+        await(underTest.removeClaimById(nino, taxYear, mtdItId, benefitId)) shouldBe Left(ApiServiceError("some-error"))
+      }
+      "ifs call fails" in {
+        mockRemoveClaim(nino, taxYear, benefitId)(result = Left(ApiServiceError("some-error")))
+
+        await(underTest.removeClaimById(nino, taxYear, mtdItId, benefitId)) shouldBe Left(ApiServiceError("some-error"))
+      }
+    }
+
+    "succeed when all calls succeed" in {
+      mockRefreshStateBenefits(taxYear, nino, mtdItId, Right(()))
+      mockRemoveClaim(nino, taxYear, benefitId)(result = Right())
+
+      await(underTest.removeClaimById(nino, taxYear, mtdItId, benefitId)) shouldBe Right(())
+    }
+
   }
 
   ".restoreClaim(...)" should {

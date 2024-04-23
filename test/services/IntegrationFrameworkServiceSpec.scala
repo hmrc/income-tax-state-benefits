@@ -20,6 +20,7 @@ import connectors.errors.{ApiError, SingleErrorBody}
 import models.api.UpdateStateBenefit
 import models.errors.ApiServiceError
 import models.mongo.BenefitDataType.{CustomerAdded, CustomerOverride, HmrcData}
+import org.scalatest.OptionValues.convertOptionToValuable
 import play.api.http.Status.INTERNAL_SERVER_ERROR
 import support.UnitTest
 import support.builders.api.AddStateBenefitBuilder.anAddStateBenefit
@@ -34,13 +35,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class IntegrationFrameworkServiceSpec extends UnitTest
-  with MockIntegrationFrameworkConnector
-  with TaxYearProvider {
+class IntegrationFrameworkServiceSpec extends UnitTest with MockIntegrationFrameworkConnector with TaxYearProvider {
 
   private implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
 
-  private val apiError = ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody.parsingError)
+  private val apiError  = ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody.parsingError)
   private val benefitId = aClaimCYAModel.benefitId.get
 
   private val underTest = new IntegrationFrameworkService(mockIntegrationFrameworkConnector)
@@ -198,6 +197,23 @@ class IntegrationFrameworkServiceSpec extends UnitTest
         mockDeleteStateBenefit(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Right(()))
 
         await(underTest.removeOrIgnoreClaim(userData)) shouldBe Right(())
+      }
+    }
+  }
+
+  ".removeClaim" when {
+    val userData = aStateBenefitsUserData.copy(benefitDataType = HmrcData.name)
+    "downstream call is successful" should {
+      "return Unit" in {
+        mockDeleteStateBenefit(userData.taxYear, userData.nino, userData.claim.value.benefitId.value, Right(()))
+        await(underTest.removeClaim(userData.nino, userData.taxYear, userData.claim.value.benefitId.value)) shouldBe Right(())
+      }
+    }
+    "downstream returns an error" should {
+      "return the error status wrapped in ApiServiceError" in {
+        mockDeleteStateBenefit(userData.taxYear, userData.nino, userData.claim.value.benefitId.value, Left(apiError))
+        await(underTest.removeClaim(userData.nino, userData.taxYear, userData.claim.value.benefitId.value)) shouldBe Left(
+          ApiServiceError(apiError.status.toString))
       }
     }
   }

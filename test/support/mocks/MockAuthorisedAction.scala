@@ -30,19 +30,21 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-trait MockAuthorisedAction extends MockFactory
-  with MockAuthConnector {
+trait MockAuthorisedAction extends MockFactory with MockAuthConnector {
 
-  private val mcc = stubMessagesControllerComponents()
+  private val mcc                                        = stubMessagesControllerComponents()
   private val defaultActionBuilder: DefaultActionBuilder = DefaultActionBuilder(mcc.parsers.default)
+
+  protected val mtdItId = "1234567890"
 
   protected val mockAuthorisedAction: AuthorisedAction = new AuthorisedAction(defaultActionBuilder, mockAuthConnector, mcc)
 
   def mockAuthorisation(): CallHandler4[Predicate, Retrieval[_], HeaderCarrier, ExecutionContext, Future[Any]] = {
-    val individualEnrolments: Enrolments = Enrolments(Set(
-      Enrolment(Individual.key, Seq(EnrolmentIdentifier(Individual.value, "1234567890")), "Activated"),
-      Enrolment(Nino.key, Seq(EnrolmentIdentifier(Nino.value, "1234567890")), "Activated")
-    ))
+    val individualEnrolments: Enrolments = Enrolments(
+      Set(
+        Enrolment(Individual.key, Seq(EnrolmentIdentifier(Individual.value, mtdItId)), "Activated"),
+        Enrolment(Nino.key, Seq(EnrolmentIdentifier(Nino.value, mtdItId)), "Activated")
+      ))
 
     mockAuth(individualEnrolments)
   }
