@@ -35,6 +35,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
                                              (implicit ec: ExecutionContext) extends IFConnector {
 
   private val createOrUpdateApiVersion = "1651"
+  private val createOrUpdateApiVersionAfter23 = "1937"
   private val getApiVersion = "1652"
   private val getApi2324Version = "1938"
   private val addApiVersion = "1676"
@@ -89,8 +90,13 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
                                                benefitId: UUID,
                                                stateBenefitDetailOverride: StateBenefitDetailOverride)
                                               (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    val url = new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/$benefitId")
-    val eventualResponse = callCreateOrUpdateDetailOverride(url, stateBenefitDetailOverride)(ifHeaderCarrier(url, createOrUpdateApiVersion))
+
+    val (url, apiVersion) = if (isAfter2324Api(taxYear)) {
+      (new URL(s"$baseUrl/income-tax/${asTys(taxYear)}/income/state-benefits/$nino/$benefitId"), createOrUpdateApiVersionAfter23)
+    } else {
+      (new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/$benefitId"), createOrUpdateApiVersion)
+    }
+    val eventualResponse = callCreateOrUpdateDetailOverride(url, stateBenefitDetailOverride)(ifHeaderCarrier(url, apiVersion))
 
     eventualResponse.map { apiResponse: CreateOrUpdateStateBenefitResponse =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
@@ -187,4 +193,15 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
   private def shouldUse2324(taxYear: Int): Boolean = {
     taxYear == 2024
   }
+
+  private def isAfter2324Api(taxYear: Int): Boolean = {
+    taxYear >= 2024
+  }
+
+  private def asTys(taxYear: Int): String = {
+    val end = taxYear - 2000
+    val start = end - 1
+    s"$start-$end"
+  }
+
 }
