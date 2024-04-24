@@ -47,6 +47,12 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     s"${taxYear - 1}-${taxYear.toString takeRight 2}"
   }
 
+  private def asTys(taxYear: Int): String = {
+    val end = taxYear - 2000
+    val start = end - 1
+    s"$start-$end"
+  }
+
   ".getAllStateBenefitsData" when {
     "when tax year not 23-24" should {
       "return correct IF data when correct parameters are passed" in {
@@ -137,26 +143,50 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
   }
 
   ".createOrUpdateStateBenefitDetailOverride" should {
-    "return correct IF data when correct parameters are passed" in {
+    val taxYearBefore24 = 2023
+
+    "return correct IF data when correct parameters are passed for tax year before 23" in {
       val jsValue = Json.toJson(aStateBenefitDetailOverride)
       val httpResponse = HttpResponse(NO_CONTENT, "")
 
-      stubPutHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/$benefitId", jsValue.toString(), httpResponse)
+      stubPutHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYearBefore24)}/$benefitId", jsValue.toString(), httpResponse)
 
-      await(underTest.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe Right(())
+      await(underTest.createOrUpdateStateBenefitDetailOverride(taxYearBefore24, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe Right(())
     }
 
-    "return IF error and perform a pagerDutyLog when Left is returned" in {
+    "return IF error and perform a pagerDutyLog when Left is returned for tax year before 23" in {
       val jsValue = Json.toJson(aStateBenefitDetailOverride)
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
       (pagerDutyLoggerService.pagerDutyLog _).expects(*, "CreateOrUpdateStateBenefitResponse")
 
-      stubPutHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/$benefitId", jsValue.toString(), httpResponse)
+      stubPutHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYearBefore24)}/$benefitId", jsValue.toString(), httpResponse)
+
+      await(underTest.createOrUpdateStateBenefitDetailOverride(taxYearBefore24, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe
+        Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+    }
+
+    "return correct IF data when correct parameters are passed for tax year after 23" in {
+      val jsValue = Json.toJson(aStateBenefitDetailOverride)
+      val httpResponse = HttpResponse(NO_CONTENT, "")
+
+      stubPutHttpClientCall(s"/if/income-tax/${asTys(taxYear)}/income/state-benefits/$nino/$benefitId", jsValue.toString(), httpResponse)
+
+      await(underTest.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe Right(())
+    }
+
+    "return IF error and perform a pagerDutyLog when Left is returned for tax year after 23" in {
+      val jsValue = Json.toJson(aStateBenefitDetailOverride)
+      val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
+
+      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "CreateOrUpdateStateBenefitResponse")
+
+      stubPutHttpClientCall(s"/if/income-tax/${asTys(taxYear)}/income/state-benefits/$nino/$benefitId", jsValue.toString(), httpResponse)
 
       await(underTest.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
     }
+
   }
 
   ".deleteStateBenefitDetailOverride" should {
