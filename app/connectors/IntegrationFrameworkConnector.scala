@@ -21,7 +21,7 @@ import connectors.errors.ApiError
 import connectors.responses._
 import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride, UpdateStateBenefit}
 import services.PagerDutyLoggerService
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, StringContextOps}
 
 import java.net.URL
 import java.util.UUID
@@ -43,6 +43,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
   private val deleteApiVersion = "1678"
   private val deleteApi2324Version = "1796"
   private val ignoreApiVersion = "1679"
+  private val ignoreApi2324Version = "1944"
   private val unIgnoreApiVersion = "1700"
 
   override protected[connectors] val appConfig: AppConfig = appConf
@@ -130,8 +131,13 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
                          nino: String,
                          benefitId: UUID)
                         (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    val url = new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/ignore/$benefitId")
-    val eventualResponse = callIgnoreStateBenefit(url)(ifHeaderCarrier(url, ignoreApiVersion))
+
+    val (url, apiVersion) = if (isAfter2324Api(taxYear)) {
+      (url"$baseUrl/income-tax/${asTys(taxYear)}/income/state-benefits/$nino/ignore/$benefitId", ignoreApi2324Version)
+    } else {
+      (url"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/ignore/$benefitId", ignoreApiVersion)
+    }
+    val eventualResponse = callIgnoreStateBenefit(url)(ifHeaderCarrier(url, apiVersion))
 
     eventualResponse.map { apiResponse: IgnoreStateBenefitResponse =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
