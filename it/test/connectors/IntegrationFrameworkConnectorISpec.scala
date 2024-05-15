@@ -272,10 +272,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
   }
 
   ".unIgnoreStateBenefit" should {
+    val taxYearBefore24 = 2023
     "return correct IF response when correct parameters are passed" in {
       val httpResponse = HttpResponse(NO_CONTENT, "")
 
-      stubDeleteHttpClientCall(s"/if/income-tax/state-benefits/$nino/${toTaxYearParameter(taxYear)}/ignore/$benefitId", httpResponse)
+      stubDeleteHttpClientCall(s"/if/income-tax/${asTys(taxYear)}/state-benefits/$nino/ignore/$benefitId", httpResponse)
 
       await(underTest.unIgnoreStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe Right(())
     }
@@ -285,9 +286,28 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       (pagerDutyLoggerService.pagerDutyLog _).expects(*, "UnIgnoreStateBenefitResponse")
 
-      stubDeleteHttpClientCall(s"/if/income-tax/state-benefits/$nino/${toTaxYearParameter(taxYear)}/ignore/$benefitId", httpResponse)
+      stubDeleteHttpClientCall(s"/if/income-tax/${asTys(taxYear)}/state-benefits/$nino/ignore/$benefitId", httpResponse)
 
       await(underTest.unIgnoreStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe
+        Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+    }
+
+    "return correct IF response when correct parameters are passed before 23-24" in {
+      val httpResponse = HttpResponse(NO_CONTENT, "")
+
+      stubDeleteHttpClientCall(s"/if/income-tax/state-benefits/$nino/${toTaxYearParameter(taxYearBefore24)}/ignore/$benefitId", httpResponse)
+
+      await(underTest.unIgnoreStateBenefit(taxYearBefore24, nino, benefitId)(hc)) shouldBe Right(())
+    }
+
+    "return IF error and perform a pagerDutyLog when Left is returned before 23-24" in {
+      val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
+
+      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "UnIgnoreStateBenefitResponse")
+
+      stubDeleteHttpClientCall(s"/if/income-tax/state-benefits/$nino/${toTaxYearParameter(taxYearBefore24)}/ignore/$benefitId", httpResponse)
+
+      await(underTest.unIgnoreStateBenefit(taxYearBefore24, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
     }
   }

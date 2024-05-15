@@ -45,6 +45,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
   private val ignoreApiVersion = "1679"
   private val ignoreApi2324Version = "1944"
   private val unIgnoreApiVersion = "1700"
+  private val unIgnoreApi2324Version = "1945"
 
   override protected[connectors] val appConfig: AppConfig = appConf
 
@@ -149,8 +150,13 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
                            nino: String,
                            benefitId: UUID)
                           (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    val url = new URL(s"$baseUrl/income-tax/state-benefits/$nino/${toTaxYearParam(taxYear)}/ignore/$benefitId")
-    val eventualResponse = callUnIgnoreStateBenefit(url)(ifHeaderCarrier(url, unIgnoreApiVersion))
+
+    val (url, apiVersion) = if (isAfter2324Api(taxYear)) {
+      (url"$baseUrl/income-tax/${asTys(taxYear)}/state-benefits/$nino/ignore/$benefitId", unIgnoreApi2324Version)
+    } else {
+      (url"$baseUrl/income-tax/state-benefits/$nino/${toTaxYearParam(taxYear)}/ignore/$benefitId", unIgnoreApiVersion)
+    }
+    val eventualResponse = callUnIgnoreStateBenefit(url)(ifHeaderCarrier(url, apiVersion))
 
     eventualResponse.map { apiResponse: UnIgnoreStateBenefitResponse =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
