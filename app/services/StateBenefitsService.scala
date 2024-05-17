@@ -30,7 +30,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class StateBenefitsService @Inject() (ifService: IntegrationFrameworkService,
-                                      desService: DESService,
                                       submissionService: SubmissionService,
                                       stateBenefitsUserDataRepository: StateBenefitsUserDataRepository)(implicit ec: ExecutionContext) {
 
@@ -104,7 +103,7 @@ class StateBenefitsService @Inject() (ifService: IntegrationFrameworkService,
     userData match {
       case _ if userData.isNewClaim                             => EitherT(Future.successful[Either[ServiceError, Unit]](Right(())))
       case _ if userData.isCustomerAdded || userData.isHmrcData => EitherT(ifService.removeOrIgnoreClaim(userData))
-      case _                                                    => EitherT(desService.removeCustomerOverride(userData))
+      case _                                                    => EitherT(ifService.removeCustomerOverride(userData))
     }
 
   private def unIgnoreClaim(userData: StateBenefitsUserData)(implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, Unit] =

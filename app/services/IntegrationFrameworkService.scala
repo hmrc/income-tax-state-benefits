@@ -29,18 +29,18 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class IntegrationFrameworkService @Inject() (connector: IntegrationFrameworkConnector)(implicit ec: ExecutionContext) {
+class IntegrationFrameworkService @Inject()(connector: IntegrationFrameworkConnector)(implicit ec: ExecutionContext) {
 
   def getAllStateBenefitsData(taxYear: Int, nino: String)(implicit hc: HeaderCarrier): Future[Either[ApiServiceError, Option[AllStateBenefitsData]]] =
     connector.getAllStateBenefitsData(taxYear, nino).map {
-      case Left(error)                 => Left(ApiServiceError(error.status.toString))
+      case Left(error) => Left(ApiServiceError(error.status.toString))
       case Right(allStateBenefitsData) => Right(allStateBenefitsData)
     }
 
   def saveStateBenefitsUserData(stateBenefitsUserData: StateBenefitsUserData)(implicit hc: HeaderCarrier): Future[Either[ApiServiceError, UUID]] = {
     val response = for {
       benefitId <- createOrUpdateStateBenefit(stateBenefitsUserData)
-      result    <- createOrUpdateBenefitDetails(stateBenefitsUserData, benefitId)
+      result <- createOrUpdateBenefitDetails(stateBenefitsUserData, benefitId)
     } yield result
     response.value
   }
@@ -55,8 +55,18 @@ class IntegrationFrameworkService @Inject() (connector: IntegrationFrameworkConn
 
     eventualIgnoreOrDelete.map {
       case Left(error) => Left(ApiServiceError(error.status.toString))
-      case Right(_)    => Right(())
+      case Right(_) => Right(())
     }
+  }
+
+  def removeCustomerOverride(stateBenefitsUserData: StateBenefitsUserData)
+                            (implicit hc: HeaderCarrier): Future[Either[ApiServiceError, Unit]] = {
+    connector
+      .deleteStateBenefitDetailOverride(stateBenefitsUserData.taxYear, stateBenefitsUserData.nino, stateBenefitsUserData.claim.get.benefitId.get)
+      .map {
+        case Left(error) => Left(ApiServiceError(error.status.toString))
+        case Right(_) => Right(())
+      }
   }
 
   def removeClaim(nino: String, taxYear: Int, benefitId: UUID)(implicit hc: HeaderCarrier): Future[Either[ApiServiceError, Unit]] = {
@@ -69,7 +79,7 @@ class IntegrationFrameworkService @Inject() (connector: IntegrationFrameworkConn
     val benefitId = stateBenefitsUserData.claim.get.benefitId.get
     connector.unIgnoreStateBenefit(stateBenefitsUserData.taxYear, stateBenefitsUserData.nino, benefitId).map {
       case Left(error) => Left(ApiServiceError(error.status.toString))
-      case Right(_)    => Right(())
+      case Right(_) => Right(())
     }
   }
 
@@ -77,16 +87,16 @@ class IntegrationFrameworkService @Inject() (connector: IntegrationFrameworkConn
     userData match {
       case _ if userData.isNewClaim => addCustomerStateBenefit(userData)
       case _ if userData.isHmrcData => createCustomerOverride(userData)
-      case _                        => updateCustomerStateBenefit(userData)
+      case _ => updateCustomerStateBenefit(userData)
     }
 
   private def createOrUpdateBenefitDetails(userData: StateBenefitsUserData, benefitId: UUID)(implicit
-      hc: HeaderCarrier): EitherT[Future, ApiServiceError, UUID] = EitherT {
-    val claimData      = userData.claim.get
+                                                                                             hc: HeaderCarrier): EitherT[Future, ApiServiceError, UUID] = EitherT {
+    val claimData = userData.claim.get
     val detailOverride = StateBenefitDetailOverride(claimData.amount.get, claimData.taxPaid)
     connector.createOrUpdateStateBenefitDetailOverride(userData.taxYear, userData.nino, benefitId, detailOverride).map {
       case Left(error) => Left(ApiServiceError(error.status.toString))
-      case Right(_)    => Right(benefitId)
+      case Right(_) => Right(benefitId)
     }
   }
 
@@ -96,19 +106,19 @@ class IntegrationFrameworkService @Inject() (connector: IntegrationFrameworkConn
       val benefitId = claimData.benefitId.get
       connector.updateCustomerStateBenefit(userData.taxYear, userData.nino, benefitId, UpdateStateBenefit(claimData)).map {
         case Left(error) => Left(ApiServiceError(error.status.toString))
-        case Right(_)    => Right(benefitId)
+        case Right(_) => Right(benefitId)
       }
     }
 
   private def createCustomerOverride(userData: StateBenefitsUserData)(implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, UUID] =
     for {
       benefitId <- createOrUpdateBenefitDetails(userData, userData.claim.get.benefitId.get)
-      _         <- updateCustomerStateBenefit(userData)
+      _ <- updateCustomerStateBenefit(userData)
     } yield benefitId
 
   private def addCustomerStateBenefit(userData: StateBenefitsUserData)(implicit hc: HeaderCarrier): EitherT[Future, ApiServiceError, UUID] = EitherT {
     connector.addCustomerStateBenefit(userData.taxYear, userData.nino, AddStateBenefit(userData.benefitType, userData.claim.get)).map {
-      case Left(error)      => Left(ApiServiceError(error.status.toString))
+      case Left(error) => Left(ApiServiceError(error.status.toString))
       case Right(benefitId) => Right(benefitId)
     }
   }

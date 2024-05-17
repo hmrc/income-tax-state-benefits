@@ -32,7 +32,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class StateBenefitsServiceSpec
     extends UnitTest
     with MockIntegrationFrameworkService
-    with MockDESService
     with MockSubmissionService
     with MockStateBenefitsUserDataRepository {
 
@@ -45,7 +44,6 @@ class StateBenefitsServiceSpec
 
   private val underTest = new StateBenefitsService(
     mockIntegrationFrameworkService,
-    mockDESService,
     mockSubmissionService,
     mockStateBenefitsUserDataRepository
   )
