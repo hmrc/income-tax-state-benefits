@@ -96,4 +96,13 @@ trait MockIntegrationFrameworkConnector extends MockFactory {
       .expects(taxYear, nino, benefitId, *)
       .returning(Future.successful(result))
   }
+
+  def mockDeleteStateBenefitDetailOverride(taxYear: Int,
+                                           nino: String,
+                                           benefitId: UUID,
+                                           result: Either[ApiError, Unit]): CallHandler4[Int, String, UUID, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
+    (mockIntegrationFrameworkConnector.deleteStateBenefitDetailOverride(_: Int, _: String, _: UUID)(_: HeaderCarrier))
+      .expects(taxYear, nino, benefitId, *)
+      .returning(Future.successful(result))
+  }
 }

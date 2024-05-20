@@ -68,4 +68,13 @@ trait MockIntegrationFrameworkService extends MockFactory {
       .unIgnoreClaim(_: StateBenefitsUserData)(_: HeaderCarrier))
       .expects(userData, *)
       .returning(Future.successful(result))
+
+  def mockRemoveCustomerOverride(userData: StateBenefitsUserData,
+                                 result: Either[ApiServiceError, Unit]
+                                ): CallHandler2[StateBenefitsUserData, HeaderCarrier, Future[Either[ApiServiceError, Unit]]] = {
+    (mockIntegrationFrameworkService.removeCustomerOverride(_: StateBenefitsUserData)(_: HeaderCarrier))
+      .expects(userData, *)
+      .returning(Future.successful(result))
+  }
+
 }

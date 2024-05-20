@@ -41,7 +41,8 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
   private val addApiVersion = "1676"
   private val updateApiVersion = "1677"
   private val deleteApiVersion = "1678"
-  private val deleteApi2324Version = "1796"
+  private val deleteOverrideApiVersion = "1653"
+  private val deleteOverrideApi2324Version = "1796"
   private val ignoreApiVersion = "1679"
   private val ignoreApi2324Version = "1944"
   private val unIgnoreApiVersion = "1700"
@@ -106,10 +107,16 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
     }
   }
 
-  def deleteStateBenefitDetailOverride(nino: String, benefitId: UUID)
+  def deleteStateBenefitDetailOverride(taxYear: Int, nino: String, benefitId: UUID)
                                       (implicit hc: HeaderCarrier): Future[Either[ApiError, Unit]] = {
-    val url = new URL(s"$baseUrl/income-tax/income/state-benefits/23-24/$nino/$benefitId")
-    val eventualResponse = callDeleteStateBenefitDetailOverride(url)(ifHeaderCarrier(url, deleteApi2324Version))
+
+    val (url, apiVersion) = if (isAfter2324Api(taxYear)) {
+      (new URL(s"$baseUrl/income-tax/income/state-benefits/${asTys(taxYear)}/$nino/$benefitId"), deleteOverrideApi2324Version)
+    } else {
+      (new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/$benefitId"), deleteOverrideApiVersion)
+    }
+
+    val eventualResponse = callDeleteStateBenefitDetailOverride(url)(ifHeaderCarrier(url, apiVersion))
 
     eventualResponse.map { apiResponse: DeleteStateBenefitDetailOverrideResponse =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)

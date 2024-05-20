@@ -201,6 +201,21 @@ class IntegrationFrameworkServiceSpec extends UnitTest with MockIntegrationFrame
     }
   }
 
+  ".removeCustomerOverride" should {
+    val userData = aStateBenefitsUserData
+    "return error when connector.deleteStateBenefitDetailOverride(...) fails" in {
+      mockDeleteStateBenefitDetailOverride(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Left(apiError))
+
+      await(underTest.removeCustomerOverride(userData)) shouldBe Left(ApiServiceError(apiError.status.toString))
+    }
+
+    "succeed when connector.deleteStateBenefitDetailOverride(...) succeeds" in {
+      mockDeleteStateBenefitDetailOverride(userData.taxYear, userData.nino, userData.claim.get.benefitId.get, Right(()))
+
+      await(underTest.removeCustomerOverride(userData)) shouldBe Right(())
+    }
+  }
+
   ".removeClaim" when {
     val userData = aStateBenefitsUserData.copy(benefitDataType = HmrcData.name)
     "downstream call is successful" should {
