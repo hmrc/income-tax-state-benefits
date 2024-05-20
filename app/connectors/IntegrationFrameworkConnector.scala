@@ -52,8 +52,8 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   def getAllStateBenefitsData(taxYear: Int, nino: String)
                              (implicit hc: HeaderCarrier): Future[Either[ApiError, Option[AllStateBenefitsData]]] = {
-    val (url, apiVersion) = if (shouldUse2324(taxYear)) {
-      (new URL(s"$baseUrl/income-tax/income/state-benefits/23-24/$nino"), getApi2324Version)
+    val (url, apiVersion) = if (isAfter2324Api(taxYear)) {
+      (new URL(s"$baseUrl/income-tax/income/state-benefits/${asTys(taxYear)}/$nino"), getApi2324Version)
     } else {
       (new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}"), getApiVersion)
     }
@@ -207,10 +207,6 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   private def toTaxYearParam(taxYear: Int): String = {
     s"${taxYear - 1}-${taxYear.toString takeRight 2}"
-  }
-
-  private def shouldUse2324(taxYear: Int): Boolean = {
-    taxYear == 2024
   }
 
   private def isAfter2324Api(taxYear: Int): Boolean = {
