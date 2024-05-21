@@ -24,7 +24,7 @@ import support.builders.IncomeTaxUserDataBuilder.anIncomeTaxUserData
 import support.builders.api.AllStateBenefitsDataBuilder.anAllStateBenefitsData
 import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
-import support.mocks.{MockDESService, MockIntegrationFrameworkService, MockStateBenefitsUserDataRepository, MockSubmissionService}
+import support.mocks.{MockIntegrationFrameworkService, MockStateBenefitsUserDataRepository, MockSubmissionService}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -288,7 +288,7 @@ class StateBenefitsServiceSpec
           await(underTest.removeClaim(userData.nino, userData.sessionDataId.get)) shouldBe Left(DataNotUpdatedError)
         }
 
-        "desService.removeOrIgnoreClaim(...) fails" in {
+        "removeOrIgnoreClaim(...) fails" in {
           mockFind(userData.nino, userData.sessionDataId.get, Right(userData))
           mockRemoveCustomerOverride(userData, Left(ApiServiceError("some-error")))
 
