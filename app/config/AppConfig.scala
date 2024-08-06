@@ -31,6 +31,9 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
 
   lazy val submissionBaseUrl: String = s"${servicesConfig.baseUrl(serviceName = "income-tax-submission")}/income-tax-submission-service"
 
+  lazy val stateBenefitsFrontendUrl: String =
+    s"${servicesConfig.getString("microservice.services.income-tax-state-benefits-frontend.url")}/update-and-submit-income-tax-return/state-benefits"
+
   //Mongo config
   lazy val encryptionKey: String = servicesConfig.getString("mongodb.encryption.key")
   lazy val mongoTTL: Int = Duration(servicesConfig.getString("mongodb.timeToLive")).toMinutes.toInt
