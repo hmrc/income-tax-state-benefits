@@ -29,7 +29,7 @@ class SectionTitleSpec extends AnyFreeSpec with Matchers {
     "must parse to and from json" in {
       val underTest = Json.toJson(EsaTitle)
 
-      underTest.toString() mustBe s"\"${EsaTitle.toString}\""
+      underTest.toString() mustBe s"\"$EsaTitle\""
       underTest.validate[SectionTitle] mustBe JsSuccess(EsaTitle, JsPath())
     }
   }
@@ -39,7 +39,7 @@ class SectionTitleSpec extends AnyFreeSpec with Matchers {
     "must parse to and from json" in {
       val underTest = Json.toJson(JsaTitle)
 
-      underTest.toString() mustBe s"\"${JsaTitle.toString}\""
+      underTest.toString() mustBe s"\"$JsaTitle\""
       underTest.validate[SectionTitle] mustBe JsSuccess(JsaTitle, JsPath())
     }
   }
