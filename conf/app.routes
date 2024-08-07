@@ -13,3 +13,6 @@ PUT     /claim-data/nino/:nino                                      controllers.
 DELETE  /claim-data/nino/:nino/session/:sessionDataId               controllers.ClaimDataController.remove(nino: String, sessionDataId: java.util.UUID)
 DELETE  /claim-data/nino/:nino/:taxYear/:benefitId/remove           controllers.ClaimDataController.removeClaim(nino: String, taxYear: Int, benefitId: java.util.UUID)
 DELETE  /claim-data/nino/:nino/session/:sessionDataId/ignore        controllers.ClaimDataController.restore(nino: String, sessionDataId: java.util.UUID)
+
+GET     /:taxYear/tasks/:nino                                       controllers.CommonTaskListController.getCommonTaskList(taxYear: Int, nino: String)
+
