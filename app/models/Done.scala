@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-package config
+package models
 
-import com.google.inject.AbstractModule
-import repositories.{StateBenefitsUserDataRepository, StateBenefitsUserDataRepositoryImpl}
-import utils.StartUpLogging
-
-import java.time.Clock
-
-class Module extends AbstractModule {
-  override def configure(): Unit = {
-    bind(classOf[AppConfig]).asEagerSingleton()
-    bind(classOf[Clock]).toInstance(Clock.systemUTC())
-    bind(classOf[StateBenefitsUserDataRepository]).to(classOf[StateBenefitsUserDataRepositoryImpl]).asEagerSingleton()
-    bind(classOf[StartUpLogging]).asEagerSingleton()
-  }
-}
+sealed abstract class Done
+object Done extends Done

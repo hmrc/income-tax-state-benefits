@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package config
+package models
 
-import com.google.inject.AbstractModule
-import repositories.{StateBenefitsUserDataRepository, StateBenefitsUserDataRepositoryImpl}
-import utils.StartUpLogging
+import play.api.mvc.PathBindable
 
-import java.time.Clock
+object TaxYearPathBindable {
 
-class Module extends AbstractModule {
-  override def configure(): Unit = {
-    bind(classOf[AppConfig]).asEagerSingleton()
-    bind(classOf[Clock]).toInstance(Clock.systemUTC())
-    bind(classOf[StateBenefitsUserDataRepository]).to(classOf[StateBenefitsUserDataRepositoryImpl]).asEagerSingleton()
-    bind(classOf[StartUpLogging]).asEagerSingleton()
+  implicit def pathBindable: PathBindable[TaxYear] = new PathBindable[TaxYear] {
+
+    override def bind(key: String, value: String): Either[String, TaxYear] =
+      value match {
+        case result if result.matches("^20\\d{2}$") => Right(TaxYear(taxYear = result.toInt))
+        case _ => Left("Invalid taxYear")
+      }
+
+    override def unbind(key: String, value: TaxYear): String =
+      value.taxYear.toString
   }
+  case class TaxYear(taxYear: Int)
 }
+

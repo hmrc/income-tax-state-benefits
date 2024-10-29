@@ -34,11 +34,15 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   lazy val stateBenefitsFrontendUrl: String =
     s"${servicesConfig.getString("microservice.services.income-tax-state-benefits-frontend.url")}/update-and-submit-income-tax-return/state-benefits"
 
-  //Mongo config
-  lazy val encryptionKey: String = servicesConfig.getString("mongodb.encryption.key")
+  //User data Mongo config
   lazy val mongoTTL: Int = Duration(servicesConfig.getString("mongodb.timeToLive")).toMinutes.toInt
-
+  lazy val encryptionKey: String = servicesConfig.getString("mongodb.encryption.key")
   lazy val useEncryption: Boolean = servicesConfig.getBoolean("useEncryption")
+
+  //Journey answers Mongo config
+  lazy val mongoJourneyAnswersTTL: Int = Duration(servicesConfig.getString("mongodb.journeyAnswersTimeToLive")).toDays.toInt
+  lazy val replaceJourneyAnswersIndexes: Boolean = servicesConfig.getBoolean("mongodb.replaceJourneyAnswersIndexes")
+
 
   def authorisationTokenFor(apiVersion: String): String = servicesConfig.getString(authorisationTokenKey + s".$apiVersion")
 }
