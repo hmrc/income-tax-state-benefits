@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonParseException
 import config.AppConfig
 import models.Done
 import models.mongo.JourneyAnswers
+import org.mockito.MockitoSugar.mock
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters
@@ -37,9 +38,10 @@ import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}
 import java.util.Base64
 
-class JourneyAnswersRepositorySpec extends IntegrationTest
-  with OptionValues
-  with DefaultPlayMongoRepositorySupport[JourneyAnswers] {
+class JourneyAnswersRepositorySpec
+  extends IntegrationTest
+    with OptionValues
+    with DefaultPlayMongoRepositorySupport[JourneyAnswers] {
 
   private val instant = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
@@ -61,6 +63,8 @@ class JourneyAnswersRepositorySpec extends IntegrationTest
   private implicit val crypto: Encrypter with Decrypter =
     SymmetricCryptoFactory.aesGcmCryptoFromConfig("crypto", configuration.underlying)
 
+  override implicit lazy val appConfig: AppConfig = mock[AppConfig]
+
   protected override val repository = new JourneyAnswersRepository(
     mongoComponent = mongoComponent,
     appConfig = appConfig,
@@ -68,7 +72,7 @@ class JourneyAnswersRepositorySpec extends IntegrationTest
   )
 
   override lazy val app: Application = new GuiceApplicationBuilder().overrides(
-    bind[AppConfig].toInstance(appConfig),
+    bind[AppConfig].toInstance(mock[AppConfig]),
     bind[JourneyAnswersRepository].toInstance(repository)
   ).build()
 
