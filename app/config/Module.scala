@@ -16,17 +16,22 @@
 
 package config
 
-import com.google.inject.AbstractModule
+import play.api.inject.Binding
+import play.api.{Configuration, Environment}
 import repositories.{StateBenefitsUserDataRepository, StateBenefitsUserDataRepositoryImpl}
-import utils.StartUpLogging
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
+import utils.{AesGcmCryptoProvider, StartUpLogging}
 
 import java.time.Clock
 
-class Module extends AbstractModule {
-  override def configure(): Unit = {
-    bind(classOf[AppConfig]).asEagerSingleton()
-    bind(classOf[Clock]).toInstance(Clock.systemUTC())
-    bind(classOf[StateBenefitsUserDataRepository]).to(classOf[StateBenefitsUserDataRepositoryImpl]).asEagerSingleton()
-    bind(classOf[StartUpLogging]).asEagerSingleton()
+class Module extends play.api.inject.Module {
+  override def bindings(environment: Environment, configuration: Configuration): collection.Seq[Binding[_]] = {
+    Seq(
+      bind[Encrypter with Decrypter].toProvider[AesGcmCryptoProvider],
+      bind[AppConfig].toSelf.eagerly(),
+      bind[Clock].toInstance(Clock.systemUTC()),
+      bind[StateBenefitsUserDataRepository].to[StateBenefitsUserDataRepositoryImpl].eagerly(),
+      bind[StartUpLogging].toSelf.eagerly()
+    )
   }
 }
