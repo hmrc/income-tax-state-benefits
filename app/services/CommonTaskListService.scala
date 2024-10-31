@@ -18,6 +18,7 @@ package services
 
 import cats.data.EitherT
 import config.AppConfig
+import models.api.BenefitType.{EmploymentSupportAllowance, JobSeekersAllowance}
 import models.api.{AllStateBenefitsData, CustomerAddedStateBenefit, StateBenefit}
 import models.errors.ServiceError
 import models.mongo.JourneyAnswers
@@ -47,9 +48,8 @@ class CommonTaskListService @Inject()(appConfig: AppConfig,
 
     def result: EitherT[Future, ServiceError, Seq[TaskListSection]] = for {
       allStateBenefitsDataOpt <- EitherT(service.getAllStateBenefitsData(taxYear, nino))
-      // TODO: Find out what the journey string is supposed to be
-      esaJourneyAnswersOpt <- EitherT.right(repository.get(mtdItId, taxYear, journey = "idk1"))
-      jsaJourneyAnswersOpt <- EitherT.right(repository.get(mtdItId, taxYear, journey = "idk2"))
+      esaJourneyAnswersOpt <- EitherT.right(repository.get(mtdItId, taxYear, journey = EmploymentSupportAllowance.typeName))
+      jsaJourneyAnswersOpt <- EitherT.right(repository.get(mtdItId, taxYear, journey = JobSeekersAllowance.typeName))
       taskList = toTaskList(allStateBenefitsDataOpt, esaJourneyAnswersOpt, jsaJourneyAnswersOpt)
     } yield taskList
 
