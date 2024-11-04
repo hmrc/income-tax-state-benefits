@@ -48,12 +48,12 @@ trait IntegrationTest extends AnyWordSpec
     .configure(config)
     .build()
 
-  override def beforeAll(): Unit = {
+  protected override def beforeAll(): Unit = {
     super.beforeAll()
     dropStateBenefitsDB()
   }
 
-  override def afterAll(): Unit = {
+  protected override def afterAll(): Unit = {
     super.afterAll()
   }
 }

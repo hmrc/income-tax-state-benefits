@@ -14,5 +14,11 @@ DELETE  /claim-data/nino/:nino/session/:sessionDataId               controllers.
 DELETE  /claim-data/nino/:nino/:taxYear/:benefitId/remove           controllers.ClaimDataController.removeClaim(nino: String, taxYear: Int, benefitId: java.util.UUID)
 DELETE  /claim-data/nino/:nino/session/:sessionDataId/ignore        controllers.ClaimDataController.restore(nino: String, sessionDataId: java.util.UUID)
 
+# Journey answers endpoints
+GET         /journey-answers/:journeyKey/:taxYear                   controllers.JourneyAnswersController.get(journeyKey: String, taxYear: TaxYear)
+POST        /journey-answers                                        controllers.JourneyAnswersController.set
+DELETE	    /journey-answers/:journeyKey/:taxYear                   controllers.JourneyAnswersController.clear(journeyKey: String, taxYear: TaxYear)
+POST        /journey-answers/keep-alive/:journeyKey/:taxYear        controllers.JourneyAnswersController.keepAlive(journeyKey: String, taxYear: TaxYear)
+
 GET     /:taxYear/tasks/:nino                                       controllers.CommonTaskListController.getCommonTaskList(taxYear: Int, nino: String)
 
