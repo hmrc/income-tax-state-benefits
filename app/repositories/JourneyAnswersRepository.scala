@@ -18,6 +18,7 @@ package repositories
 
 import com.google.inject.ImplementedBy
 import config.AppConfig
+import models.Done
 import models.mongo.JourneyAnswers
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters.{and, equal}
@@ -33,9 +34,6 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
-sealed abstract class Done
-object Done extends Done
 
 @ImplementedBy(classOf[JourneyAnswersRepositoryImpl])
 trait JourneyAnswersRepository {
