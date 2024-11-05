@@ -19,7 +19,7 @@ package services
 import models.api._
 import models.errors.ApiServiceError
 import models.mongo.JourneyAnswers
-import models.tasklist._
+import models.taskList._
 import org.scalamock.scalatest.proxy.MockFactory
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.libs.json.{JsObject, Json}

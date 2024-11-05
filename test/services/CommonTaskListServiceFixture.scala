@@ -18,7 +18,7 @@ package services
 
 import models.api.{AllStateBenefitsData, CustomerAddedStateBenefit, CustomerAddedStateBenefitsData, StateBenefit, StateBenefitsData}
 import models.errors.ApiServiceError
-import models.tasklist.{SectionTitle, TaskListSection, TaskListSectionItem, TaskStatus, TaskTitle}
+import models.taskList.{SectionTitle, TaskListSection, TaskListSectionItem, TaskStatus, TaskTitle}
 
 import java.time.{Instant, LocalDate}
 import java.util.UUID

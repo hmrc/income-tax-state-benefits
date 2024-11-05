@@ -16,7 +16,7 @@
 
 package controllers
 
-import models.tasklist.{SectionTitle, TaskListSection}
+import models.taskList.{SectionTitle, TaskListSection}
 import org.scalamock.handlers.CallHandler5
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.http.Status.OK

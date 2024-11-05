@@ -22,8 +22,8 @@ import models.api.BenefitType.{EmploymentSupportAllowance, JobSeekersAllowance}
 import models.api.{AllStateBenefitsData, CustomerAddedStateBenefit, StateBenefit}
 import models.errors.ServiceError
 import models.mongo.JourneyAnswers
-import models.tasklist.TaskStatus.{Completed, InProgress, NotStarted}
-import models.tasklist._
+import models.taskList.TaskStatus.{Completed, InProgress, NotStarted}
+import models.taskList._
 import play.api.Logging
 import repositories.JourneyAnswersRepository
 import uk.gov.hmrc.http.HeaderCarrier
