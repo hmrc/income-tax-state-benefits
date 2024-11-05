@@ -28,6 +28,7 @@ import play.api.Logging
 import repositories.JourneyAnswersRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.time.Instant
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -86,18 +87,25 @@ class CommonTaskListService @Inject()(appConfig: AppConfig,
                                    taskTitle: TaskTitle,
                                    url: String,
                                    journeyAnswers: Option[JourneyAnswers]): Option[Seq[TaskListSectionItem]] = {
-    val hmrcSubmittedOn: Long =
-      hmrcAdded.flatMap(_.headOption.flatMap(_.submittedOn.map(_.getEpochSecond)))
-        .getOrElse(0)
+    val hmrcSubmittedOn: Instant =
+      hmrcAdded.flatMap(
+        _.headOption.flatMap(
+          _.submittedOn
+        )
+      ).getOrElse(Instant.MIN)
 
-    val customerSubmittedOn: Long =
-      customerAdded.flatMap(_.headOption.flatMap(_.submittedOn.map(_.getEpochSecond)))
-        .getOrElse(0)
+    val customerSubmittedOn: Instant =
+      customerAdded.flatMap(
+        _.headOption.flatMap(
+          _.submittedOn
+        )
+      ).getOrElse(Instant.MIN)
 
-    val hasCustomerData: Boolean = customerAdded.exists(_.nonEmpty)
+    val hmrcHeldDataNewer: Boolean = !hmrcSubmittedOn.isBefore(customerSubmittedOn)
 
-    (hmrcSubmittedOn >= customerSubmittedOn, hasCustomerData, journeyAnswers) match {
-      case (true, _, _) => Some(Seq(TaskListSectionItem(taskTitle, TaskStatus.CheckNow, Some(url))))
+    (hmrcAdded, customerAdded, journeyAnswers) match {
+      case (Some(_), _, _) if hmrcHeldDataNewer =>
+        Some(Seq(TaskListSectionItem(taskTitle, TaskStatus.CheckNow, Some(url))))
       case (_, _, Some(journeyAnswers)) =>
         val status: TaskStatus = journeyAnswers.data.value("status").validate[TaskStatus].asOpt match {
           case Some(TaskStatus.Completed) => Completed
@@ -106,9 +114,9 @@ class CommonTaskListService @Inject()(appConfig: AppConfig,
             logger.info("[CommonTaskListService][getStatus] status stored in an invalid format, setting as 'Not yet started'.")
             NotStarted
         }
-
         Some(Seq(TaskListSectionItem(taskTitle, status, Some(url))))
-      case (_, true, _) => Some(Seq(TaskListSectionItem(taskTitle, TaskStatus.Completed, Some(url))))
+      case (_, Some(_), _) =>
+        Some(Seq(TaskListSectionItem(taskTitle, TaskStatus.Completed, Some(url))))
       case (_, _, _) => None
     }
   }
