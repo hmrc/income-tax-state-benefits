@@ -16,10 +16,11 @@
 
 package support.mocks
 
+import models.Done
 import models.mongo.JourneyAnswers
 import org.scalamock.handlers.{CallHandler1, CallHandler3}
 import org.scalamock.scalatest.MockFactory
-import repositories.{Done, JourneyAnswersRepository}
+import repositories.JourneyAnswersRepository
 
 import scala.concurrent.Future
 
