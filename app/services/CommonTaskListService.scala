@@ -18,7 +18,6 @@ package services
 
 import cats.data.EitherT
 import config.AppConfig
-import models.api.BenefitType.{EmploymentSupportAllowance, JobSeekersAllowance}
 import models.api.{AllStateBenefitsData, CustomerAddedStateBenefit, StateBenefit}
 import models.errors.ServiceError
 import models.mongo.JourneyAnswers
@@ -39,8 +38,10 @@ class CommonTaskListService @Inject()(appConfig: AppConfig,
   def get(taxYear: Int, nino: String, mtdItId: String)
          (implicit ec: ExecutionContext,hc: HeaderCarrier): Future[Seq[TaskListSection]] = {
 
-    val jsaUrl: String = s"${appConfig.stateBenefitsFrontendUrl}/$taxYear/jobseekers-allowance/claims"
-    val esaUrl: String = s"${appConfig.stateBenefitsFrontendUrl}/$taxYear/employment-support-allowance/claims"
+    val jsaJourneyName: String = "jobseekers-allowance"
+    val esaJourneyName: String = "employment-support-allowance"
+    val jsaUrl: String = s"${appConfig.stateBenefitsFrontendUrl}/$taxYear/$jsaJourneyName/claims"
+    val esaUrl: String = s"${appConfig.stateBenefitsFrontendUrl}/$taxYear/$esaJourneyName/claims"
 
     val emptyTaskList: Seq[TaskListSection] = Seq(
       TaskListSection(SectionTitle.JsaTitle, None),
@@ -49,8 +50,8 @@ class CommonTaskListService @Inject()(appConfig: AppConfig,
 
     def result: EitherT[Future, ServiceError, Seq[TaskListSection]] = for {
       allStateBenefitsDataOpt <- EitherT(service.getAllStateBenefitsData(taxYear, nino))
-      esaJourneyAnswersOpt <- EitherT.right(repository.get(mtdItId, taxYear, journey = EmploymentSupportAllowance.typeName))
-      jsaJourneyAnswersOpt <- EitherT.right(repository.get(mtdItId, taxYear, journey = JobSeekersAllowance.typeName))
+      esaJourneyAnswersOpt <- EitherT.right(repository.get(mtdItId, taxYear, journey = esaJourneyName))
+      jsaJourneyAnswersOpt <- EitherT.right(repository.get(mtdItId, taxYear, journey = jsaJourneyName))
       taskList = toTaskList(allStateBenefitsDataOpt, esaJourneyAnswersOpt, jsaJourneyAnswersOpt)
     } yield taskList
 

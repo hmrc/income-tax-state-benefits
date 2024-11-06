@@ -99,7 +99,7 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswersException(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "employmentSupportAllowance",
+          journey = "employment-support-allowance",
           result = new RuntimeException("Dummy exception")
         )
 
@@ -124,12 +124,12 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "employmentSupportAllowance",
+          journey = "employment-support-allowance",
           result = Some(
             JourneyAnswers(
               mtdItId = mtdItId,
               taxYear = taxYear,
-              journey = "employmentSupportAllowance",
+              journey = "employment-support-allowance",
               data = JsObject.empty,
               lastUpdated = Instant.ofEpochMilli(10)
             )
@@ -139,7 +139,7 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswersException(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "jobSeekersAllowance",
+          journey = "jobseekers-allowance",
           result = new RuntimeException("Dummy exception")
         )
 
@@ -164,12 +164,12 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "employmentSupportAllowance",
+          journey = "employment-support-allowance",
           result = Some(
             JourneyAnswers(
               mtdItId = mtdItId,
               taxYear = taxYear,
-              journey = "employmentSupportAllowance",
+              journey = "employment-support-allowance",
               data = JsObject.empty,
               lastUpdated = Instant.ofEpochMilli(10)
             )
@@ -179,12 +179,12 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "jobSeekersAllowance",
+          journey = "jobseekers-allowance",
           result = Some(
             JourneyAnswers(
               mtdItId = mtdItId,
               taxYear = taxYear,
-              journey = "jobSeekersAllowance",
+              journey = "jobseekers-allowance",
               data = JsObject.empty,
               lastUpdated = Instant.ofEpochMilli(10)
             )
@@ -230,14 +230,14 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "employmentSupportAllowance",
+          journey = "employment-support-allowance",
           result = None
         )
 
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "jobSeekersAllowance",
+          journey = "jobseekers-allowance",
           result = None
         )
 
@@ -263,14 +263,14 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "employmentSupportAllowance",
+          journey = "employment-support-allowance",
           result = None
         )
 
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "jobSeekersAllowance",
+          journey = "jobseekers-allowance",
           result = None
         )
 
@@ -293,14 +293,14 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "employmentSupportAllowance",
+          journey = "employment-support-allowance",
           result = None
         )
 
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "jobSeekersAllowance",
+          journey = "jobseekers-allowance",
           result = None
         )
 
@@ -325,12 +325,12 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "employmentSupportAllowance",
+          journey = "employment-support-allowance",
           result = Some(
             JourneyAnswers(
               mtdItId = mtdItId,
               taxYear = taxYear,
-              journey = "employmentSupportAllowance",
+              journey = "employment-support-allowance",
               data = Json.parse(
                 """
                   |{
@@ -345,12 +345,12 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "jobSeekersAllowance",
+          journey = "jobseekers-allowance",
           result = Some(
             JourneyAnswers(
               mtdItId = mtdItId,
               taxYear = taxYear,
-              journey = "jobSeekersAllowance",
+              journey = "jobseekers-allowance",
               data = Json.parse(
                 """
                   |{
@@ -394,12 +394,12 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "employmentSupportAllowance",
+          journey = "employment-support-allowance",
           result = Some(
             JourneyAnswers(
               mtdItId = mtdItId,
               taxYear = taxYear,
-              journey = "employmentSupportAllowance",
+              journey = "employment-support-allowance",
               data = Json.parse(
                 """
                   |{
@@ -414,12 +414,12 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "jobSeekersAllowance",
+          journey = "jobseekers-allowance",
           result = Some(
             JourneyAnswers(
               mtdItId = mtdItId,
               taxYear = taxYear,
-              journey = "jobSeekersAllowance",
+              journey = "jobseekers-allowance",
               data = Json.parse(
                 """
                   |{
@@ -450,14 +450,14 @@ class CommonTaskListServiceSpec extends UnitTest
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "employmentSupportAllowance",
+          journey = "employment-support-allowance",
           result = None
         )
 
         mockGetJourneyAnswers(
           mtdItId = mtdItId,
           taxYear = taxYear,
-          journey = "jobSeekersAllowance",
+          journey = "jobseekers-allowance",
           result = None
         )
 
