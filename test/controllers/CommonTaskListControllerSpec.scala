@@ -16,8 +16,8 @@
 
 package controllers
 
-import models.tasklist.{SectionTitle, TaskListSection}
-import org.scalamock.handlers.CallHandler4
+import models.taskList.{SectionTitle, TaskListSection}
+import org.scalamock.handlers.CallHandler5
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.http.Status.OK
 import play.api.test.Helpers.status
@@ -31,25 +31,21 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.{ExecutionContext, Future}
 
 class CommonTaskListControllerSpec extends ControllerUnitTest with MockAuthorisedAction with FakeRequestProvider {
-
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
   val nino: String = "123456789"
   val taxYear: Int = TaxYearUtils.taxYear
 
   val commonTaskListService: CommonTaskListService = mock[CommonTaskListService]
-
   val controller = new CommonTaskListController(commonTaskListService, mockAuthorisedAction, cc)
 
-  def mockStateBenefitsService(): CallHandler4[Int, String, ExecutionContext, HeaderCarrier, Future[Seq[TaskListSection]]] = {
-    (commonTaskListService.get(_: Int, _: String)(_: ExecutionContext, _: HeaderCarrier))
-      .expects(*, *, *, *)
+  def mockStateBenefitsService(): CallHandler5[Int, String, String, ExecutionContext, HeaderCarrier, Future[Seq[TaskListSection]]] = {
+    (commonTaskListService.get(_: Int, _: String, _: String)(_: ExecutionContext, _: HeaderCarrier))
+      .expects(*, *, *, *, *)
       .returning(Future.successful(Seq(TaskListSection(SectionTitle.EsaTitle, None))))
   }
 
   ".getCommonTaskList" should {
-
     "return a task list section model" in {
-
       val result = {
         mockAuthorisation()
         mockStateBenefitsService()

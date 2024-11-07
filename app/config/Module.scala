@@ -18,7 +18,7 @@ package config
 
 import play.api.inject.Binding
 import play.api.{Configuration, Environment}
-import repositories.{StateBenefitsUserDataRepository, StateBenefitsUserDataRepositoryImpl}
+import repositories.{JourneyAnswersRepository, JourneyAnswersRepositoryImpl, StateBenefitsUserDataRepository, StateBenefitsUserDataRepositoryImpl}
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import utils.{AesGcmCryptoProvider, StartUpLogging}
 
@@ -31,6 +31,7 @@ class Module extends play.api.inject.Module {
       bind[AppConfig].toSelf.eagerly(),
       bind[Clock].toInstance(Clock.systemUTC()),
       bind[StateBenefitsUserDataRepository].to[StateBenefitsUserDataRepositoryImpl].eagerly(),
+      bind[JourneyAnswersRepository].to[JourneyAnswersRepositoryImpl].eagerly(),
       bind[StartUpLogging].toSelf.eagerly()
     )
   }

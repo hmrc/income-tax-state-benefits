@@ -33,11 +33,18 @@ trait MockStateBenefitsService extends MockFactory {
   protected val mockStateBenefitsService: StateBenefitsService = mock[StateBenefitsService]
 
   def mockGetAllStateBenefitsData(taxYear: Int, nino: String, result: Either[ServiceError, Option[AllStateBenefitsData]])
-      : CallHandler3[Int, String, HeaderCarrier, Future[Either[ServiceError, Option[AllStateBenefitsData]]]] =
+  : CallHandler3[Int, String, HeaderCarrier, Future[Either[ServiceError, Option[AllStateBenefitsData]]]] =
     (mockStateBenefitsService
       .getAllStateBenefitsData(_: Int, _: String)(_: HeaderCarrier))
       .expects(taxYear, nino, *)
       .returning(Future.successful(result))
+
+    def mockGetAllStateBenefitsDataException(taxYear: Int, nino: String, result: Throwable)
+    : CallHandler3[Int, String, HeaderCarrier, Future[Either[ServiceError, Option[AllStateBenefitsData]]]] =
+    (mockStateBenefitsService
+      .getAllStateBenefitsData(_: Int, _: String)(_: HeaderCarrier))
+      .expects(taxYear, nino, *)
+      .returning(Future.failed(result))
 
   def mockGetPriorData(taxYear: Int, nino: String, mtditid: String, result: Either[ApiServiceError, IncomeTaxUserData])
       : CallHandler4[Int, String, String, HeaderCarrier, Future[Either[ApiServiceError, IncomeTaxUserData]]] =

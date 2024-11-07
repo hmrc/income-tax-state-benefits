@@ -20,13 +20,14 @@ import config.AppConfig
 import models.Done
 import models.TaxYearPathBindable.TaxYear
 import models.mongo.JourneyAnswers
+import org.mockito.ArgumentMatchers.{eq => mockitoEq}
 import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchersSugar.eqTo
-import org.mockito.MockitoSugar
+import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -94,17 +95,17 @@ class JourneyAnswersControllerSpec
     bind[AuthConnector].toInstance(mockAuthConnector)
   ).build()
 
-  when(mockAuthConnector.authorise[Option[AffinityGroup]](any(), eqTo(affinityGroup))(any(), any()))
+  when(mockAuthConnector.authorise[Option[AffinityGroup]](any(), mockitoEq(affinityGroup))(any(), any()))
     .thenReturn(Future.successful(Some(AffinityGroup.Individual)))
 
-  when(mockAuthConnector.authorise[Enrolments ~ ConfidenceLevel](any(), eqTo(allEnrolments and confidenceLevel))(any(), any()))
+  when(mockAuthConnector.authorise[Enrolments ~ ConfidenceLevel](any(), mockitoEq(allEnrolments and confidenceLevel))(any(), any()))
     .thenReturn(Future.successful(authResponse))
 
   ".get" should {
 
     "return OK and the data when user data can be found for this mtdItId and taxYear" in {
 
-      when(mockRepo.get(eqTo(userData.mtdItId), eqTo(userData.taxYear), eqTo(userData.journey))).thenReturn(Future.successful(Some(userData)))
+      when(mockRepo.get(mockitoEq(userData.mtdItId), mockitoEq(userData.taxYear), mockitoEq(userData.journey))).thenReturn(Future.successful(Some(userData)))
 
       val request =
         FakeRequest(GET, routes.JourneyAnswersController.get(journey, taxYear).url)
@@ -150,7 +151,7 @@ class JourneyAnswersControllerSpec
 
     "return INTERNAL_SERVER_ERROR when throwing an error" in {
 
-      when(mockRepo.get(eqTo(userData.mtdItId), eqTo(userData.taxYear), eqTo(userData.journey))).thenReturn(Future.failed(new Throwable()))
+      when(mockRepo.get(mockitoEq(userData.mtdItId), mockitoEq(userData.taxYear), mockitoEq(userData.journey))).thenReturn(Future.failed(new Throwable()))
 
       val request =
         FakeRequest(GET, routes.JourneyAnswersController.get(journey, taxYear).url)
@@ -179,7 +180,7 @@ class JourneyAnswersControllerSpec
       val result = route(app, request).value
 
       status(result) shouldBe NO_CONTENT
-      verify(mockRepo, times(1)).set(eqTo(userData))
+      verify(mockRepo, times(1)).set(mockitoEq(userData))
     }
 
     "return Bad Request when the taxYear is invalid" in {
@@ -250,7 +251,7 @@ class JourneyAnswersControllerSpec
 
     "return No Content when data is cleared" in {
 
-      when(mockRepo.clear(eqTo(userData.mtdItId), eqTo(userData.taxYear), eqTo(userData.journey))) thenReturn Future.successful(Done)
+      when(mockRepo.clear(mockitoEq(userData.mtdItId), mockitoEq(userData.taxYear), mockitoEq(userData.journey))) thenReturn Future.successful(Done)
 
       val request =
         FakeRequest(DELETE, routes.JourneyAnswersController.clear(journey, taxYear).url)
@@ -259,7 +260,7 @@ class JourneyAnswersControllerSpec
       val result = route(app, request).value
 
       status(result) shouldBe NO_CONTENT
-      verify(mockRepo, times(1)).clear(eqTo(userData.mtdItId), eqTo(userData.taxYear), eqTo(userData.journey))
+      verify(mockRepo, times(1)).clear(mockitoEq(userData.mtdItId), mockitoEq(userData.taxYear), mockitoEq(userData.journey))
     }
 
     "return UNAUTHORIZED when the request does not have a mtditid in request header" in {
@@ -289,7 +290,7 @@ class JourneyAnswersControllerSpec
 
     "return No Content when keepAlive updates last updated" in {
 
-      when(mockRepo.keepAlive(eqTo(userData.mtdItId), eqTo(userData.taxYear), eqTo(userData.journey))) thenReturn Future.successful(Done)
+      when(mockRepo.keepAlive(mockitoEq(userData.mtdItId), mockitoEq(userData.taxYear), mockitoEq(userData.journey))) thenReturn Future.successful(Done)
 
       val request =
         FakeRequest(POST, routes.JourneyAnswersController.keepAlive(journey, taxYear).url)
@@ -298,7 +299,7 @@ class JourneyAnswersControllerSpec
       val result = route(app, request).value
 
       status(result) shouldBe NO_CONTENT
-      verify(mockRepo, times(1)).clear(eqTo(userData.mtdItId), eqTo(userData.taxYear), eqTo(userData.journey))
+      verify(mockRepo, times(1)).clear(mockitoEq(userData.mtdItId), mockitoEq(userData.taxYear), mockitoEq(userData.journey))
     }
 
     "return UNAUTHORIZED when the request does not have a mtditid in request header" in {

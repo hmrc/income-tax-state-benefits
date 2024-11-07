@@ -18,186 +18,457 @@ package services
 
 import models.api._
 import models.errors.ApiServiceError
-import models.tasklist._
+import models.mongo.JourneyAnswers
+import models.taskList._
 import org.scalamock.scalatest.proxy.MockFactory
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
+import play.api.libs.json.{JsObject, Json}
 import support.UnitTest
-import support.mocks.MockStateBenefitsService
+import support.mocks.{MockJourneyAnswersRepository, MockStateBenefitsService}
 import support.providers.AppConfigStubProvider
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{Instant, LocalDate}
 import java.util.UUID
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
-class CommonTaskListServiceSpec extends UnitTest with MockFactory with AppConfigStubProvider with MockStateBenefitsService {
+class CommonTaskListServiceSpec extends UnitTest
+  with MockFactory
+  with AppConfigStubProvider
+  with MockStateBenefitsService
+  with MockJourneyAnswersRepository {
 
-  implicit val ec: ExecutionContext = ExecutionContext.global
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  private trait Test extends CommonTaskListServiceFixture {
+    implicit val ec: ExecutionContext = ExecutionContext.global
+    implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  private val stateBenefitsService = mockStateBenefitsService
-
-  private val service: CommonTaskListService = new CommonTaskListService(appConfigStub, stateBenefitsService)
-
-  private val nino: String = "12345678"
-  private val taxYear: Int = 1234
-
-  val stateBenefits: Option[StateBenefitsData] = Some(StateBenefitsData(
-    incapacityBenefits = None,
-    statePension = None,
-    statePensionLumpSum = None,
-    employmentSupportAllowances = Some(Set(StateBenefit(
-      benefitId = UUID.fromString("a1e8057e-fbbc-47a8-a8b4-78d9f015c937"),
-      startDate = LocalDate.parse(s"${taxYear - 1}-09-23"),
-      endDate = Some(LocalDate.parse(s"$taxYear-08-23")),
-      dateIgnored = None,
-      submittedOn = Some(Instant.parse(s"$taxYear-11-13T19:23:00Z")),
-      amount = Some(44545.43),
-      taxPaid = Some(35343.23)
-    ))),
-    jobSeekersAllowances = Some(Set(StateBenefit(
-      benefitId = UUID.fromString("a1e8057e-fbbc-47a8-a8b4-78d9f015c938"),
-      startDate = LocalDate.parse(s"${taxYear - 1}-09-19"),
-      endDate = Some(LocalDate.parse(s"$taxYear-09-23")),
-      dateIgnored = None,
-      submittedOn = Some(Instant.parse(s"$taxYear-07-10T18:23:00Z")),
-      amount = Some(33223.12),
-      taxPaid = Some(44224.56)
-    ))),
-    bereavementAllowance = None,
-    other = None
-  ))
-
-  val customerAddedStateBenefit: Option[CustomerAddedStateBenefitsData] = Some(CustomerAddedStateBenefitsData(
-    incapacityBenefits = None,
-    statePensions = None,
-    statePensionLumpSums = None,
-    employmentSupportAllowances = Some(Set(CustomerAddedStateBenefit(
-      benefitId = UUID.fromString("a1e8057e-fbbc-47a8-a8b4-78d9f015c988"),
-      startDate = LocalDate.parse(s"${taxYear - 1}-09-11"),
-      endDate = Some(LocalDate.parse(s"$taxYear-06-13")),
-      submittedOn = Some(Instant.parse(s"$taxYear-02-10T11:20:00Z")),
-      amount = Some(45424.23),
-      taxPaid = Some(23232.34)
-    ))),
-    jobSeekersAllowances = Some(Set(CustomerAddedStateBenefit(
-      benefitId = UUID.fromString("a1e8057e-fbbc-47a8-a8b4-78d9f015c990"),
-      startDate = LocalDate.parse(s"${taxYear - 1}-07-10"),
-      endDate = Some(LocalDate.parse(s"$taxYear-05-11")),
-      submittedOn = Some(Instant.parse(s"$taxYear-05-13T14:23:00Z")),
-      amount = Some(34343.78),
-      taxPaid = Some(3433.56)
-    ))),
-    bereavementAllowances = None,
-    otherStateBenefits = None
-  ))
-
-  val latestCustomerAddedStateBenefit: Option[CustomerAddedStateBenefitsData] = Some(CustomerAddedStateBenefitsData(
-    incapacityBenefits = None,
-    statePensions = None,
-    statePensionLumpSums = None,
-    employmentSupportAllowances = Some(Set(CustomerAddedStateBenefit(
-      benefitId = UUID.fromString("a1e8057e-fbbc-47a8-a8b4-78d9f015c988"),
-      startDate = LocalDate.parse(s"${taxYear - 1}-09-11"),
-      endDate = Some(LocalDate.parse(s"$taxYear-06-13")),
-      submittedOn = Some(Instant.parse(s"$taxYear-12-10T11:20:00Z")),
-      amount = Some(45424.23),
-      taxPaid = Some(23232.34)
-    ))),
-    jobSeekersAllowances = Some(Set(CustomerAddedStateBenefit(
-      benefitId = UUID.fromString("a1e8057e-fbbc-47a8-a8b4-78d9f015c990"),
-      startDate = LocalDate.parse(s"${taxYear - 1}-07-10"),
-      endDate = Some(LocalDate.parse(s"$taxYear-05-11")),
-      submittedOn = Some(Instant.parse(s"$taxYear-12-10T14:23:00Z")),
-      amount = Some(34343.78),
-      taxPaid = Some(3433.56)
-    ))),
-    bereavementAllowances = None,
-    otherStateBenefits = None
-  ))
-
-  val fullStateBenefitsResult: Right[Nothing, Some[AllStateBenefitsData]] = Right(Some(AllStateBenefitsData(stateBenefits, customerAddedStateBenefit)))
-
-  val customerLatestResult: Right[Nothing, Some[AllStateBenefitsData]] = Right(Some(AllStateBenefitsData(stateBenefits, latestCustomerAddedStateBenefit)))
-
-  val emptyStateBenefitsResult: Left[ApiServiceError, Nothing] = Left(ApiServiceError(""))
-
-  val checkNowTaskSections: List[TaskListSection] =
-    List(
-      TaskListSection(
-        SectionTitle.JsaTitle,
-        Some(List(TaskListSectionItem(TaskTitle.JSA, TaskStatus.CheckNow, Some("http://localhost:9376/1234/jobseekers-allowance/claims"))))),
-      TaskListSection(
-        SectionTitle.EsaTitle,
-        Some(List(TaskListSectionItem(TaskTitle.ESA, TaskStatus.CheckNow, Some("http://localhost:9376/1234/employment-support-allowance/claims")))))
+    val service: CommonTaskListService = new CommonTaskListService(
+      appConfig = appConfigStub,
+      service = mockStateBenefitsService,
+      repository = mockJourneyAnswersRepo
     )
 
-  val completedTaskSections: List[TaskListSection] = List(
-    TaskListSection(
-      SectionTitle.JsaTitle,
-      Some(List(TaskListSectionItem(TaskTitle.JSA, TaskStatus.Completed, Some("http://localhost:9376/1234/jobseekers-allowance/claims"))))),
-    TaskListSection(
-      SectionTitle.EsaTitle,
-      Some(List(TaskListSectionItem(TaskTitle.ESA, TaskStatus.Completed, Some("http://localhost:9376/1234/employment-support-allowance/claims")))))
-  )
+    val nino: String = "12345678"
+    val taxYear: Int = 1234
+    val mtdItId = "12345"
+  }
 
-  val emptyTaskSections: List[TaskListSection] = List(TaskListSection(SectionTitle.JsaTitle, None), TaskListSection(SectionTitle.EsaTitle, None))
+  "CommonTaskListService" when {
+    "an error occurs while retrieving benefits data from IF" should {
+      "return an empty task list when IF returns an API error" in new Test {
+        mockGetAllStateBenefitsData(
+          taxYear = taxYear,
+          nino = nino,
+          result = Left(ApiServiceError("Dummy error"))
+        )
 
-  "CommonTaskListService.get" should {
+        val underTest: Future[Seq[TaskListSection]] = service.get(
+          taxYear = taxYear,
+          nino = nino,
+          mtdItId = mtdItId
+        )
 
-    "return a full task list section model" in {
+        await(underTest) mustBe emptyTaskSections
+      }
 
-      mockGetAllStateBenefitsData(taxYear, nino, fullStateBenefitsResult)
+      "handle appropriately when an exception occurs" in new Test {
+        mockGetAllStateBenefitsDataException(
+          taxYear = taxYear,
+          nino = nino,
+          result = new RuntimeException("Dummy Exception")
+        )
 
-      val underTest = service.get(taxYear, nino)
+        val underTest: Future[Seq[TaskListSection]] = service.get(
+          taxYear = taxYear,
+          nino = nino,
+          mtdItId = mtdItId
+        )
 
-      await(underTest) mustBe checkNowTaskSections
+        assertThrows[RuntimeException](await(underTest))
+      }
     }
 
-    "return a minimal task list section model" in {
+    "an error occurs while retrieving ESA Journey Answers from the Journey Answers repository" should {
+      "handle appropriately" in new Test {
+        mockGetAllStateBenefitsData(
+          taxYear = taxYear,
+          nino = nino,
+          result = fullStateBenefitsResult(taxYear)
+        )
 
-      val result = Right(
-        Some(AllStateBenefitsData(Some(
-          StateBenefitsData(employmentSupportAllowances = Some(Set(StateBenefit(
-            benefitId = UUID.fromString("a1e8057e-fbbc-47a8-a8b4-78d9f015c988"),
-            startDate = LocalDate.parse(s"${taxYear - 1}-09-11"),
-            endDate = Some(LocalDate.parse(s"$taxYear-06-13")),
-            submittedOn = Some(Instant.parse(s"$taxYear-02-10T11:20:00Z")),
-            amount = Some(45424.23),
-            taxPaid = Some(23232.34)
-          ))))
-        )))
-      )
+        mockGetJourneyAnswersException(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "employment-support-allowance",
+          result = new RuntimeException("Dummy exception")
+        )
 
-      mockGetAllStateBenefitsData(taxYear, nino, result)
+        val underTest: Future[Seq[TaskListSection]] = service.get(
+          taxYear = taxYear,
+          nino = nino,
+          mtdItId = mtdItId
+        )
 
-      val underTest = service.get(taxYear, nino)
-
-      await(underTest) mustBe List(
-        TaskListSection(SectionTitle.JsaTitle,
-          Some(List(
-            TaskListSectionItem(TaskTitle.JSA, TaskStatus.CheckNow, Some("http://localhost:9376/1234/jobseekers-allowance/claims")),
-          ))),
-        TaskListSection(SectionTitle.EsaTitle, None)
-      )
+        assertThrows[RuntimeException](await(underTest))
+      }
     }
 
-    "return an empty task list section model" in {
+    "an error occurs while retrieving JSA Journey Answers from the Journey Answers repository" should {
+      "handle appropriately" in new Test {
+        mockGetAllStateBenefitsData(
+          taxYear = taxYear,
+          nino = nino,
+          result = fullStateBenefitsResult(taxYear)
+        )
 
-      mockGetAllStateBenefitsData(taxYear, nino, emptyStateBenefitsResult)
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "employment-support-allowance",
+          result = Some(
+            JourneyAnswers(
+              mtdItId = mtdItId,
+              taxYear = taxYear,
+              journey = "employment-support-allowance",
+              data = JsObject.empty,
+              lastUpdated = Instant.ofEpochMilli(10)
+            )
+          )
+        )
 
-      val underTest = service.get(taxYear, nino)
+        mockGetJourneyAnswersException(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "jobseekers-allowance",
+          result = new RuntimeException("Dummy exception")
+        )
 
-      await(underTest) mustBe emptyTaskSections
+        val underTest: Future[Seq[TaskListSection]] = service.get(
+          taxYear = taxYear,
+          nino = nino,
+          mtdItId = mtdItId
+        )
+
+        assertThrows[RuntimeException](await(underTest))
+      }
     }
 
-    "return tasks as completed when customer data is more recent than hmrc data" in {
+    "the call to IF for benefits data returns a successful, but empty, response" should {
+      "return an empty task list" in new Test {
+        mockGetAllStateBenefitsData(
+          taxYear = taxYear,
+          nino = nino,
+          result = Right(None)
+        )
 
-      mockGetAllStateBenefitsData(taxYear, nino, customerLatestResult)
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "employment-support-allowance",
+          result = Some(
+            JourneyAnswers(
+              mtdItId = mtdItId,
+              taxYear = taxYear,
+              journey = "employment-support-allowance",
+              data = JsObject.empty,
+              lastUpdated = Instant.ofEpochMilli(10)
+            )
+          )
+        )
 
-      val underTest = service.get(taxYear, nino)
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "jobseekers-allowance",
+          result = Some(
+            JourneyAnswers(
+              mtdItId = mtdItId,
+              taxYear = taxYear,
+              journey = "jobseekers-allowance",
+              data = JsObject.empty,
+              lastUpdated = Instant.ofEpochMilli(10)
+            )
+          )
+        )
 
-      await(underTest) mustBe completedTaskSections
+        val underTest: Future[Seq[TaskListSection]] = service.get(
+          taxYear = taxYear,
+          nino = nino,
+          mtdItId = mtdItId
+        )
+
+        await(underTest) shouldBe emptyTaskSections
+      }
+    }
+
+    "ESA and JSA have no Journey Answers defined" should {
+      "return an empty task list when no ESA or JSA benefits data exists in IF" in new Test {
+        mockGetAllStateBenefitsData(
+          taxYear = taxYear,
+          nino = nino,
+          result = Right(Some(AllStateBenefitsData(
+            stateBenefitsData = Some(StateBenefitsData(
+              incapacityBenefits = Some(Set(
+                StateBenefit(
+                  benefitId = UUID.randomUUID(),
+                  startDate = LocalDate.MIN
+                )
+              ))
+            )
+            ),
+            customerAddedStateBenefitsData = Some(CustomerAddedStateBenefitsData(
+              incapacityBenefits = Some(Set(
+                CustomerAddedStateBenefit(
+                  benefitId = UUID.randomUUID(),
+                  startDate = LocalDate.MIN
+                )
+              ))
+            ))
+          )))
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "employment-support-allowance",
+          result = None
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "jobseekers-allowance",
+          result = None
+        )
+
+        val underTest: Future[Seq[TaskListSection]] = service.get(
+          taxYear = taxYear,
+          nino = nino,
+          mtdItId = mtdItId
+        )
+
+        await(underTest) shouldBe emptyTaskSections
+      }
+
+      "return 'Completed' status when only customer added ESA and JSA data exists in IF" in new Test {
+        mockGetAllStateBenefitsData(
+          taxYear = taxYear,
+          nino = nino,
+          result = Right(Some(AllStateBenefitsData(
+            stateBenefitsData = None,
+            customerAddedStateBenefitsData = customerAddedStateBenefit(taxYear)
+          )))
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "employment-support-allowance",
+          result = None
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "jobseekers-allowance",
+          result = None
+        )
+
+        val underTest: Future[Seq[TaskListSection]] = service.get(
+          taxYear = taxYear,
+          nino = nino,
+          mtdItId = mtdItId
+        )
+
+        await(underTest) shouldBe completedTaskSections
+      }
+
+      "return 'Completed' status when customer added ESA and JSA data is newer than HMRC held data in IF" in new Test {
+        mockGetAllStateBenefitsData(
+          taxYear = taxYear,
+          nino = nino,
+          result = customerLatestResult(taxYear)
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "employment-support-allowance",
+          result = None
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "jobseekers-allowance",
+          result = None
+        )
+
+        val underTest: Future[Seq[TaskListSection]] = service.get(
+          taxYear = taxYear,
+          nino = nino,
+          mtdItId = mtdItId
+        )
+
+        await(underTest) shouldBe completedTaskSections
+      }
+    }
+
+    "ESA and JSA have Journey Answers defined" should {
+      "use Journey Answers when customer added ESA and JSA data is newer than HMRC held data in IF" in new Test {
+        mockGetAllStateBenefitsData(
+          taxYear = taxYear,
+          nino = nino,
+          result = customerLatestResult(taxYear)
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "employment-support-allowance",
+          result = Some(
+            JourneyAnswers(
+              mtdItId = mtdItId,
+              taxYear = taxYear,
+              journey = "employment-support-allowance",
+              data = Json.parse(
+                """
+                  |{
+                  | "status": "completed"
+                  |}
+                """.stripMargin).as[JsObject],
+              lastUpdated = Instant.ofEpochMilli(10)
+            )
+          )
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "jobseekers-allowance",
+          result = Some(
+            JourneyAnswers(
+              mtdItId = mtdItId,
+              taxYear = taxYear,
+              journey = "jobseekers-allowance",
+              data = Json.parse(
+                """
+                  |{
+                  | "status": "inProgress"
+                  |}
+                """.stripMargin).as[JsObject],
+              lastUpdated = Instant.ofEpochMilli(10)
+            )
+          )
+        )
+
+        val underTest: Future[Seq[TaskListSection]] = service.get(
+          taxYear = taxYear,
+          nino = nino,
+          mtdItId = mtdItId
+        )
+
+        await(underTest) shouldBe splitTaskSections
+      }
+
+      "return 'Not Started' status when Journey Answers are used, but contain non-valid statues" in new Test {
+        mockGetAllStateBenefitsData(
+          taxYear = taxYear,
+          nino = nino,
+          result = Right(Some(AllStateBenefitsData(
+            stateBenefitsData = Some(StateBenefitsData(
+              employmentSupportAllowances = Some(Set(StateBenefit(
+                benefitId = UUID.fromString("a1e8057e-fbbc-47a8-a8b4-78d9f015c937"),
+                startDate = LocalDate.parse(s"${taxYear - 1}-09-23"),
+                endDate = Some(LocalDate.parse(s"$taxYear-08-23")),
+                dateIgnored = None,
+                submittedOn = Some(Instant.parse(s"$taxYear-11-13T19:23:00Z")),
+                amount = Some(44545.43),
+                taxPaid = Some(35343.23)
+              )))
+            )),
+            customerAddedStateBenefitsData = latestCustomerAddedStateBenefit(taxYear)
+          )))
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "employment-support-allowance",
+          result = Some(
+            JourneyAnswers(
+              mtdItId = mtdItId,
+              taxYear = taxYear,
+              journey = "employment-support-allowance",
+              data = Json.parse(
+                """
+                  |{
+                  | "status": "somethingNonValid"
+                  |}
+                """.stripMargin).as[JsObject],
+              lastUpdated = Instant.ofEpochMilli(10)
+            )
+          )
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "jobseekers-allowance",
+          result = Some(
+            JourneyAnswers(
+              mtdItId = mtdItId,
+              taxYear = taxYear,
+              journey = "jobseekers-allowance",
+              data = Json.parse(
+                """
+                  |{
+                  | "status": "somethingNonValid"
+                  |}
+                """.stripMargin).as[JsObject],
+              lastUpdated = Instant.ofEpochMilli(10)
+            )
+          )
+        )
+
+        val underTest: Future[Seq[TaskListSection]] = service.get(
+          taxYear = taxYear,
+          nino = nino,
+          mtdItId = mtdItId
+        )
+
+        await(underTest) shouldBe nonValidStatusTaskSections
+      }
+
+      "return 'Check' status when HMRC held ESA and JSA data is newer than customer added data in IF" in new Test {
+        mockGetAllStateBenefitsData(
+          taxYear = taxYear,
+          nino = nino,
+          result = fullStateBenefitsResult(taxYear)
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "employment-support-allowance",
+          result = None
+        )
+
+        mockGetJourneyAnswers(
+          mtdItId = mtdItId,
+          taxYear = taxYear,
+          journey = "jobseekers-allowance",
+          result = None
+        )
+
+        val underTest: Future[Seq[TaskListSection]] = service.get(
+          taxYear = taxYear,
+          nino = nino,
+          mtdItId = mtdItId
+        )
+
+        await(underTest) shouldBe checkNowTaskSections
+      }
     }
   }
 }

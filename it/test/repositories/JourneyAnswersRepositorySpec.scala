@@ -20,11 +20,11 @@ import com.fasterxml.jackson.core.JsonParseException
 import config.AppConfig
 import models.Done
 import models.mongo.JourneyAnswers
-import org.mockito.MockitoSugar.mock
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters
 import org.scalatest.OptionValues
+import org.scalatestplus.mockito.MockitoSugar.mock
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -65,7 +65,7 @@ class JourneyAnswersRepositorySpec
 
   override implicit lazy val appConfig: AppConfig = mock[AppConfig]
 
-  protected override val repository = new JourneyAnswersRepository(
+  protected override val repository = new JourneyAnswersRepositoryImpl(
     mongoComponent = mongoComponent,
     appConfig = appConfig,
     clock = stubClock

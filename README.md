@@ -11,14 +11,14 @@ You will need to have the following:
 
 The service manager profile for this service is:
 
-    sm --start INCOME_TAX_STATE_BENEFITS
+    sm2 --start INCOME_TAX_STATE_BENEFITS
 
 This service runs on port: `localhost:9377`
 
 Run the following command to start the remaining services locally:
 
     sudo mongod (If not already running)
-    sm --start INCOME_TAX_SUBMISSION_ALL -r
+    sm2 --start INCOME_TAX_SUBMISSION_ALL
 
 ### Feature Switches
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package models.tasklist
+package models.taskList
 
 import enumeratum._
 
