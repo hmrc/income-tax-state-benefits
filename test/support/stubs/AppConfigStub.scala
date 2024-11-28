@@ -36,6 +36,8 @@ class AppConfigStub extends MockFactory {
     override lazy val encryptionKey: String = "encryptionKey12345"
     override lazy val useEncryption: Boolean = encrypt
 
+    override lazy val sectionCompletedQuestionEnabled: Boolean = true
+
     override def authorisationTokenFor(apiVersion: String): String = authorisationToken + s".$apiVersion"
 
   }

@@ -250,7 +250,18 @@ class CommonTaskListServiceSpec extends UnitTest
         await(underTest) shouldBe emptyTaskSections
       }
 
-      "return 'Completed' status when only customer added ESA and JSA data exists in IF" in new Test {
+      "return 'Completed' status when only customer added ESA and JSA data exists in IF and sectionCompletedQuestionEnabled is false" in new Test {
+
+        val sCQDisabledAppConfig: appConfigStub = new appConfigStub{
+          override val sectionCompletedQuestionEnabled: Boolean = false
+        }
+
+        override val service: CommonTaskListService = new CommonTaskListService(
+          appConfig = sCQDisabledAppConfig,
+          service = mockStateBenefitsService,
+          repository = mockJourneyAnswersRepo
+        )
+
         mockGetAllStateBenefitsData(
           taxYear = taxYear,
           nino = nino,
@@ -283,7 +294,18 @@ class CommonTaskListServiceSpec extends UnitTest
         await(underTest) shouldBe completedTaskSections
       }
 
-      "return 'Completed' status when customer added ESA and JSA data is newer than HMRC held data in IF" in new Test {
+      "return 'In Progress' status when customer added ESA and JSA data is newer than HMRC held data in IF and sectionCompletedQuestionEnabled is true" in new Test {
+
+        val sCQDisabledAppConfig: appConfigStub = new appConfigStub{
+          override val sectionCompletedQuestionEnabled: Boolean = true
+        }
+
+        override val service: CommonTaskListService = new CommonTaskListService(
+          appConfig = sCQDisabledAppConfig,
+          service = mockStateBenefitsService,
+          repository = mockJourneyAnswersRepo
+        )
+
         mockGetAllStateBenefitsData(
           taxYear = taxYear,
           nino = nino,
@@ -310,7 +332,7 @@ class CommonTaskListServiceSpec extends UnitTest
           mtdItId = mtdItId
         )
 
-        await(underTest) shouldBe completedTaskSections
+        await(underTest) shouldBe inProgressTaskSections
       }
     }
 

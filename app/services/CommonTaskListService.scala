@@ -118,6 +118,8 @@ class CommonTaskListService @Inject()(appConfig: AppConfig,
         Some(Seq(TaskListSectionItem(taskTitle, status, Some(url))))
       case (_, Some(_), _) =>
         Some(Seq(TaskListSectionItem(taskTitle, TaskStatus.Completed, Some(url))))
+        Some(Seq(TaskListSectionItem(taskTitle, if(appConfig.sectionCompletedQuestionEnabled) TaskStatus.InProgress else TaskStatus.Completed, Some(url))))
+
       case (_, _, _) => None
     }
   }

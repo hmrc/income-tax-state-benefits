@@ -175,6 +175,29 @@ trait CommonTaskListServiceFixture {
     )
   )
 
+  val inProgressTaskSections: List[TaskListSection] = List(
+    TaskListSection(
+      sectionTitle = SectionTitle.JsaTitle,
+      taskItems = Some(List(
+        TaskListSectionItem(
+          title = TaskTitle.JSA,
+          status = TaskStatus.InProgress,
+          href = Some("http://localhost:9376/1234/jobseekers-allowance/claims")
+        )
+      ))
+    ),
+    TaskListSection(
+      sectionTitle = SectionTitle.EsaTitle,
+      taskItems = Some(List(
+        TaskListSectionItem(
+          title = TaskTitle.ESA,
+          status = TaskStatus.InProgress,
+          href = Some("http://localhost:9376/1234/employment-support-allowance/claims")
+        )
+      ))
+    )
+  )
+
   val nonValidStatusTaskSections: List[TaskListSection] = List(
     TaskListSection(
       sectionTitle = SectionTitle.JsaTitle,
