@@ -16,6 +16,7 @@
 
 package services
 
+import config.AppConfig
 import models.api._
 import models.errors.ApiServiceError
 import models.mongo.JourneyAnswers
@@ -26,6 +27,7 @@ import play.api.libs.json.{JsObject, Json}
 import support.UnitTest
 import support.mocks.{MockJourneyAnswersRepository, MockStateBenefitsService}
 import support.providers.AppConfigStubProvider
+import support.stubs.AppConfigStub
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{Instant, LocalDate}
@@ -252,9 +254,7 @@ class CommonTaskListServiceSpec extends UnitTest
 
       "return 'Completed' status when only customer added ESA and JSA data exists in IF and sectionCompletedQuestionEnabled is false" in new Test {
 
-        val sCQDisabledAppConfig: appConfigStub = new appConfigStub{
-          override val sectionCompletedQuestionEnabled: Boolean = false
-        }
+        val sCQDisabledAppConfig: AppConfig = new AppConfigStub().config(useSectionCompletedQuestionEnabled = false)
 
         override val service: CommonTaskListService = new CommonTaskListService(
           appConfig = sCQDisabledAppConfig,
@@ -295,16 +295,6 @@ class CommonTaskListServiceSpec extends UnitTest
       }
 
       "return 'In Progress' status when customer added ESA and JSA data is newer than HMRC held data in IF and sectionCompletedQuestionEnabled is true" in new Test {
-
-        val sCQDisabledAppConfig: appConfigStub = new appConfigStub{
-          override val sectionCompletedQuestionEnabled: Boolean = true
-        }
-
-        override val service: CommonTaskListService = new CommonTaskListService(
-          appConfig = sCQDisabledAppConfig,
-          service = mockStateBenefitsService,
-          repository = mockJourneyAnswersRepo
-        )
 
         mockGetAllStateBenefitsData(
           taxYear = taxYear,
