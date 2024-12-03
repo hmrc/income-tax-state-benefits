@@ -51,7 +51,7 @@ class CommonTaskListServiceSpec extends UnitTest
     )
 
     val nino: String = "12345678"
-    val taxYear: Int = 1234
+    val taxYear: Int = 2025
     val mtdItId = "12345"
   }
 
