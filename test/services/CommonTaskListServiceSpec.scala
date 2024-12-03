@@ -16,6 +16,7 @@
 
 package services
 
+import config.AppConfig
 import models.api._
 import models.errors.ApiServiceError
 import models.mongo.JourneyAnswers
@@ -26,6 +27,7 @@ import play.api.libs.json.{JsObject, Json}
 import support.UnitTest
 import support.mocks.{MockJourneyAnswersRepository, MockStateBenefitsService}
 import support.providers.AppConfigStubProvider
+import support.stubs.AppConfigStub
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{Instant, LocalDate}
@@ -49,7 +51,7 @@ class CommonTaskListServiceSpec extends UnitTest
     )
 
     val nino: String = "12345678"
-    val taxYear: Int = 1234
+    val taxYear: Int = 2025
     val mtdItId = "12345"
   }
 
@@ -250,7 +252,16 @@ class CommonTaskListServiceSpec extends UnitTest
         await(underTest) shouldBe emptyTaskSections
       }
 
-      "return 'Completed' status when only customer added ESA and JSA data exists in IF" in new Test {
+      "return 'Completed' status when only customer added ESA and JSA data exists in IF and sectionCompletedQuestionEnabled is false" in new Test {
+
+        val sCQDisabledAppConfig: AppConfig = new AppConfigStub().config(useSectionCompletedQuestionEnabled = false)
+
+        override val service: CommonTaskListService = new CommonTaskListService(
+          appConfig = sCQDisabledAppConfig,
+          service = mockStateBenefitsService,
+          repository = mockJourneyAnswersRepo
+        )
+
         mockGetAllStateBenefitsData(
           taxYear = taxYear,
           nino = nino,
@@ -283,7 +294,8 @@ class CommonTaskListServiceSpec extends UnitTest
         await(underTest) shouldBe completedTaskSections
       }
 
-      "return 'Completed' status when customer added ESA and JSA data is newer than HMRC held data in IF" in new Test {
+      "return 'In Progress' status when customer added ESA and JSA data is newer than HMRC held data in IF and sectionCompletedQuestionEnabled is true" in new Test {
+
         mockGetAllStateBenefitsData(
           taxYear = taxYear,
           nino = nino,
@@ -310,7 +322,7 @@ class CommonTaskListServiceSpec extends UnitTest
           mtdItId = mtdItId
         )
 
-        await(underTest) shouldBe completedTaskSections
+        await(underTest) shouldBe inProgressTaskSections
       }
     }
 

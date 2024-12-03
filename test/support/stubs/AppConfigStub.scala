@@ -22,7 +22,8 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 class AppConfigStub extends MockFactory {
 
-  def config(environment: String = "test", encrypt: Boolean = true): AppConfig = new AppConfig(mock[ServicesConfig]) {
+  def config(environment: String = "test", encrypt: Boolean = true, useSectionCompletedQuestionEnabled: Boolean = true
+            ): AppConfig = new AppConfig(mock[ServicesConfig]) {
     private val wireMockPort = 11111
 
     private lazy val authorisationToken: String = "secret"
@@ -35,6 +36,8 @@ class AppConfigStub extends MockFactory {
 
     override lazy val encryptionKey: String = "encryptionKey12345"
     override lazy val useEncryption: Boolean = encrypt
+
+    override lazy val sectionCompletedQuestionEnabled: Boolean = useSectionCompletedQuestionEnabled
 
     override def authorisationTokenFor(apiVersion: String): String = authorisationToken + s".$apiVersion"
 

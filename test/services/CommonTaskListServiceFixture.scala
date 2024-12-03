@@ -19,6 +19,7 @@ package services
 import models.api.{AllStateBenefitsData, CustomerAddedStateBenefit, CustomerAddedStateBenefitsData, StateBenefit, StateBenefitsData}
 import models.errors.ApiServiceError
 import models.taskList.{SectionTitle, TaskListSection, TaskListSectionItem, TaskStatus, TaskTitle}
+import support.utils.TaxYearUtils.taxYear
 
 import java.time.{Instant, LocalDate}
 import java.util.UUID
@@ -136,7 +137,7 @@ trait CommonTaskListServiceFixture {
           TaskListSectionItem(
             title = TaskTitle.JSA,
             status = TaskStatus.CheckNow,
-            href = Some("http://localhost:9376/1234/jobseekers-allowance/claims")
+            href = Some(s"http://localhost:9376/$taxYear/jobseekers-allowance/claims")
           )
         ))
       ),
@@ -146,7 +147,7 @@ trait CommonTaskListServiceFixture {
           TaskListSectionItem(
             title = TaskTitle.ESA,
             status = TaskStatus.CheckNow,
-            href = Some("http://localhost:9376/1234/employment-support-allowance/claims")
+            href = Some(s"http://localhost:9376/$taxYear/employment-support-allowance/claims")
           )
         ))
       )
@@ -159,7 +160,7 @@ trait CommonTaskListServiceFixture {
         TaskListSectionItem(
           title = TaskTitle.JSA,
           status = TaskStatus.Completed,
-          href = Some("http://localhost:9376/1234/jobseekers-allowance/claims")
+          href = Some(s"http://localhost:9376/$taxYear/jobseekers-allowance/claims")
         )
       ))
     ),
@@ -169,7 +170,30 @@ trait CommonTaskListServiceFixture {
         TaskListSectionItem(
           title = TaskTitle.ESA,
           status = TaskStatus.Completed,
-          href = Some("http://localhost:9376/1234/employment-support-allowance/claims")
+          href = Some(s"http://localhost:9376/$taxYear/employment-support-allowance/claims")
+        )
+      ))
+    )
+  )
+
+  val inProgressTaskSections: List[TaskListSection] = List(
+    TaskListSection(
+      sectionTitle = SectionTitle.JsaTitle,
+      taskItems = Some(List(
+        TaskListSectionItem(
+          title = TaskTitle.JSA,
+          status = TaskStatus.InProgress,
+          href = Some(s"http://localhost:9376/$taxYear/jobseekers-allowance/claims")
+        )
+      ))
+    ),
+    TaskListSection(
+      sectionTitle = SectionTitle.EsaTitle,
+      taskItems = Some(List(
+        TaskListSectionItem(
+          title = TaskTitle.ESA,
+          status = TaskStatus.InProgress,
+          href = Some(s"http://localhost:9376/$taxYear/employment-support-allowance/claims")
         )
       ))
     )
@@ -182,7 +206,7 @@ trait CommonTaskListServiceFixture {
         TaskListSectionItem(
           title = TaskTitle.JSA,
           status = TaskStatus.NotStarted,
-          href = Some("http://localhost:9376/1234/jobseekers-allowance/claims")
+          href = Some(s"http://localhost:9376/$taxYear/jobseekers-allowance/claims")
         )
       ))
     ),
@@ -192,7 +216,7 @@ trait CommonTaskListServiceFixture {
         TaskListSectionItem(
           title = TaskTitle.ESA,
           status = TaskStatus.NotStarted,
-          href = Some("http://localhost:9376/1234/employment-support-allowance/claims")
+          href = Some(s"http://localhost:9376/$taxYear/employment-support-allowance/claims")
         )
       ))
     )
@@ -205,7 +229,7 @@ trait CommonTaskListServiceFixture {
         TaskListSectionItem(
           title = TaskTitle.JSA,
           status = TaskStatus.InProgress,
-          href = Some("http://localhost:9376/1234/jobseekers-allowance/claims")
+          href = Some(s"http://localhost:9376/$taxYear/jobseekers-allowance/claims")
         )
       ))
     ),
@@ -215,7 +239,7 @@ trait CommonTaskListServiceFixture {
         TaskListSectionItem(
           title = TaskTitle.ESA,
           status = TaskStatus.Completed,
-          href = Some("http://localhost:9376/1234/employment-support-allowance/claims")
+          href = Some(s"http://localhost:9376/$taxYear/employment-support-allowance/claims")
         )
       ))
     )
