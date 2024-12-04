@@ -16,13 +16,30 @@
 
 package config
 
+import com.google.inject.ImplementedBy
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.Duration
 
+@ImplementedBy(classOf[AppConfigImpl])
+trait AppConfig {
+  def ifBaseUrl: String
+  def ifEnvironment: String
+  def submissionBaseUrl: String
+  def stateBenefitsFrontendUrl: String
+  def mongoTTL: Int
+  def encryptionKey: String
+  def useEncryption: Boolean
+  def mongoJourneyAnswersTTL: Int
+  def replaceJourneyAnswersIndexes: Boolean
+  def sectionCompletedQuestionEnabled: Boolean
+  def authorisationTokenFor(apiVersion: String): String
+  def emaSupportingAgentsEnabled: Boolean
+}
+
 @Singleton
-class AppConfig @Inject()(servicesConfig: ServicesConfig) {
+class AppConfigImpl @Inject()(servicesConfig: ServicesConfig) extends AppConfig {
 
   private lazy val authorisationTokenKey: String = "microservice.services.integration-framework.authorisation-token"
 
@@ -46,4 +63,6 @@ class AppConfig @Inject()(servicesConfig: ServicesConfig) {
   lazy val sectionCompletedQuestionEnabled: Boolean = servicesConfig.getBoolean("feature-switch.sectionCompletedQuestionEnabled")
 
   def authorisationTokenFor(apiVersion: String): String = servicesConfig.getString(authorisationTokenKey + s".$apiVersion")
+
+  lazy val emaSupportingAgentsEnabled: Boolean = servicesConfig.getBoolean("feature-switch.ema-supporting-agents-enabled")
 }
