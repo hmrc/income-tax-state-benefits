@@ -28,7 +28,7 @@ class Module extends play.api.inject.Module {
   override def bindings(environment: Environment, configuration: Configuration): collection.Seq[Binding[_]] = {
     Seq(
       bind[Encrypter with Decrypter].toProvider[AesGcmCryptoProvider],
-      bind[AppConfig].toSelf.eagerly(),
+      bind[AppConfig].to(classOf[AppConfigImpl]),
       bind[Clock].toInstance(Clock.systemUTC()),
       bind[StateBenefitsUserDataRepository].to[StateBenefitsUserDataRepositoryImpl].eagerly(),
       bind[JourneyAnswersRepository].to[JourneyAnswersRepositoryImpl].eagerly(),

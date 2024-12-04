@@ -16,14 +16,14 @@
 
 package support.stubs
 
-import config.AppConfig
+import config.{AppConfig, AppConfigImpl}
 import org.scalamock.scalatest.MockFactory
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 class AppConfigStub extends MockFactory {
 
   def config(environment: String = "test", encrypt: Boolean = true, useSectionCompletedQuestionEnabled: Boolean = true
-            ): AppConfig = new AppConfig(mock[ServicesConfig]) {
+            ): AppConfig = new AppConfigImpl(mock[ServicesConfig]) {
     private val wireMockPort = 11111
 
     private lazy val authorisationToken: String = "secret"
