@@ -66,7 +66,7 @@ class AuthorisedAction @Inject()(defaultActionBuilder: DefaultActionBuilder,
             logger.info(logMessage)
             Unauthorized
           case e =>
-            logger.error(s"[AuthorisedAction][agentAuthentication] - Unexpected exception of type '${e.getClass.getSimpleName}' was caught.")
+            logger.error(s"[AuthorisedAction][async] - Unexpected exception of type '${e.getClass.getSimpleName}' was caught.")
             InternalServerError
 
         }
