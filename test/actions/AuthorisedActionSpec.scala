@@ -77,7 +77,7 @@ class AuthorisedActionSpec extends UnitTest
         .withDelegatedAuthRule("mtd-it-auth-supp")
 
     def mockMultipleAgentsSwitch(bool: Boolean): CallHandler0[Boolean] =
-      (mockAppConfig.emaSupportingAgentsEnabled _: () => Boolean)
+      (() => mockAppConfig.emaSupportingAgentsEnabled)
         .expects()
         .returning(bool)
         .anyNumberOfTimes()
@@ -168,6 +168,15 @@ class AuthorisedActionSpec extends UnitTest
         mockAuthReturnException(NoActiveSession)
 
         await(underTest.async(block)(requestWithMtditid)).header.status shouldBe UNAUTHORIZED
+      }
+
+      "return an ISE" when {
+        "the authorisation service returns an exception other than AuthorisationException" in {
+
+          mockAuthReturnException(new Exception("Bang"))
+
+          await(underTest.async(block)(requestWithMtditid)).header.status shouldBe INTERNAL_SERVER_ERROR
+        }
       }
 
       "the request does not contain mtditid header" in {
@@ -436,6 +445,37 @@ class AuthorisedActionSpec extends UnitTest
 
           status(result) shouldBe OK
           contentAsString(result) shouldBe s"$mtdItId $arn"
+        }
+      }
+
+      "[EMA enabled] results in an ISE error being returned from Auth for primary agent" should {
+        "return an error other than Auth " in new AgentTest {
+          mockMultipleAgentsSwitch(true)
+
+          mockAuthReturnException(new Exception("Bang"), primaryAgentPredicate(mtdItId))
+
+          val result: Future[Result] = testAuth.agentAuthentication(testBlock, mtdItId)(
+            request = FakeRequest().withSession(fakeRequestWithMtditidAndNino.session.data.toSeq: _*),
+            hc = emptyHeaderCarrier
+          )
+
+          status(result) shouldBe INTERNAL_SERVER_ERROR
+        }
+      }
+
+      "[EMA enabled] results in an ISE error being returned from Auth for secondary agent" should {
+        "return an error other than Auth " in new AgentTest {
+          mockMultipleAgentsSwitch(true)
+
+          mockAuthReturnException(new InsufficientEnrolments, primaryAgentPredicate(mtdItId))
+          mockAuthReturnException(new Exception("Bang"), secondaryAgentPredicate(mtdItId))
+
+          val result: Future[Result] = testAuth.agentAuthentication(testBlock, mtdItId)(
+            request = FakeRequest().withSession(fakeRequestWithMtditidAndNino.session.data.toSeq: _*),
+            hc = emptyHeaderCarrier
+          )
+
+          status(result) shouldBe INTERNAL_SERVER_ERROR
         }
       }
 
