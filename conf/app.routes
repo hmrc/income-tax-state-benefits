@@ -21,7 +21,7 @@ DELETE	    /journey-answers/:journeyKey/:taxYear                   controllers.J
 POST        /journey-answers/keep-alive/:journeyKey/:taxYear        controllers.JourneyAnswersController.keepAlive(journeyKey: String, taxYear: TaxYear)
 
 # Pre-population endpoints
-GET     /pre-population/:nino/:taxYear                             controllers.PrePopulationController.get(nino: String, taxYear: Int)
+GET     /pre-population/:nino/:taxYear                              controllers.PrePopulationController.get(nino: String, taxYear: Int)
 
 GET     /:taxYear/tasks/:nino                                       controllers.CommonTaskListController.getCommonTaskList(taxYear: Int, nino: String)
 
