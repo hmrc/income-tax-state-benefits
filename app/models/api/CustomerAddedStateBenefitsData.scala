@@ -27,6 +27,7 @@ case class CustomerAddedStateBenefitsData(incapacityBenefits: Option[Set[Custome
                                           jobSeekersAllowances: Option[Set[CustomerAddedStateBenefit]] = None,
                                           bereavementAllowances: Option[Set[CustomerAddedStateBenefit]] = None,
                                           otherStateBenefits: Option[Set[CustomerAddedStateBenefit]] = None)
+  extends PrePopulationDataWrapper[CustomerAddedStateBenefit]
 
 object CustomerAddedStateBenefitsData {
 

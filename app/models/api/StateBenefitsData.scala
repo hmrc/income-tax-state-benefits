@@ -27,6 +27,11 @@ case class StateBenefitsData(incapacityBenefits: Option[Set[StateBenefit]] = Non
                              jobSeekersAllowances: Option[Set[StateBenefit]] = None,
                              bereavementAllowance: Option[StateBenefit] = None,
                              other: Option[StateBenefit] = None)
+  extends PrePopulationDataWrapper[StateBenefit] {
+
+  override def hasDataForOpt(dataOpt: Option[Set[StateBenefit]]): Boolean =
+    dataOpt.fold(false)(data => data.exists(_.dateIgnored.isEmpty))
+}
 
 object StateBenefitsData {
 
