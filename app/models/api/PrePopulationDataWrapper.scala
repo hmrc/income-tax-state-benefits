@@ -20,7 +20,7 @@ trait PrePopulationDataWrapper[I] {
   val employmentSupportAllowances: Option[Set[I]]
   val jobSeekersAllowances: Option[Set[I]]
 
-  def hasDataForOpt(dataOpt: Option[Set[I]]): Boolean =
+  protected[api] def hasDataForOpt(dataOpt: Option[Set[I]]): Boolean =
     dataOpt.fold(false)(data => data.nonEmpty)
 
   val (hasEsaData, hasJsaData) = (

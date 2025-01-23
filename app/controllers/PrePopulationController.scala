@@ -31,7 +31,7 @@ class PrePopulationController @Inject()(service: PrePopulationService,
                                         cc: ControllerComponents)
                                        (implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
-  def get(taxYear: Int, nino: String): Action[AnyContent] = auth.async { implicit request => {
+  def get(nino: String, taxYear: Int): Action[AnyContent] = auth.async { implicit request => {
 
     val loggingContext = "[PrePopulationController][get] - "
     val userDataLogString: String = s" for NINO: $nino, and tax year: $taxYear"

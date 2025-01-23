@@ -23,9 +23,10 @@ import models.prePopulation.PrePopulationResponse
 import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
 
-import javax.inject.Inject
+import javax.inject.{Singleton, Inject}
 import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
 class PrePopulationService @Inject()(service: StateBenefitsService) extends Logging {
 
   def get(taxYear: Int, nino: String)
@@ -57,7 +58,7 @@ class PrePopulationService @Inject()(service: StateBenefitsService) extends Logg
 
       PrePopulationResponse(
         hasEsaPrePop = esaCustomerPrePopulated || esaHmrcHeldPrePopulated,
-        hasJsaPrePop = jsaCustomerPrePopulated || jsaCustomerPrePopulated
+        hasJsaPrePop = jsaCustomerPrePopulated || jsaHmrcHeldPrePopulated
       )
     })
 

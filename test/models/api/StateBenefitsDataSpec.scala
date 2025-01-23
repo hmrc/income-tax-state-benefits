@@ -41,35 +41,62 @@ class StateBenefitsDataSpec extends UnitTest {
     .copy(bereavementAllowance = Some(stateBenefit.copy(benefitId = UUID.fromString("a1e8057e-fbbc-47a8-a8b4-78d9f015c939"))))
     .copy(other = Some(stateBenefit.copy(benefitId = UUID.fromString("a1e8057e-fbbc-47a8-a8b4-78d9f015c940"))))
 
-  "stateBenefitsDataWrites" should {
-    "convert StateBenefitsData to correct JsValue when full object" in {
-      Json.toJson(stateBenefitsData) shouldBe aStateBenefitsDataJsValue
+  "StateBenefits" when {
+    "stateBenefitsWrites" should {
+      "convert StateBenefitsData to correct JsValue when full object" in {
+        Json.toJson(stateBenefitsData) shouldBe aStateBenefitsDataJsValue
+      }
+
+      "convert StateBenefitsData to correct JsValue when empty object" in {
+        val jsValue: JsValue = Json.parse(
+          """
+            |{
+            |}
+            |""".stripMargin)
+
+        Json.toJson(StateBenefitsData()) shouldBe jsValue
+      }
     }
 
-    "convert StateBenefitsData to correct JsValue when empty object" in {
-      val jsValue: JsValue = Json.parse(
-        """
-          |{
-          |}
-          |""".stripMargin)
+    "stateBenefitsDataReads" should {
+      "convert JsValue to StateBenefitsData when full object" in {
+        Json.fromJson[StateBenefitsData](aStateBenefitsDataJsValue).get shouldBe stateBenefitsData
+      }
 
-      Json.toJson(StateBenefitsData()) shouldBe jsValue
+      "convert JsValue to StateBenefitsData when empty object" in {
+        val jsValue: JsValue = Json.parse(
+          """
+            |{
+            |}
+            |""".stripMargin)
+
+        Json.fromJson[StateBenefitsData](jsValue).get shouldBe StateBenefitsData()
+      }
+    }
+
+    "hasDataForOpt" should {
+      "return 'true' when non-ignored entries exist for an optional state benefit" in {
+        val testData = Some(Set(
+          stateBenefit.copy(dateIgnored = None),
+          stateBenefit
+        ))
+
+        stateBenefitsData.hasDataForOpt(testData) shouldBe true
+      }
+
+      "return 'false' when an optional state benefit is 'None'" in {
+        stateBenefitsData.hasDataForOpt(None) shouldBe false
+      }
+
+      "return 'false' when an optional state benefit is empty" in {
+        stateBenefitsData.hasDataForOpt(Some(Set())) shouldBe false
+      }
+
+      "return 'false' when only ignored benefits exist for an optional state benefit" in {
+        stateBenefitsData.hasDataForOpt(Some(Set(stateBenefit))) shouldBe false
+      }
     }
   }
 
-  "stateBenefitsDataReads" should {
-    "convert JsValue to StateBenefitsData when full object" in {
-      Json.fromJson[StateBenefitsData](aStateBenefitsDataJsValue).get shouldBe stateBenefitsData
-    }
 
-    "convert JsValue to StateBenefitsData when empty object" in {
-      val jsValue: JsValue = Json.parse(
-        """
-          |{
-          |}
-          |""".stripMargin)
-
-      Json.fromJson[StateBenefitsData](jsValue).get shouldBe StateBenefitsData()
-    }
-  }
 }
