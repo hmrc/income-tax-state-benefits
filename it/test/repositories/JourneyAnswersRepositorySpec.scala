@@ -29,7 +29,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.{Application, Configuration}
-import support.IntegrationTest
+import support.RepositoryIntegrationTest
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter, SymmetricCryptoFactory}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
@@ -39,7 +39,7 @@ import java.time.{Clock, Instant, ZoneId}
 import java.util.Base64
 
 class JourneyAnswersRepositorySpec
-  extends IntegrationTest
+  extends RepositoryIntegrationTest
     with OptionValues
     with DefaultPlayMongoRepositorySupport[JourneyAnswers] {
 

@@ -23,7 +23,7 @@ import repositories.StateBenefitsUserDataRepositoryImpl
 import java.util.UUID
 
 trait DatabaseHelper {
-  self: IntegrationTest =>
+  self: RepositoryIntegrationTest =>
 
   lazy val stateBenefitsDatabase: StateBenefitsUserDataRepositoryImpl = app.injector.instanceOf[StateBenefitsUserDataRepositoryImpl]
 
