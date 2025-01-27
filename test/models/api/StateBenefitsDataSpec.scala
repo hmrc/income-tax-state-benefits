@@ -73,29 +73,6 @@ class StateBenefitsDataSpec extends UnitTest {
         Json.fromJson[StateBenefitsData](jsValue).get shouldBe StateBenefitsData()
       }
     }
-
-    "hasDataForOpt" should {
-      "return 'true' when non-ignored entries exist for an optional state benefit" in {
-        val testData = Some(Set(
-          stateBenefit.copy(dateIgnored = None),
-          stateBenefit
-        ))
-
-        stateBenefitsData.hasDataForOpt(testData) shouldBe true
-      }
-
-      "return 'false' when an optional state benefit is 'None'" in {
-        stateBenefitsData.hasDataForOpt(None) shouldBe false
-      }
-
-      "return 'false' when an optional state benefit is empty" in {
-        stateBenefitsData.hasDataForOpt(Some(Set())) shouldBe false
-      }
-
-      "return 'false' when only ignored benefits exist for an optional state benefit" in {
-        stateBenefitsData.hasDataForOpt(Some(Set(stateBenefit))) shouldBe false
-      }
-    }
   }
 
 

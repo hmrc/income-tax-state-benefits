@@ -42,7 +42,12 @@ class PrePopulationServiceSpec extends UnitTest
     implicit val hc: HeaderCarrier = HeaderCarrier()
     implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
-    val dummyData: PrePopulationResponse = PrePopulationResponse(hasEsaPrePop = true, hasJsaPrePop = true)
+    val dummyData: PrePopulationResponse = PrePopulationResponse(
+      hasEsaPrePop = true,
+      hasJsaPrePop = true,
+      hasPensionsPrePop = false,
+      hasPensionLumpSumsPrePop = false
+    )
   }
 
   "get" when {
@@ -76,7 +81,7 @@ class PrePopulationServiceSpec extends UnitTest
       }
     }
 
-    "call to retrieve state benefits data succeeds, but the response contains no ESA or JSA data" should {
+    "call to retrieve state benefits data succeeds, but the response contains no relevant" should {
       "return a 'no pre-pop' response" in new Test {
         val emptyIfResponse: AllStateBenefitsData = AllStateBenefitsData(
           stateBenefitsData = Some(StateBenefitsData()),
@@ -91,7 +96,7 @@ class PrePopulationServiceSpec extends UnitTest
       }
     }
 
-    "call to retrieve state benefits data succeeds, and the response contains ESA or JSA data" should {
+    "call to retrieve state benefits data succeeds, and the response contains relevant" should {
       "return pre-pop flags as 'true' when customer data exists" in new Test {
         val customerOnlyIfResponse: AllStateBenefitsData = AllStateBenefitsData(
           stateBenefitsData = None,
@@ -102,7 +107,9 @@ class PrePopulationServiceSpec extends UnitTest
         val result: Either[ServiceError, PrePopulationResponse] = await(service.get(taxYear, nino).value)
 
         result shouldBe a[Right[_, _]]
-        result.getOrElse(PrePopulationResponse.noPrePop) shouldBe PrePopulationResponse(hasEsaPrePop = true, hasJsaPrePop = true)
+        result.getOrElse(PrePopulationResponse.noPrePop) shouldBe PrePopulationResponse(
+          hasEsaPrePop = true, hasJsaPrePop = true, hasPensionsPrePop = true, hasPensionLumpSumsPrePop = true
+        )
       }
 
       "return pre-pop flags as 'true' when non-ignored HMRC-Held data exists" in new Test {
@@ -118,7 +125,9 @@ class PrePopulationServiceSpec extends UnitTest
 
         val aStateBenefitsData: StateBenefitsData = StateBenefitsData(
           employmentSupportAllowances = Some(Set(aStateBenefit)),
-          jobSeekersAllowances = Some(Set(aStateBenefit))
+          jobSeekersAllowances = Some(Set(aStateBenefit)),
+          statePension = Some(aStateBenefit),
+          statePensionLumpSum = Some(aStateBenefit)
         )
 
         val hmrcHeldOnlyIfResponse: AllStateBenefitsData = AllStateBenefitsData(
@@ -130,7 +139,9 @@ class PrePopulationServiceSpec extends UnitTest
         val result: Either[ServiceError, PrePopulationResponse] = await(service.get(taxYear, nino).value)
 
         result shouldBe a[Right[_, _]]
-        result.getOrElse(PrePopulationResponse.noPrePop) shouldBe PrePopulationResponse(hasEsaPrePop = true, hasJsaPrePop = true)
+        result.getOrElse(PrePopulationResponse.noPrePop) shouldBe PrePopulationResponse(
+          hasEsaPrePop = true, hasJsaPrePop = true, hasPensionsPrePop = true, hasPensionLumpSumsPrePop = true
+        )
       }
 
       "return pre-pop flags as 'false' when only ignored HMRC-held data exists" in new Test {

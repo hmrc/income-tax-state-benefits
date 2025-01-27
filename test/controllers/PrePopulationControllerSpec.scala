@@ -70,7 +70,16 @@ class PrePopulationControllerSpec extends ControllerUnitTest
 
     "prePopulationService returns a pre pop response" should {
       "return it" in new Test {
-        mockGetPrePop(taxYear, nino, Right(PrePopulationResponse(hasEsaPrePop = false, hasJsaPrePop = true)))
+        mockGetPrePop(
+          taxYear,
+          nino,
+          Right(PrePopulationResponse(
+            hasEsaPrePop = false,
+            hasJsaPrePop = true,
+            hasPensionsPrePop = true,
+            hasPensionLumpSumsPrePop = false
+          ))
+        )
 
         val result: Future[Result] = controller.get(nino, taxYear)(fakeGetRequest)
         status(result) shouldBe 200
@@ -79,7 +88,9 @@ class PrePopulationControllerSpec extends ControllerUnitTest
             """
               |{
               |   "hasEsaPrePop": false,
-              |   "hasJsaPrePop": true
+              |   "hasJsaPrePop": true,
+              |   "hasPensionsPrePop": false,
+              |   "hasPensionLumpSumsPrePop": true
               |}
           """.stripMargin
           )

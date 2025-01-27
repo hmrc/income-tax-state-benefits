@@ -26,13 +26,23 @@ class PrePopulationResponseSpec extends UnitTest {
       "return the expected JsValue" in {
         val hasEsaPrePop: Boolean = true
         val hasJsaPrePop: Boolean = false
-        val prePopulationResponse = PrePopulationResponse(hasEsaPrePop = hasEsaPrePop, hasJsaPrePop = hasJsaPrePop)
+        val hasPensionsPrePop: Boolean = true
+        val hasLumpSumsPrePop: Boolean = false
+
+        val prePopulationResponse = PrePopulationResponse(
+          hasEsaPrePop = hasEsaPrePop,
+          hasJsaPrePop = hasJsaPrePop,
+          hasPensionsPrePop = hasPensionsPrePop,
+          hasPensionLumpSumsPrePop = hasLumpSumsPrePop
+        )
 
         Json.toJson(prePopulationResponse) shouldBe Json.parse(
         """
            |{
            |  "hasEsaPrePop": true,
-           |  "hasJsaPrePop": false
+           |  "hasJsaPrePop": false,
+           |  "hasPensionsPrePop": true,
+           |  "hasPensionLumpSumsPrePop": false
            |}
         """.stripMargin
         )

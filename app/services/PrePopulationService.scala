@@ -17,48 +17,41 @@
 package services
 
 import cats.data.EitherT
-import models.api.{AllStateBenefitsData, PrePopulationDataWrapper}
+import models.api.AllStateBenefitsData
 import models.errors.ServiceError
 import models.prePopulation.PrePopulationResponse
-import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.PrePopulationLogging
 
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class PrePopulationService @Inject()(service: StateBenefitsService) extends Logging {
+class PrePopulationService @Inject()(service: StateBenefitsService) extends PrePopulationLogging {
+  val classLoggingContext = "PrePopulationService"
 
   def get(taxYear: Int, nino: String)
          (implicit ec: ExecutionContext,hc: HeaderCarrier): EitherT[Future, ServiceError, PrePopulationResponse] = {
 
-    val loggingContext: String = "[PrePopulationService][get] - "
+    val methodLoggingContext: String = "get"
     val userDataLogString: String = s" for NINO: $nino, and tax year: $taxYear"
+    val getInfoLogger = infoLog(methodLoggingContext = methodLoggingContext, dataLog = userDataLogString)
 
-    def infoLog(message: String): Unit = logger.info(loggingContext + message + userDataLogString)
-    def warnLog(message: String): Unit = logger.warn(loggingContext + message + userDataLogString)
-
-    infoLog("Attempting to retrieve user's state benefits data from IF")
+    getInfoLogger("Attempting to retrieve user's state benefits data from IF")
 
     def result: EitherT[Future, ServiceError, PrePopulationResponse] = for {
       allStateBenefitsDataOpt <- EitherT(service.getAllStateBenefitsData(taxYear, nino))
     } yield toPrePopulationResponse(allStateBenefitsDataOpt)
 
     def toPrePopulationResponse(data: Option[AllStateBenefitsData]): PrePopulationResponse = data.fold {
-      infoLog("No state benefits data found in success response from IF. Returning 'no pre-pop' response")
+      getInfoLogger("No state benefits data found in success response from IF. Returning 'no pre-pop' response")
       PrePopulationResponse.noPrePop
     }(prePop => {
-      infoLog("Valid state benefits data found within success response from IF. Determining correct pre-pop response")
+      getInfoLogger("Valid state benefits data found within success response from IF. Determining correct pre-pop response")
 
-      def isEsaJsaPrePopulated[I](data: Option[PrePopulationDataWrapper[I]]): (Boolean, Boolean) =
-        data.fold((false, false))(data => (data.hasEsaData, data.hasJsaData))
-
-      val (esaCustomerPrePopulated, jsaCustomerPrePopulated) = isEsaJsaPrePopulated(prePop.customerAddedStateBenefitsData)
-      val (esaHmrcHeldPrePopulated, jsaHmrcHeldPrePopulated) = isEsaJsaPrePopulated(prePop.stateBenefitsData)
-
-      PrePopulationResponse(
-        hasEsaPrePop = esaCustomerPrePopulated || esaHmrcHeldPrePopulated,
-        hasJsaPrePop = jsaCustomerPrePopulated || jsaHmrcHeldPrePopulated
+      PrePopulationResponse.fromData(
+        customerData = prePop.customerAddedStateBenefitsData,
+        hmrcData = prePop.stateBenefitsData
       )
     })
 
@@ -66,10 +59,10 @@ class PrePopulationService @Inject()(service: StateBenefitsService) extends Logg
 
     result.leftFlatMap{
       case error if error.message.contains("404") =>
-        infoLog(errorLogString + "'404 data not found' error. Returning 'no pre-pop' response")
+        getInfoLogger(errorLogString + "'404 data not found' error. Returning 'no pre-pop' response")
         EitherT.right(Future.successful(PrePopulationResponse.noPrePop))
       case err =>
-        warnLog(errorLogString + s"error: ${err.message}")
+        warnLog(methodLoggingContext, userDataLogString)(errorLogString + s"error: ${err.message}")
         EitherT.left(Future.successful(err))
     }
   }

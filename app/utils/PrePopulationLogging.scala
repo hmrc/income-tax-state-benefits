@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package models.api
+package utils
 
-trait PrePopulationDataWrapper[I] {
-  val employmentSupportAllowances: Option[Set[I]]
-  val jobSeekersAllowances: Option[Set[I]]
+import play.api.Logger
 
-  protected[api] def hasDataForOpt(dataOpt: Option[Set[I]]): Boolean =
-    dataOpt.fold(false)(data => data.nonEmpty)
+trait PrePopulationLogging {
+  lazy val logger: Logger = Logger(this.getClass)
+  val classLoggingContext : String
 
-  val (hasEsaData, hasJsaData) = (
-    hasDataForOpt(employmentSupportAllowances),
-    hasDataForOpt(jobSeekersAllowances)
-  )
+  def infoLog(methodLoggingContext: String, dataLog: String = ""): String => Unit = (message: String) =>
+      logger.info(s"[$classLoggingContext]" + s"[$methodLoggingContext]" + " - " + message + dataLog)
+
+  def warnLog(methodLoggingContext: String, dataLog: String = ""): String => Unit = (message: String) =>
+    logger.warn(s"[$classLoggingContext]" + s"[$methodLoggingContext]" + " - " + message + dataLog)
 }

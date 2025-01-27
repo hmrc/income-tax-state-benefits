@@ -18,13 +18,31 @@ package models.prePopulation
 
 import play.api.libs.json.{Json, Writes}
 
-case class PrePopulationResponse(hasEsaPrePop: Boolean, hasJsaPrePop: Boolean)
+case class PrePopulationResponse(hasEsaPrePop: Boolean,
+                                 hasJsaPrePop: Boolean,
+                                 hasPensionsPrePop: Boolean,
+                                 hasPensionLumpSumsPrePop: Boolean)
 
 object PrePopulationResponse {
   implicit val writes: Writes[PrePopulationResponse] = Json.writes[PrePopulationResponse]
 
+  def fromData(customerData: Option[CustomerPrePopulationDataWrapper],
+               hmrcData: Option[HmrcHeldPrePopulationDataWrapper]): PrePopulationResponse = {
+    val (esaCustomer, jsaCustomer, penCustomer, lumCustomer) = PrePopulationDataWrapper.isPrePopulated(customerData)
+    val (esaHmrc, jsaHmrc, penHmrc, lumHmrc) = PrePopulationDataWrapper.isPrePopulated(hmrcData)
+
+    PrePopulationResponse(
+      hasEsaPrePop = esaCustomer || esaHmrc,
+      hasJsaPrePop = jsaCustomer || jsaHmrc,
+      hasPensionsPrePop = penCustomer || penHmrc,
+      hasPensionLumpSumsPrePop = lumCustomer || lumHmrc
+    )
+  }
+
   val noPrePop: PrePopulationResponse = PrePopulationResponse(
     hasEsaPrePop = false,
-    hasJsaPrePop = false
+    hasJsaPrePop = false,
+    hasPensionsPrePop = false,
+    hasPensionLumpSumsPrePop = false
   )
 }

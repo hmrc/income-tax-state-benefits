@@ -16,6 +16,7 @@
 
 package models.api
 
+import models.prePopulation.HmrcHeldPrePopulationDataWrapper
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.{JsPath, OWrites, Reads}
 import utils.JsonUtils.jsonObjNoNulls
@@ -27,11 +28,7 @@ case class StateBenefitsData(incapacityBenefits: Option[Set[StateBenefit]] = Non
                              jobSeekersAllowances: Option[Set[StateBenefit]] = None,
                              bereavementAllowance: Option[StateBenefit] = None,
                              other: Option[StateBenefit] = None)
-  extends PrePopulationDataWrapper[StateBenefit] {
-
-  override def hasDataForOpt(dataOpt: Option[Set[StateBenefit]]): Boolean =
-    dataOpt.fold(false)(data => data.exists(_.dateIgnored.isEmpty))
-}
+  extends HmrcHeldPrePopulationDataWrapper
 
 object StateBenefitsData {
 

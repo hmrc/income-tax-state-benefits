@@ -74,7 +74,7 @@ class PrePopulationControllerISpec extends ControllerIntegrationTest
       }
     }
 
-    "IF returns no relevant data when retrieving a user's state benefits" should {
+    "IF returns no data when retrieving a user's state benefits" should {
       "return an empty pre-pop response" in new Test {
         val httpResponse: HttpResponse = HttpResponse(OK, "{}")
         stubGetHttpClientCall(s"/if/income-tax/income/state-benefits/$ifTaxYearParam/$nino", httpResponse)
@@ -85,7 +85,7 @@ class PrePopulationControllerISpec extends ControllerIntegrationTest
       }
     }
 
-    "IF returns no ESA or JSA data when retrieving a user's state benefits" should {
+    "IF returns no relevant data when retrieving a user's state benefits" should {
       "return an empty pre-pop response" in new Test {
         val data: AllStateBenefitsData = AllStateBenefitsData(
           stateBenefitsData = Some(aStateBenefitsData.copy(
@@ -107,7 +107,7 @@ class PrePopulationControllerISpec extends ControllerIntegrationTest
       }
     }
 
-    "IF returns ESA or JSA data when retrieving a user's state benefits" should {
+    "IF returns relevant data when retrieving a user's state benefits" should {
       "return the appropriate pre-population response when only customer data exists" in new Test {
         val customerOnlyIfResponse: AllStateBenefitsData = AllStateBenefitsData(
           stateBenefitsData = None,
@@ -119,7 +119,9 @@ class PrePopulationControllerISpec extends ControllerIntegrationTest
 
         val result: WSResponse = await(request().get())
         result.status shouldBe OK
-        result.json shouldBe Json.toJson(PrePopulationResponse(hasEsaPrePop = true, hasJsaPrePop = true))
+        result.json shouldBe Json.toJson(PrePopulationResponse(
+          hasEsaPrePop = true, hasJsaPrePop = true, hasPensionsPrePop = true, hasPensionLumpSumsPrePop = true
+        ))
       }
 
       "return the appropriate pre-population response when only non-ignored HMRC-held data exists" in new Test {
@@ -135,7 +137,10 @@ class PrePopulationControllerISpec extends ControllerIntegrationTest
 
         val aStateBenefitsData: StateBenefitsData = StateBenefitsData(
           employmentSupportAllowances = Some(Set(aStateBenefit)),
-          jobSeekersAllowances = Some(Set(aStateBenefit))
+          jobSeekersAllowances = Some(Set(aStateBenefit)),
+          statePension = Some(aStateBenefit),
+          statePensionLumpSum = Some(aStateBenefit),
+
         )
 
         val hmrcHeldOnlyIfResponse: AllStateBenefitsData = AllStateBenefitsData(
@@ -148,7 +153,9 @@ class PrePopulationControllerISpec extends ControllerIntegrationTest
 
         val result: WSResponse = await(request().get())
         result.status shouldBe OK
-        result.json shouldBe Json.toJson(PrePopulationResponse(hasEsaPrePop = true, hasJsaPrePop = true))
+        result.json shouldBe Json.toJson(PrePopulationResponse(
+          hasEsaPrePop = true, hasJsaPrePop = true, hasPensionsPrePop = true, hasPensionLumpSumsPrePop = true
+        ))
       }
 
       "return an empty pre-population response when only ignored HMRC-held data exists" in new Test {
@@ -179,7 +186,9 @@ class PrePopulationControllerISpec extends ControllerIntegrationTest
 
         val result: WSResponse = await(request().get())
         result.status shouldBe OK
-        result.json shouldBe Json.toJson(PrePopulationResponse(hasEsaPrePop = true, hasJsaPrePop = false))
+        result.json shouldBe Json.toJson(PrePopulationResponse(
+          hasEsaPrePop = true, hasJsaPrePop = false, hasPensionsPrePop = true, hasPensionLumpSumsPrePop = true
+        ))
       }
     }
   }
