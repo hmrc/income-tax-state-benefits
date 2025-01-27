@@ -76,8 +76,8 @@ class PrePopulationControllerSpec extends ControllerUnitTest
           Right(PrePopulationResponse(
             hasEsaPrePop = false,
             hasJsaPrePop = true,
-            hasPensionsPrePop = true,
-            hasPensionLumpSumsPrePop = false
+            hasPensionsPrePop = false,
+            hasPensionLumpSumsPrePop = true
           ))
         )
 

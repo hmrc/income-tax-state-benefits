@@ -90,11 +90,15 @@ class PrePopulationControllerISpec extends ControllerIntegrationTest
         val data: AllStateBenefitsData = AllStateBenefitsData(
           stateBenefitsData = Some(aStateBenefitsData.copy(
             employmentSupportAllowances = None,
-            jobSeekersAllowances = None
+            jobSeekersAllowances = None,
+            statePension = None,
+            statePensionLumpSum = None
           )),
           customerAddedStateBenefitsData = Some(aCustomerAddedStateBenefitsData.copy(
             employmentSupportAllowances = None,
-            jobSeekersAllowances = None
+            jobSeekersAllowances = None,
+            statePensions = None,
+            statePensionLumpSums = None
           ))
         )
 
