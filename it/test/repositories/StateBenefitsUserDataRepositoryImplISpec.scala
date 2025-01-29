@@ -24,7 +24,7 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import org.mongodb.scala.{MongoException, MongoInternalException, MongoWriteException}
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.inject.guice.GuiceApplicationBuilder
-import support.IntegrationTest
+import support.RepositoryIntegrationTest
 import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
 import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserData
 import uk.gov.hmrc.mongo.MongoUtils
@@ -35,7 +35,7 @@ import java.time.Instant
 import java.util.UUID
 import scala.concurrent.Future
 
-class StateBenefitsUserDataRepositoryImplISpec extends IntegrationTest {
+class StateBenefitsUserDataRepositoryImplISpec extends RepositoryIntegrationTest {
 
   protected implicit val aesGcmAdCrypto: AesGcmAdCrypto = app.injector.instanceOf[AesGcmAdCrypto]
 

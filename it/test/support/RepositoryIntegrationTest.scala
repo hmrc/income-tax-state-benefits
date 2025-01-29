@@ -28,7 +28,7 @@ import support.providers.TaxYearProvider
 
 import scala.concurrent.ExecutionContext
 
-trait IntegrationTest extends AnyWordSpec
+trait RepositoryIntegrationTest extends AnyWordSpec
   with FutureAwaits with DefaultAwaitTimeout
   with Matchers
   with GuiceOneServerPerSuite
