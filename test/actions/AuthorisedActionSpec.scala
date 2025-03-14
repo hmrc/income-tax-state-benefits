@@ -17,7 +17,7 @@
 package actions
 
 import config.AppConfig
-import models.authorisation.Enrolment.{Agent, Individual, Nino, SupportingAgent}
+import models.authorisation.Enrolment.{Agent, Individual, Nino}
 import models.requests.AuthorisationRequest
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.SystemMaterializer
@@ -53,7 +53,7 @@ class AuthorisedActionSpec extends UnitTest
   private val defaultActionBuilder: DefaultActionBuilder = DefaultActionBuilder(mockControllerComponents.parsers.default)
   implicit val materializer: SystemMaterializer = SystemMaterializer(actorSystem)
 
-  private val underTest: AuthorisedAction = new AuthorisedAction(defaultActionBuilder, mock[AppConfig], mockAuthConnector, mockControllerComponents)
+  private val underTest: AuthorisedAction = new AuthorisedAction(defaultActionBuilder, mockAuthConnector, mockControllerComponents)
 
   trait AgentTest {
     val nino = "AA111111A"
@@ -76,19 +76,13 @@ class AuthorisedActionSpec extends UnitTest
         .withIdentifier("MTDITID", mtdId)
         .withDelegatedAuthRule("mtd-it-auth-supp")
 
-    def mockMultipleAgentsSwitch(bool: Boolean): CallHandler0[Boolean] =
-      (() => mockAppConfig.emaSupportingAgentsEnabled)
-        .expects()
-        .returning(bool)
-        .anyNumberOfTimes()
-
     val primaryAgentEnrolment: Enrolments = Enrolments(Set(
       Enrolment(Individual.key, Seq(EnrolmentIdentifier(Individual.value, mtdItId)), "Activated"),
       Enrolment(Agent.key, Seq(EnrolmentIdentifier(Agent.value, arn)), "Activated")
     ))
 
     val supportingAgentEnrolment: Enrolments = Enrolments(Set(
-      Enrolment(SupportingAgent.key, Seq(EnrolmentIdentifier(Individual.value, mtdItId)), "Activated"),
+      Enrolment("HMRC-MTD-IT-SUPP", Seq(EnrolmentIdentifier(Individual.value, mtdItId)), "Activated"),
       Enrolment(Agent.key, Seq(EnrolmentIdentifier(Agent.value, arn)), "Activated")
     ))
 
@@ -105,7 +99,6 @@ class AuthorisedActionSpec extends UnitTest
 
     def testAuth: AuthorisedAction = new AuthorisedAction(
       defaultActionBuilder = defaultActionBuilder,
-      appConfig = mockAppConfig,
       authConnector = mockAuthConnector,
       cc = mockControllerComponents
     )
@@ -397,30 +390,10 @@ class AuthorisedActionSpec extends UnitTest
         }
       }
 
-      "[EMA disabled] results in an AuthorisationException error being returned from Auth" should {
-        "return an Unauthorised response" in new AgentTest {
-          mockMultipleAgentsSwitch(false)
-
+      "results in an AuthorisationException error being returned from Auth" should {
+        "return an Unauthorised response when agent auth call fails" in new AgentTest {
           object AuthException extends AuthorisationException("Some reason")
           mockAuthReturnException(AuthException, primaryAgentPredicate(mtdItId))
-
-          val result: Future[Result] = testAuth.agentAuthentication(testBlock, mtdItId)(
-            request = FakeRequest().withSession(fakeRequestWithMtditidAndNino.session.data.toSeq :_*),
-            hc = emptyHeaderCarrier
-          )
-
-          status(result) shouldBe UNAUTHORIZED
-          contentAsString(result) shouldBe ""
-        }
-      }
-
-      "[EMA enabled] results in an AuthorisationException error being returned from Auth" should {
-        "return an Unauthorised response when secondary agent auth call also fails" in new AgentTest {
-          mockMultipleAgentsSwitch(true)
-
-          object AuthException extends AuthorisationException("Some reason")
-          mockAuthReturnException(AuthException, primaryAgentPredicate(mtdItId))
-          mockAuthReturnException(AuthException, secondaryAgentPredicate(mtdItId))
 
           lazy val result: Future[Result] = testAuth.agentAuthentication(testBlock, mtdItId)(
             request = FakeRequest().withSession(fakeRequestWithMtditidAndNino.session.data.toSeq :_*),
@@ -430,45 +403,11 @@ class AuthorisedActionSpec extends UnitTest
           status(result) shouldBe UNAUTHORIZED
           contentAsString(result) shouldBe ""
         }
-
-        "handle appropriately when a supporting agent is properly authorised" in new AgentTest {
-          mockMultipleAgentsSwitch(true)
-
-          object AuthException extends AuthorisationException("Some reason")
-          mockAuthReturnException(AuthException, primaryAgentPredicate(mtdItId))
-          mockAuthReturn(supportingAgentEnrolment, secondaryAgentPredicate(mtdItId))
-
-          lazy val result: Future[Result] = testAuth.agentAuthentication(testBlock, mtdItId)(
-            request = FakeRequest().withSession(fakeRequestWithMtditidAndNino.session.data.toSeq :_*),
-            hc = validHeaderCarrier
-          )
-
-          status(result) shouldBe OK
-          contentAsString(result) shouldBe s"$mtdItId $arn"
-        }
       }
 
-      "[EMA enabled] results in an ISE error being returned from Auth for primary agent" should {
+      "results in an ISE error being returned from Auth for primary agent" should {
         "return an error other than Auth " in new AgentTest {
-          mockMultipleAgentsSwitch(true)
-
           mockAuthReturnException(new Exception("Bang"), primaryAgentPredicate(mtdItId))
-
-          val result: Future[Result] = testAuth.agentAuthentication(testBlock, mtdItId)(
-            request = FakeRequest().withSession(fakeRequestWithMtditidAndNino.session.data.toSeq: _*),
-            hc = emptyHeaderCarrier
-          )
-
-          status(result) shouldBe INTERNAL_SERVER_ERROR
-        }
-      }
-
-      "[EMA enabled] results in an ISE error being returned from Auth for secondary agent" should {
-        "return an error other than Auth " in new AgentTest {
-          mockMultipleAgentsSwitch(true)
-
-          mockAuthReturnException(new InsufficientEnrolments, primaryAgentPredicate(mtdItId))
-          mockAuthReturnException(new Exception("Bang"), secondaryAgentPredicate(mtdItId))
 
           val result: Future[Result] = testAuth.agentAuthentication(testBlock, mtdItId)(
             request = FakeRequest().withSession(fakeRequestWithMtditidAndNino.session.data.toSeq: _*),
