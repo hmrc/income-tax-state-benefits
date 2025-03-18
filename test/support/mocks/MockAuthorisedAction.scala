@@ -17,7 +17,6 @@
 package support.mocks
 
 import actions.AuthorisedAction
-import config.AppConfig
 import models.authorisation.Enrolment.{Individual, Nino}
 import org.scalamock.handlers.CallHandler4
 import org.scalamock.scalatest.MockFactory
@@ -38,7 +37,7 @@ trait MockAuthorisedAction extends MockFactory with MockAuthConnector {
 
   protected val mtdItId = "1234567890"
 
-  protected val mockAuthorisedAction: AuthorisedAction = new AuthorisedAction(defaultActionBuilder, mock[AppConfig], mockAuthConnector, mcc)
+  protected val mockAuthorisedAction: AuthorisedAction = new AuthorisedAction(defaultActionBuilder, mockAuthConnector, mcc)
 
   def mockAuthorisation(): CallHandler4[Predicate, Retrieval[_], HeaderCarrier, ExecutionContext, Future[Any]] = {
     val individualEnrolments: Enrolments = Enrolments(

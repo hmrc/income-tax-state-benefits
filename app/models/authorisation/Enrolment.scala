@@ -22,10 +22,8 @@ object Enrolment {
   case object Individual extends Enrolment(key = "HMRC-MTD-IT", value = "MTDITID")
   case object Agent extends Enrolment(key = "HMRC-AS-AGENT", value = "AgentReferenceNumber")
   case object Nino extends Enrolment(key = "HMRC-NI", value = "NINO")
-  case object SupportingAgent extends Enrolment(key = "HMRC-MTD-IT-SUPP", value = "MTDITID")
 }
 
 object DelegatedAuthRules {
   val agentDelegatedAuthRule = "mtd-it-auth"
-  val supportingAgentDelegatedAuthRule = "mtd-it-auth-supp"
 }

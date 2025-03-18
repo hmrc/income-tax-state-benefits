@@ -35,7 +35,6 @@ trait AppConfig {
   def replaceJourneyAnswersIndexes: Boolean
   def sectionCompletedQuestionEnabled: Boolean
   def authorisationTokenFor(apiVersion: String): String
-  def emaSupportingAgentsEnabled: Boolean
 }
 
 @Singleton
@@ -63,6 +62,4 @@ class AppConfigImpl @Inject()(servicesConfig: ServicesConfig) extends AppConfig 
   lazy val sectionCompletedQuestionEnabled: Boolean = servicesConfig.getBoolean("feature-switch.sectionCompletedQuestionEnabled")
 
   def authorisationTokenFor(apiVersion: String): String = servicesConfig.getString(authorisationTokenKey + s".$apiVersion")
-
-  lazy val emaSupportingAgentsEnabled: Boolean = servicesConfig.getBoolean("feature-switch.ema-supporting-agents-enabled")
 }
