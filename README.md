@@ -6,8 +6,8 @@ This is where we make API calls from users viewing and making changes to the Sta
 ## Running the service locally
 
 You will need to have the following:
-- Installed [MondoDB](https://docs.mongodb.com/manual/installation/)
-- Installed/configured [service manager](https://github.com/hmrc/service-manager).
+- Installed [MongoDB](https://docs.mongodb.com/manual/installation/)
+- Installed/configured [service manager 2](https://github.com/hmrc/sm2).
 
 The service manager profile for this service is:
 
