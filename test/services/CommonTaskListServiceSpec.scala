@@ -28,6 +28,7 @@ import support.UnitTest
 import support.mocks.{MockJourneyAnswersRepository, MockStateBenefitsService}
 import support.providers.AppConfigStubProvider
 import support.stubs.AppConfigStub
+import support.utils.TaxYearUtils
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{Instant, LocalDate}
@@ -51,7 +52,7 @@ class CommonTaskListServiceSpec extends UnitTest
     )
 
     val nino: String = "12345678"
-    val taxYear: Int = 2025
+    val taxYear: Int = TaxYearUtils.taxYear
     val mtdItId = "12345"
   }
 
