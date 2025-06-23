@@ -21,8 +21,7 @@ import models.authorisation.Enrolment.{Agent, Individual, Nino}
 import models.requests.AuthorisationRequest
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.SystemMaterializer
-import org.scalamock.handlers.{CallHandler0, CallHandler4}
-import play.api.http.Status._
+import org.scalamock.handlers.CallHandler4
 import play.api.http.{HeaderNames, Status => TestStatus}
 import play.api.mvc.Results._
 import play.api.mvc._

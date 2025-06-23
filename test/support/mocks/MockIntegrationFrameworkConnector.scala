@@ -21,12 +21,13 @@ import connectors.errors.ApiError
 import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride, UpdateStateBenefit}
 import org.scalamock.handlers.{CallHandler3, CallHandler4, CallHandler5}
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.TestSuite
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.util.UUID
 import scala.concurrent.Future
 
-trait MockIntegrationFrameworkConnector extends MockFactory {
+trait MockIntegrationFrameworkConnector extends MockFactory { _: TestSuite =>
 
   protected val mockIntegrationFrameworkConnector: IntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
 

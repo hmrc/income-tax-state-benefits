@@ -20,6 +20,7 @@ import actions.AuthorisedAction
 import models.authorisation.Enrolment.{Individual, Nino}
 import org.scalamock.handlers.CallHandler4
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.TestSuite
 import play.api.mvc._
 import play.api.test.Helpers.stubMessagesControllerComponents
 import uk.gov.hmrc.auth.core.authorise.Predicate
@@ -30,7 +31,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-trait MockAuthorisedAction extends MockFactory with MockAuthConnector {
+trait MockAuthorisedAction extends MockFactory with MockAuthConnector { _: TestSuite =>
 
   private val mcc                                        = stubMessagesControllerComponents()
   private val defaultActionBuilder: DefaultActionBuilder = DefaultActionBuilder(mcc.parsers.default)
