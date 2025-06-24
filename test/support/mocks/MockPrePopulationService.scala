@@ -21,12 +21,13 @@ import models.errors.ServiceError
 import models.prePopulation.PrePopulationResponse
 import org.scalamock.handlers._
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.TestSuite
 import services.PrePopulationService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait MockPrePopulationService extends MockFactory {
+trait MockPrePopulationService extends MockFactory { _: TestSuite =>
 
   protected val mockPrePopService: PrePopulationService = mock[PrePopulationService]
 

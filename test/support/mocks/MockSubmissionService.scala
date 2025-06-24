@@ -20,12 +20,13 @@ import models.IncomeTaxUserData
 import models.errors.ApiServiceError
 import org.scalamock.handlers._
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.TestSuite
 import services.SubmissionService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-trait MockSubmissionService extends MockFactory {
+trait MockSubmissionService extends MockFactory { _: TestSuite =>
 
   protected val mockSubmissionService: SubmissionService = mock[SubmissionService]
 

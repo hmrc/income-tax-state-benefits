@@ -20,12 +20,13 @@ import models.errors.ServiceError
 import models.mongo.StateBenefitsUserData
 import org.scalamock.handlers.{CallHandler1, CallHandler2}
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.TestSuite
 import repositories.StateBenefitsUserDataRepository
 
 import java.util.UUID
 import scala.concurrent.Future
 
-trait MockStateBenefitsUserDataRepository extends MockFactory {
+trait MockStateBenefitsUserDataRepository extends MockFactory { _: TestSuite =>
 
   protected val mockStateBenefitsUserDataRepository: StateBenefitsUserDataRepository = mock[StateBenefitsUserDataRepository]
 

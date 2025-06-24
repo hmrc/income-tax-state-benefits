@@ -21,11 +21,12 @@ import connectors.errors.ApiError
 import models.IncomeTaxUserData
 import org.scalamock.handlers.CallHandler4
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.TestSuite
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-trait MockSubmissionConnector extends MockFactory {
+trait MockSubmissionConnector extends MockFactory { _: TestSuite =>
 
   protected val mockSubmissionConnector: SubmissionConnector = mock[SubmissionConnector]
 

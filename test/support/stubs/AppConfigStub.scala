@@ -17,10 +17,10 @@
 package support.stubs
 
 import config.{AppConfig, AppConfigImpl}
-import org.scalamock.scalatest.MockFactory
+import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-class AppConfigStub extends MockFactory {
+class AppConfigStub {
 
   def config(environment: String = "test", encrypt: Boolean = true, useSectionCompletedQuestionEnabled: Boolean = true
             ): AppConfig = new AppConfigImpl(mock[ServicesConfig]) {

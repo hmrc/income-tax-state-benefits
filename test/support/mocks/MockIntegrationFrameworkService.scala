@@ -21,13 +21,14 @@ import models.errors.ApiServiceError
 import models.mongo.StateBenefitsUserData
 import org.scalamock.handlers._
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.TestSuite
 import services.IntegrationFrameworkService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.util.UUID
 import scala.concurrent.Future
 
-trait MockIntegrationFrameworkService extends MockFactory {
+trait MockIntegrationFrameworkService extends MockFactory { _: TestSuite =>
 
   protected val mockIntegrationFrameworkService: IntegrationFrameworkService = mock[IntegrationFrameworkService]
 
