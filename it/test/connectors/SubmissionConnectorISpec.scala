@@ -39,7 +39,7 @@ class SubmissionConnectorISpec extends ConnectorIntegrationTest
 
   private val pagerDutyLoggerService = mock[PagerDutyLoggerService]
 
-  private val underTest = new SubmissionConnector(httpClient, pagerDutyLoggerService, appConfigStub)
+  private val underTest = new SubmissionConnector(httpClientV2, pagerDutyLoggerService, appConfigStub)
 
   ".getIncomeTaxUserData" should {
     "return correct data when correct parameters are passed" in {

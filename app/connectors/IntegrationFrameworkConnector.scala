@@ -20,8 +20,10 @@ import config.AppConfig
 import connectors.errors.ApiError
 import connectors.responses._
 import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride, UpdateStateBenefit}
+import play.api.libs.json.Json
 import services.PagerDutyLoggerService
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, StringContextOps}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import java.net.URL
 import java.util.UUID
@@ -29,7 +31,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
+class IntegrationFrameworkConnector @Inject()(httpClient: HttpClientV2,
                                               pagerDutyLoggerService: PagerDutyLoggerService,
                                               appConf: AppConfig)
                                              (implicit ec: ExecutionContext) extends IFConnector {
@@ -173,36 +175,44 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClient,
 
   private def callCreateOrUpdateDetailOverride(url: URL, stateBenefitDetailOverride: StateBenefitDetailOverride)
                                               (implicit hc: HeaderCarrier): Future[CreateOrUpdateStateBenefitResponse] = {
-    httpClient.PUT[StateBenefitDetailOverride, CreateOrUpdateStateBenefitResponse](url, stateBenefitDetailOverride)
+    httpClient.put(url"$url")
+      .withBody(Json.toJson(stateBenefitDetailOverride))
+      .execute[CreateOrUpdateStateBenefitResponse]
   }
 
   private def callGetStateBenefits(url: URL)(implicit hc: HeaderCarrier): Future[GetStateBenefitsResponse] = {
-    httpClient.GET[GetStateBenefitsResponse](url)
+    httpClient.get(url"$url").execute[GetStateBenefitsResponse]
   }
 
   private def callAddStateBenefit(url: URL, addStateBenefit: AddStateBenefit)
                                  (implicit hc: HeaderCarrier): Future[AddStateBenefitResponse] = {
-    httpClient.POST[AddStateBenefit, AddStateBenefitResponse](url, addStateBenefit)
+    httpClient.post(url"$url")
+      .withBody(Json.toJson(addStateBenefit))
+      .execute[AddStateBenefitResponse]
   }
 
   private def callUpdateStateBenefit(url: URL, updateStateBenefit: UpdateStateBenefit)(implicit hc: HeaderCarrier): Future[UpdateStateBenefitResponse] = {
-    httpClient.PUT[UpdateStateBenefit, UpdateStateBenefitResponse](url, updateStateBenefit)
+    httpClient.put(url"$url")
+      .withBody(Json.toJson(updateStateBenefit))
+      .execute[UpdateStateBenefitResponse]
   }
 
   private def callDeleteStateBenefit(url: URL)(implicit hc: HeaderCarrier): Future[DeleteStateBenefitResponse] = {
-    httpClient.DELETE[DeleteStateBenefitResponse](url)
+    httpClient.delete(url"$url").execute[DeleteStateBenefitResponse]
   }
 
   private def callDeleteStateBenefitDetailOverride(url: URL)(implicit hc: HeaderCarrier): Future[DeleteStateBenefitDetailOverrideResponse] = {
-    httpClient.DELETE[DeleteStateBenefitDetailOverrideResponse](url)
+    httpClient.delete(url"$url").execute[DeleteStateBenefitDetailOverrideResponse]
   }
 
   private def callIgnoreStateBenefit(url: URL)(implicit hc: HeaderCarrier): Future[IgnoreStateBenefitResponse] = {
-    httpClient.PUT[Map[String, String], IgnoreStateBenefitResponse](url, Map[String, String]())
+    httpClient.put(url"$url")
+      .withBody(Json.toJson(Map[String, String]()))
+      .execute[IgnoreStateBenefitResponse]
   }
 
   private def callUnIgnoreStateBenefit(url: URL)(implicit hc: HeaderCarrier): Future[UnIgnoreStateBenefitResponse] = {
-    httpClient.DELETE[UnIgnoreStateBenefitResponse](url)
+    httpClient.delete(url"$url").execute[UnIgnoreStateBenefitResponse]
   }
 
   private def toTaxYearParam(taxYear: Int): String = {

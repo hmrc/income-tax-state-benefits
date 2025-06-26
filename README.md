@@ -9,6 +9,8 @@ You will need to have the following:
 - Installed [MongoDB](https://docs.mongodb.com/manual/installation/)
 - Installed/configured [service manager 2](https://github.com/hmrc/sm2).
 
+This can be found in the [developer handbook](https://docs.tax.service.gov.uk/mdtp-handbook/documentation/developer-set-up/)
+
 The service manager profile for this service is:
 
     sm2 --start INCOME_TAX_STATE_BENEFITS
@@ -34,9 +36,10 @@ To test the branch you're working on locally. You will need to run `sm2 --stop I
 
 ### Feature Switches
 
-| Feature    | Environments Enabled In     |
-|------------|-----------------------------|
-| Encryption | QA, Staging, ET, Production |
+| Feature                         | Description                                                                     |
+|---------------------------------|---------------------------------------------------------------------------------|
+| sectionCompletedQuestionEnabled | Sets task list item status to In Progress when enabled and section not finished |
+| useEncryption                   | Enables SymmetricCryptoFactory instead of EncryptedValue                        |
 
 ### Downstream services
 All State Benefits data is retrieved / updated via the downstream system.
