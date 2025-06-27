@@ -21,13 +21,15 @@ import connectors.errors.ApiError
 import connectors.responses.{GetIncomeTaxUserDataResponse, RefreshIncomeSourceResponse}
 import models.IncomeTaxUserData
 import models.requests.RefreshIncomeSourceRequest
+import play.api.libs.json.Json
 import services.PagerDutyLoggerService
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class SubmissionConnector @Inject()(httpClient: HttpClient,
+class SubmissionConnector @Inject()(httpClient: HttpClientV2,
                                     pagerDutyLoggerService: PagerDutyLoggerService,
                                     config: AppConfig)(implicit ec: ExecutionContext) {
 
@@ -54,12 +56,14 @@ class SubmissionConnector @Inject()(httpClient: HttpClient,
   private def getAllStateBenefitsDataResponse(taxYear: Int, nino: String)
                                              (implicit hc: HeaderCarrier): Future[GetIncomeTaxUserDataResponse] = {
     val url = config.submissionBaseUrl + s"/income-tax/nino/$nino/sources/session?taxYear=$taxYear"
-    httpClient.GET[GetIncomeTaxUserDataResponse](url)
+    httpClient.get(url"$url").execute[GetIncomeTaxUserDataResponse]
   }
 
   private def refreshStateBenefitsResponse(taxYear: Int, nino: String)
                                           (implicit hc: HeaderCarrier): Future[RefreshIncomeSourceResponse] = {
     val url = config.submissionBaseUrl + s"/income-tax/nino/$nino/sources/session?taxYear=$taxYear"
-    httpClient.PUT[RefreshIncomeSourceRequest, RefreshIncomeSourceResponse](url, RefreshIncomeSourceRequest("state-benefits"))
+    httpClient.put(url"$url")
+      .withBody(Json.toJson(RefreshIncomeSourceRequest("state-benefits")))
+      .execute[RefreshIncomeSourceResponse]
   }
 }

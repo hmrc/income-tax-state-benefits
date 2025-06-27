@@ -41,7 +41,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
   private val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId("sessionIdValue")))
 
   private val pagerDutyLoggerService = mock[PagerDutyLoggerService]
-  private val underTest = new IntegrationFrameworkConnector(httpClient, pagerDutyLoggerService, appConfigStub)
+  private val underTest = new IntegrationFrameworkConnector(httpClientV2, pagerDutyLoggerService, appConfigStub)
 
   private def toTaxYearParameter(taxYear: Int): String = {
     s"${taxYear - 1}-${taxYear.toString takeRight 2}"
