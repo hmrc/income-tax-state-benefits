@@ -26,11 +26,11 @@ import org.mongodb.scala.MongoException
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.{FindOneAndReplaceOptions, FindOneAndUpdateOptions}
 import play.api.Logging
+import uk.gov.hmrc.mdc.Mdc
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs.toBson
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.play.http.logging.Mdc
 import utils.AesGcmAdCrypto
 import utils.PagerDutyHelper.PagerDutyKeys._
 import utils.PagerDutyHelper.{PagerDutyKeys, pagerDutyLog}
