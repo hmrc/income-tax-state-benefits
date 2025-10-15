@@ -346,7 +346,7 @@ class StateBenefitsServiceSpec
 
     "succeed when all calls succeed" in {
       mockRefreshStateBenefits(taxYear, nino, mtdItId, Right(()))
-      mockRemoveClaim(nino, taxYear, benefitId)(result = Right())
+      mockRemoveClaim(nino, taxYear, benefitId)(result = Right((): Unit))
 
       await(underTest.removeClaimById(nino, taxYear, mtdItId, benefitId)) shouldBe Right(())
     }
