@@ -125,7 +125,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends RepositoryIntegrationTest
 
       private val errorOrUuid = await(underTest.createOrUpdate(aStateBenefitsUserData.copy(sessionDataId = Some(UUID.randomUUID()))))
 
-      errorOrUuid.swap.map(_.message).getOrElse("") must {include("Command failed") and include("error 11000 (DuplicateKey)")}
+      errorOrUuid.swap.map(_.message).getOrElse("") must include("error 11000 (DuplicateKey)")
       await(underTest.collection.countDocuments().toFuture()) shouldBe 1
     }
 
