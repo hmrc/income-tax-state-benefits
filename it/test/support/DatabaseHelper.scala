@@ -19,6 +19,8 @@ package support
 import models.mongo.StateBenefitsUserData
 import org.mongodb.scala.Document
 import repositories.StateBenefitsUserDataRepositoryImpl
+import org.mongodb.scala.{ObservableFuture, SingleObservableFuture}
+
 
 import java.util.UUID
 

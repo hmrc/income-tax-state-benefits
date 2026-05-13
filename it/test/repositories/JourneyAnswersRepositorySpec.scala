@@ -65,7 +65,7 @@ class JourneyAnswersRepositorySpec
 
   override implicit lazy val appConfig: AppConfig = mock[AppConfig]
 
-  protected override val repository = new JourneyAnswersRepositoryImpl(
+  protected override val repository: JourneyAnswersRepositoryImpl = new JourneyAnswersRepositoryImpl(
     mongoComponent = mongoComponent,
     appConfig = appConfig,
     clock = stubClock

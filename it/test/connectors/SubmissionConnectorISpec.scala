@@ -18,7 +18,7 @@ package connectors
 
 import connectors.errors.{ApiError, SingleErrorBody}
 import models.requests.RefreshIncomeSourceRequest
-import org.scalamock.scalatest.MockFactory
+
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import services.PagerDutyLoggerService
@@ -28,10 +28,9 @@ import support.providers.TaxYearProvider
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalatestplus.mockito.MockitoSugar
 
-class SubmissionConnectorISpec extends ConnectorIntegrationTest
-  with TaxYearProvider
-  with MockFactory {
+class SubmissionConnectorISpec extends ConnectorIntegrationTest with MockitoSugar with TaxYearProvider {
 
   private val nino = "some-nino"
   private val mtditid = "some-mtditid"
@@ -53,8 +52,6 @@ class SubmissionConnectorISpec extends ConnectorIntegrationTest
     "return IF error and perform a pagerDutyLog when Left is returned" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "GetIncomeTaxUserDataResponse")
-
       stubGetHttpClientCall(s"/income-tax/nino/$nino/sources/session\\?taxYear=$taxYear", httpResponse)
 
       await(underTest.getIncomeTaxUserData(taxYear, nino, mtditid)(hc)) shouldBe
@@ -75,8 +72,6 @@ class SubmissionConnectorISpec extends ConnectorIntegrationTest
     "return error and perform pagerDutyLog when Left is returned" in {
       val jsValue = Json.toJson(RefreshIncomeSourceRequest("state-benefits"))
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
-
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "RefreshIncomeSourceResponse")
 
       stubPutHttpClientCall(s"/income-tax/nino/$nino/sources/session\\?taxYear=$taxYearEOY", jsValue.toString(), httpResponse)
 

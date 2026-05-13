@@ -19,29 +19,23 @@ package support.mocks
 import cats.data.EitherT
 import models.errors.ServiceError
 import models.prePopulation.PrePopulationResponse
-import org.scalamock.handlers._
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.TestSuite
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.Mockito.when
+import org.scalatestplus.mockito.MockitoSugar
 import services.PrePopulationService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait MockPrePopulationService extends MockFactory { _: TestSuite =>
+trait MockPrePopulationService extends MockitoSugar {
 
   protected val mockPrePopService: PrePopulationService = mock[PrePopulationService]
 
-  def mockGetPrePop(taxYear: Int, nino: String, result: Either[ServiceError, PrePopulationResponse]):
-  CallHandler4[Int, String, ExecutionContext, HeaderCarrier, EitherT[Future, ServiceError, PrePopulationResponse]] =
-    (mockPrePopService
-      .get(_: Int, _: String)(_: ExecutionContext, _: HeaderCarrier))
-      .expects(taxYear, nino, *, *)
-      .returning(EitherT(Future.successful(result)))
+  def mockGetPrePop(taxYear: Int, nino: String, result: Either[ServiceError, PrePopulationResponse]): Unit =
+    when(mockPrePopService.get(eqTo(taxYear), eqTo(nino))(any[ExecutionContext](), any[HeaderCarrier]()))
+      .thenReturn(EitherT(Future.successful(result)))
 
-    def mockGetPrePopException(taxYear: Int, nino: String, result: Throwable):
-    CallHandler4[Int, String, ExecutionContext, HeaderCarrier, EitherT[Future, ServiceError, PrePopulationResponse]] =
-    (mockPrePopService
-      .get(_: Int, _: String)(_: ExecutionContext, _: HeaderCarrier))
-      .expects(taxYear, nino, *, *)
-      .returning(EitherT[Future, ServiceError, PrePopulationResponse](Future.failed(result)))
+  def mockGetPrePopException(taxYear: Int, nino: String, result: Throwable): Unit =
+    when(mockPrePopService.get(eqTo(taxYear), eqTo(nino))(any[ExecutionContext](), any[HeaderCarrier]()))
+      .thenReturn(EitherT[Future, ServiceError, PrePopulationResponse](Future.failed(result)))
 }

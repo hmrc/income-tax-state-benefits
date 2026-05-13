@@ -36,7 +36,7 @@ object JourneyAnswersRepositoryIndexes {
     IndexModel(
       ascending("lastUpdated"),
       IndexOptions()
-        .expireAfter(appConfig.mongoJourneyAnswersTTL, TimeUnit.DAYS)
+        .expireAfter(appConfig.mongoJourneyAnswersTTL.toLong, TimeUnit.DAYS)
         .name("last-updated-index")
     )
   )

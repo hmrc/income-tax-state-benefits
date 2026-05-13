@@ -21,8 +21,6 @@ import models.api._
 import models.errors.ApiServiceError
 import models.mongo.JourneyAnswers
 import models.taskList._
-import org.scalamock.scalatest.proxy.MockFactory
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.libs.json.{JsObject, Json}
 import support.UnitTest
 import support.mocks.{MockJourneyAnswersRepository, MockStateBenefitsService}
@@ -36,7 +34,6 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class CommonTaskListServiceSpec extends UnitTest
-  with MockFactory
   with AppConfigStubProvider
   with MockStateBenefitsService
   with MockJourneyAnswersRepository {
@@ -71,7 +68,7 @@ class CommonTaskListServiceSpec extends UnitTest
           mtdItId = mtdItId
         )
 
-        await(underTest) mustBe emptyTaskSections
+        await(underTest) shouldBe emptyTaskSections
       }
 
       "handle appropriately when an exception occurs" in new Test {

@@ -17,7 +17,6 @@
 package connectors
 
 import config.AppConfig
-import org.scalamock.scalatest.MockFactory
 import support.UnitTest
 import support.providers.AppConfigStubProvider
 import support.stubs.AppConfigStub
@@ -26,9 +25,7 @@ import uk.gov.hmrc.http.{Authorization, HeaderCarrier, SessionId}
 
 import java.net.URL
 
-class IFConnectorSpec extends UnitTest
-  with MockFactory
-  with AppConfigStubProvider {
+class IFConnectorSpec extends UnitTest with AppConfigStubProvider {
 
   private val underTest = new IFConnector {
     override protected val appConfig: AppConfig = appConfigStub

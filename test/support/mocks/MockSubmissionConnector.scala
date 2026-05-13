@@ -19,34 +19,28 @@ package support.mocks
 import connectors.SubmissionConnector
 import connectors.errors.ApiError
 import models.IncomeTaxUserData
-import org.scalamock.handlers.CallHandler4
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.TestSuite
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.Mockito.when
+import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-trait MockSubmissionConnector extends MockFactory { _: TestSuite =>
+trait MockSubmissionConnector extends MockitoSugar {
 
   protected val mockSubmissionConnector: SubmissionConnector = mock[SubmissionConnector]
 
   def mockGetIncomeTaxUserData(taxYear: Int,
                                nino: String,
                                mtditid: String,
-                               result: Either[ApiError, IncomeTaxUserData]
-                              ): CallHandler4[Int, String, String, HeaderCarrier, Future[Either[ApiError, IncomeTaxUserData]]] = {
-
-    (mockSubmissionConnector.getIncomeTaxUserData(_: Int, _: String, _: String)(_: HeaderCarrier))
-      .expects(taxYear, nino, mtditid, *)
-      .returning(Future.successful(result))
-  }
+                               result: Either[ApiError, IncomeTaxUserData]): Unit =
+    when(mockSubmissionConnector.getIncomeTaxUserData(eqTo(taxYear), eqTo(nino), eqTo(mtditid))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
   def mockRefreshStateBenefits(taxYear: Int,
                                nino: String,
                                mtditid: String,
-                               result: Either[ApiError, Unit]): CallHandler4[Int, String, String, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
-    (mockSubmissionConnector.refreshStateBenefits(_: Int, _: String, _: String)(_: HeaderCarrier))
-      .expects(taxYear, nino, mtditid, *)
-      .returning(Future.successful(result))
-  }
+                               result: Either[ApiError, Unit]): Unit =
+    when(mockSubmissionConnector.refreshStateBenefits(eqTo(taxYear), eqTo(nino), eqTo(mtditid))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 }
