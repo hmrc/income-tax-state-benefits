@@ -17,7 +17,8 @@
 package support.mocks
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{when, withSettings}
+import org.mockito.quality.Strictness
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
@@ -30,7 +31,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait MockAuthConnector extends MockitoSugar {
 
-  protected val mockAuthConnector: AuthConnector = mock[AuthConnector]
+  protected val mockAuthConnector: AuthConnector = mock[AuthConnector](withSettings().strictness(Strictness.STRICT_STUBS))
 
   def mockAuthReturnException(exception: Exception): Unit =
     when(mockAuthConnector.authorise(any[Predicate](), any[Retrieval[_]]())(any[HeaderCarrier](), any[ExecutionContext]()))

@@ -29,7 +29,7 @@ import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserDat
 import uk.gov.hmrc.mongo.MongoUtils
 import utils.AesGcmAdCrypto
 import utils.PagerDutyHelper.PagerDutyKeys.FAILED_TO_CREATE_UPDATE_STATE_BENEFITS_DATA
-import org.mongodb.scala.{ObservableFuture, SingleObservableFuture}
+import org.mongodb.scala.SingleObservableFuture
 
 import java.time.Instant
 import java.util.UUID

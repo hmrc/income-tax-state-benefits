@@ -26,7 +26,6 @@ import support.ControllerUnitTest
 import support.mocks.MockAuthorisedAction
 import support.providers.FakeRequestProvider
 import support.utils.TaxYearUtils
-import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
