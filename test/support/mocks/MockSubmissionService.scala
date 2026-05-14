@@ -18,7 +18,7 @@ package support.mocks
 
 import models.IncomeTaxUserData
 import models.errors.ApiServiceError
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import services.SubmissionService

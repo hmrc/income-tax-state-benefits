@@ -19,7 +19,7 @@ package support.mocks
 import connectors.SubmissionConnector
 import connectors.errors.ApiError
 import models.IncomeTaxUserData
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.HeaderCarrier

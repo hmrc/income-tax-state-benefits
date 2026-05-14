@@ -18,7 +18,7 @@ package support.mocks
 
 import models.Done
 import models.mongo.JourneyAnswers
-import org.mockito.ArgumentMatchers.{eq => eqTo}
+import org.mockito.ArgumentMatchers.{eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import repositories.JourneyAnswersRepository

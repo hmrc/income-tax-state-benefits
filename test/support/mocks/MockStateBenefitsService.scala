@@ -20,7 +20,7 @@ import models.IncomeTaxUserData
 import models.api.AllStateBenefitsData
 import models.errors.{ApiServiceError, ServiceError}
 import models.mongo.StateBenefitsUserData
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import services.StateBenefitsService

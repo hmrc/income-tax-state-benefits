@@ -17,6 +17,10 @@
 package connectors
 
 import connectors.errors.{ApiError, SingleErrorBody}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.{reset, verify}
+import org.scalatest.BeforeAndAfterEach
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import services.PagerDutyLoggerService
@@ -30,10 +34,10 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
-import org.scalatestplus.mockito.MockitoSugar
 
 class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
   with MockitoSugar
+  with BeforeAndAfterEach
   with TaxYearProvider {
 
   private val benefitId = UUID.randomUUID()
@@ -41,6 +45,12 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
   private val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId("sessionIdValue")))
 
   private val pagerDutyLoggerService = mock[PagerDutyLoggerService]
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(pagerDutyLoggerService)
+  }
+
   private val underTest = new IntegrationFrameworkConnector(httpClientV2, pagerDutyLoggerService, appConfigStub)
 
   private def toTaxYearParameter(taxYear: Int): String = {
@@ -70,6 +80,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
         await(underTest.getAllStateBenefitsData(2023, nino)(hc)) shouldBe
           Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+        verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("GetStateBenefitsResponse"))
       }
     }
 
@@ -89,6 +100,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
         await(underTest.getAllStateBenefitsData(2024, nino)(hc)) shouldBe
           Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+        verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("GetStateBenefitsResponse"))
       }
     }
   }
@@ -111,6 +123,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.addCustomerStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("AddStateBenefitResponse"))
     }
   }
 
@@ -131,6 +144,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.updateCustomerStateBenefit(taxYear, nino, benefitId, anUpdateStateBenefit)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("UpdateStateBenefitResponse"))
     }
   }
 
@@ -154,6 +168,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.createOrUpdateStateBenefitDetailOverride(taxYearBefore24, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("CreateOrUpdateStateBenefitResponse"))
     }
 
     "return correct IF data when correct parameters are passed for tax year after 23" in {
@@ -173,6 +188,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("CreateOrUpdateStateBenefitResponse"))
     }
 
   }
@@ -194,6 +210,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.deleteStateBenefitDetailOverride(taxYear, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("DeleteStateBenefitDetailOverrideResponse"))
     }
 
     "return correct IF response when correct parameters are passed before 23-24" in {
@@ -211,6 +228,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.deleteStateBenefitDetailOverride(taxYearBefore24, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("DeleteStateBenefitDetailOverrideResponse"))
     }
 
 
@@ -232,6 +250,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.deleteStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("DeleteStateBenefitResponse"))
     }
   }
 
@@ -251,6 +270,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.ignoreStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("IgnoreStateBenefitResponse"))
     }
 
     "return correct IF response when correct parameters are passed before 23-24" in {
@@ -268,6 +288,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.ignoreStateBenefit(taxYearBefore24, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("IgnoreStateBenefitResponse"))
     }
   }
 
@@ -288,6 +309,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.unIgnoreStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("UnIgnoreStateBenefitResponse"))
     }
 
     "return correct IF response when correct parameters are passed before 23-24" in {
@@ -305,6 +327,7 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
 
       await(underTest.unIgnoreStateBenefit(taxYearBefore24, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("UnIgnoreStateBenefitResponse"))
     }
   }
 }

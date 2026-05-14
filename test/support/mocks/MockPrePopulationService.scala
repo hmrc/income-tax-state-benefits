@@ -19,7 +19,7 @@ package support.mocks
 import cats.data.EitherT
 import models.errors.ServiceError
 import models.prePopulation.PrePopulationResponse
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import services.PrePopulationService

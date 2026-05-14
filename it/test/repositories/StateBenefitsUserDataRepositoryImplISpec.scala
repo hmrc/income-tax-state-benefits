@@ -31,8 +31,6 @@ import utils.AesGcmAdCrypto
 import utils.PagerDutyHelper.PagerDutyKeys.FAILED_TO_CREATE_UPDATE_STATE_BENEFITS_DATA
 import org.mongodb.scala.{ObservableFuture, SingleObservableFuture}
 
-
-
 import java.time.Instant
 import java.util.UUID
 import scala.concurrent.Future
