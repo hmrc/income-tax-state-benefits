@@ -17,7 +17,10 @@
 package connectors
 
 import connectors.errors.{ApiError, SingleErrorBody}
-import org.scalamock.scalatest.MockFactory
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.{reset, verify}
+import org.scalatest.BeforeAndAfterEach
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import services.PagerDutyLoggerService
@@ -33,7 +36,8 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
-  with MockFactory
+  with MockitoSugar
+  with BeforeAndAfterEach
   with TaxYearProvider {
 
   private val benefitId = UUID.randomUUID()
@@ -41,6 +45,12 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
   private val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId("sessionIdValue")))
 
   private val pagerDutyLoggerService = mock[PagerDutyLoggerService]
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(pagerDutyLoggerService)
+  }
+
   private val underTest = new IntegrationFrameworkConnector(httpClientV2, pagerDutyLoggerService, appConfigStub)
 
   private def toTaxYearParameter(taxYear: Int): String = {
@@ -66,12 +76,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
       "return IF error and perform a pagerDutyLog when Left is returned" in {
         val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-        (pagerDutyLoggerService.pagerDutyLog _).expects(*, "GetStateBenefitsResponse")
-
         stubGetHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(2023)}", httpResponse)
 
         await(underTest.getAllStateBenefitsData(2023, nino)(hc)) shouldBe
           Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+        verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("GetStateBenefitsResponse"))
       }
     }
 
@@ -87,12 +96,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
       "return IF error and perform a pagerDutyLog when Left is returned" in {
         val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-        (pagerDutyLoggerService.pagerDutyLog _).expects(*, "GetStateBenefitsResponse")
-
         stubGetHttpClientCall(s"/if/income-tax/income/state-benefits/23-24/$nino", httpResponse)
 
         await(underTest.getAllStateBenefitsData(2024, nino)(hc)) shouldBe
           Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+        verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("GetStateBenefitsResponse"))
       }
     }
   }
@@ -110,13 +118,12 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return IF error and perform a pagerDutyLog when Left is returned" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "AddStateBenefitResponse")
-
       val url = s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/custom"
       stubPostHttpClientCall(url, Json.toJson(anAddStateBenefit).toString(), httpResponse)
 
       await(underTest.addCustomerStateBenefit(taxYear, nino, anAddStateBenefit)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("AddStateBenefitResponse"))
     }
   }
 
@@ -133,12 +140,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return IF error and perform a pagerDutyLog when Left is returned" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "UpdateStateBenefitResponse")
-
       stubPutHttpClientCall(url, Json.toJson(anUpdateStateBenefit).toString(), httpResponse)
 
       await(underTest.updateCustomerStateBenefit(taxYear, nino, benefitId, anUpdateStateBenefit)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("UpdateStateBenefitResponse"))
     }
   }
 
@@ -158,12 +164,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
       val jsValue = Json.toJson(aStateBenefitDetailOverride)
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "CreateOrUpdateStateBenefitResponse")
-
       stubPutHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYearBefore24)}/$benefitId", jsValue.toString(), httpResponse)
 
       await(underTest.createOrUpdateStateBenefitDetailOverride(taxYearBefore24, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("CreateOrUpdateStateBenefitResponse"))
     }
 
     "return correct IF data when correct parameters are passed for tax year after 23" in {
@@ -179,12 +184,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
       val jsValue = Json.toJson(aStateBenefitDetailOverride)
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "CreateOrUpdateStateBenefitResponse")
-
       stubPutHttpClientCall(s"/if/income-tax/${asTys(taxYear)}/income/state-benefits/$nino/$benefitId", jsValue.toString(), httpResponse)
 
       await(underTest.createOrUpdateStateBenefitDetailOverride(taxYear, nino, benefitId, aStateBenefitDetailOverride)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("CreateOrUpdateStateBenefitResponse"))
     }
 
   }
@@ -202,12 +206,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return IF error and perform a pagerDutyLog when Left is returned" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "DeleteStateBenefitDetailOverrideResponse")
-
       stubDeleteHttpClientCall(s"/if/income-tax/income/state-benefits/${asTys(taxYear)}/$nino/$benefitId", httpResponse)
 
       await(underTest.deleteStateBenefitDetailOverride(taxYear, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("DeleteStateBenefitDetailOverrideResponse"))
     }
 
     "return correct IF response when correct parameters are passed before 23-24" in {
@@ -221,12 +224,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return IF error and perform a pagerDutyLog when Left is returned before 23-24" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "DeleteStateBenefitDetailOverrideResponse")
-
       stubDeleteHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYearBefore24)}/$benefitId", httpResponse)
 
       await(underTest.deleteStateBenefitDetailOverride(taxYearBefore24, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("DeleteStateBenefitDetailOverrideResponse"))
     }
 
 
@@ -244,12 +246,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return IF error and perform a pagerDutyLog when Left is returned" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "DeleteStateBenefitResponse")
-
       stubDeleteHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYear)}/custom/$benefitId", httpResponse)
 
       await(underTest.deleteStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("DeleteStateBenefitResponse"))
     }
   }
 
@@ -265,12 +266,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return IF error and perform a pagerDutyLog when Left is returned" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "IgnoreStateBenefitResponse")
-
       stubPutHttpClientCall(s"/if/income-tax/${asTys(taxYear)}/income/state-benefits/$nino/ignore/$benefitId", "{}", httpResponse)
 
       await(underTest.ignoreStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("IgnoreStateBenefitResponse"))
     }
 
     "return correct IF response when correct parameters are passed before 23-24" in {
@@ -284,12 +284,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return IF error and perform a pagerDutyLog when Left is returned before 23-24" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "IgnoreStateBenefitResponse")
-
       stubPutHttpClientCall(s"/if/income-tax/income/state-benefits/$nino/${toTaxYearParameter(taxYearBefore24)}/ignore/$benefitId", "{}", httpResponse)
 
       await(underTest.ignoreStateBenefit(taxYearBefore24, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("IgnoreStateBenefitResponse"))
     }
   }
 
@@ -306,12 +305,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return IF error and perform a pagerDutyLog when Left is returned" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "UnIgnoreStateBenefitResponse")
-
       stubDeleteHttpClientCall(s"/if/income-tax/${asTys(taxYear)}/state-benefits/$nino/ignore/$benefitId", httpResponse)
 
       await(underTest.unIgnoreStateBenefit(taxYear, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("UnIgnoreStateBenefitResponse"))
     }
 
     "return correct IF response when correct parameters are passed before 23-24" in {
@@ -325,12 +323,11 @@ class IntegrationFrameworkConnectorISpec extends ConnectorIntegrationTest
     "return IF error and perform a pagerDutyLog when Left is returned before 23-24" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "UnIgnoreStateBenefitResponse")
-
       stubDeleteHttpClientCall(s"/if/income-tax/state-benefits/$nino/${toTaxYearParameter(taxYearBefore24)}/ignore/$benefitId", httpResponse)
 
       await(underTest.unIgnoreStateBenefit(taxYearBefore24, nino, benefitId)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("UnIgnoreStateBenefitResponse"))
     }
   }
 }

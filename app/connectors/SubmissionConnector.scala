@@ -22,6 +22,7 @@ import connectors.responses.{GetIncomeTaxUserDataResponse, RefreshIncomeSourceRe
 import models.IncomeTaxUserData
 import models.requests.RefreshIncomeSourceRequest
 import play.api.libs.json.Json
+import play.api.libs.ws.writeableOf_JsValue
 import services.PagerDutyLoggerService
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}

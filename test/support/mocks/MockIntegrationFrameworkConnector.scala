@@ -19,91 +19,72 @@ package support.mocks
 import connectors.IntegrationFrameworkConnector
 import connectors.errors.ApiError
 import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride, UpdateStateBenefit}
-import org.scalamock.handlers.{CallHandler3, CallHandler4, CallHandler5}
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.TestSuite
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.when
+import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.util.UUID
 import scala.concurrent.Future
 
-trait MockIntegrationFrameworkConnector extends MockFactory { _: TestSuite =>
+trait MockIntegrationFrameworkConnector extends MockitoSugar {
 
   protected val mockIntegrationFrameworkConnector: IntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
 
   def mockGetAllStateBenefitsData(taxYear: Int,
                                   nino: String,
-                                  result: Either[ApiError, Option[AllStateBenefitsData]])
-  : CallHandler3[Int, String, HeaderCarrier, Future[Either[ApiError, Option[AllStateBenefitsData]]]] = {
-    (mockIntegrationFrameworkConnector.getAllStateBenefitsData(_: Int, _: String)(_: HeaderCarrier))
-      .expects(taxYear, nino, *)
-      .returning(Future.successful(result))
-  }
+                                  result: Either[ApiError, Option[AllStateBenefitsData]]): Unit =
+    when(mockIntegrationFrameworkConnector.getAllStateBenefitsData(eqTo(taxYear), eqTo(nino))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
   def mockAddCustomerStateBenefit(taxYear: Int,
                                   nino: String,
                                   addStateBenefit: AddStateBenefit,
-                                  result: Either[ApiError, UUID]): CallHandler4[Int, String, AddStateBenefit, HeaderCarrier, Future[Either[ApiError, UUID]]] = {
-    (mockIntegrationFrameworkConnector.addCustomerStateBenefit(_: Int, _: String, _: AddStateBenefit)(_: HeaderCarrier))
-      .expects(taxYear, nino, addStateBenefit, *)
-      .returning(Future.successful(result))
-  }
+                                  result: Either[ApiError, UUID]): Unit =
+    when(mockIntegrationFrameworkConnector.addCustomerStateBenefit(eqTo(taxYear), eqTo(nino), eqTo(addStateBenefit))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
   def mockUpdateCustomerStateBenefit(taxYear: Int,
                                      nino: String,
                                      benefitId: UUID,
                                      updateStateBenefit: UpdateStateBenefit,
-                                     result: Either[ApiError, Unit])
-  : CallHandler5[Int, String, UUID, UpdateStateBenefit, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
-    (mockIntegrationFrameworkConnector.updateCustomerStateBenefit(_: Int, _: String, _: UUID, _: UpdateStateBenefit)(_: HeaderCarrier))
-      .expects(taxYear, nino, benefitId, updateStateBenefit, *)
-      .returning(Future.successful(result))
-  }
+                                     result: Either[ApiError, Unit]): Unit =
+    when(mockIntegrationFrameworkConnector.updateCustomerStateBenefit(eqTo(taxYear), eqTo(nino), eqTo(benefitId), eqTo(updateStateBenefit))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
   def mockCreateOrUpdateStateBenefitDetailOverride(taxYear: Int,
                                                    nino: String,
                                                    benefitId: UUID,
                                                    stateBenefitDetailOverride: StateBenefitDetailOverride,
-                                                   result: Either[ApiError, Unit])
-  : CallHandler5[Int, String, UUID, StateBenefitDetailOverride, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
-    (mockIntegrationFrameworkConnector.createOrUpdateStateBenefitDetailOverride(_: Int, _: String, _: UUID, _: StateBenefitDetailOverride)(_: HeaderCarrier))
-      .expects(taxYear, nino, benefitId, stateBenefitDetailOverride, *)
-      .returning(Future.successful(result))
-  }
+                                                   result: Either[ApiError, Unit]): Unit =
+    when(mockIntegrationFrameworkConnector.createOrUpdateStateBenefitDetailOverride(eqTo(taxYear), eqTo(nino), eqTo(benefitId), eqTo(stateBenefitDetailOverride))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
   def mockDeleteStateBenefit(taxYear: Int,
                              nino: String,
                              benefitId: UUID,
-                             result: Either[ApiError, Unit]): CallHandler4[Int, String, UUID, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
-    (mockIntegrationFrameworkConnector.deleteStateBenefit(_: Int, _: String, _: UUID)(_: HeaderCarrier))
-      .expects(taxYear, nino, benefitId, *)
-      .returning(Future.successful(result))
-  }
+                             result: Either[ApiError, Unit]): Unit =
+    when(mockIntegrationFrameworkConnector.deleteStateBenefit(eqTo(taxYear), eqTo(nino), eqTo(benefitId))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
   def mockIgnoreStateBenefit(taxYear: Int,
                              nino: String,
                              benefitId: UUID,
-                             result: Either[ApiError, Unit]): CallHandler4[Int, String, UUID, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
-    (mockIntegrationFrameworkConnector.ignoreStateBenefit(_: Int, _: String, _: UUID)(_: HeaderCarrier))
-      .expects(taxYear, nino, benefitId, *)
-      .returning(Future.successful(result))
-  }
+                             result: Either[ApiError, Unit]): Unit =
+    when(mockIntegrationFrameworkConnector.ignoreStateBenefit(eqTo(taxYear), eqTo(nino), eqTo(benefitId))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
   def mockUnIgnoreStateBenefit(taxYear: Int,
                                nino: String,
                                benefitId: UUID,
-                               result: Either[ApiError, Unit]): CallHandler4[Int, String, UUID, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
-    (mockIntegrationFrameworkConnector.unIgnoreStateBenefit(_: Int, _: String, _: UUID)(_: HeaderCarrier))
-      .expects(taxYear, nino, benefitId, *)
-      .returning(Future.successful(result))
-  }
+                               result: Either[ApiError, Unit]): Unit =
+    when(mockIntegrationFrameworkConnector.unIgnoreStateBenefit(eqTo(taxYear), eqTo(nino), eqTo(benefitId))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
   def mockDeleteStateBenefitDetailOverride(taxYear: Int,
                                            nino: String,
                                            benefitId: UUID,
-                                           result: Either[ApiError, Unit]): CallHandler4[Int, String, UUID, HeaderCarrier, Future[Either[ApiError, Unit]]] = {
-    (mockIntegrationFrameworkConnector.deleteStateBenefitDetailOverride(_: Int, _: String, _: UUID)(_: HeaderCarrier))
-      .expects(taxYear, nino, benefitId, *)
-      .returning(Future.successful(result))
-  }
+                                           result: Either[ApiError, Unit]): Unit =
+    when(mockIntegrationFrameworkConnector.deleteStateBenefitDetailOverride(eqTo(taxYear), eqTo(nino), eqTo(benefitId))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 }

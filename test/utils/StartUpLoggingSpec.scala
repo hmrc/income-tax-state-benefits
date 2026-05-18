@@ -16,6 +16,7 @@
 
 package utils
 
+import org.mockito.Mockito.verify
 import support.UnitTest
 import support.mocks.MockStateBenefitsUserDataRepository
 
@@ -24,11 +25,8 @@ class StartUpLoggingSpec extends UnitTest
 
   "StartUpLogging" should {
     "execute repository.logOutIndexes" in {
-      (() => mockStateBenefitsUserDataRepository.logOutIndexes())
-        .expects()
-        .once()
-
       new StartUpLogging(mockStateBenefitsUserDataRepository)
+      verify(mockStateBenefitsUserDataRepository).logOutIndexes()
     }
   }
 }

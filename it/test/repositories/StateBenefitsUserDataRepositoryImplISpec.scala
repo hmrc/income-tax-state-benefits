@@ -22,7 +22,6 @@ import models.mongo.{EncryptedStateBenefitsUserData, StateBenefitsUserData}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import org.mongodb.scala.{MongoException, MongoInternalException, MongoWriteException}
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.inject.guice.GuiceApplicationBuilder
 import support.RepositoryIntegrationTest
 import support.builders.mongo.ClaimCYAModelBuilder.aClaimCYAModel
@@ -30,6 +29,7 @@ import support.builders.mongo.StateBenefitsUserDataBuilder.aStateBenefitsUserDat
 import uk.gov.hmrc.mongo.MongoUtils
 import utils.AesGcmAdCrypto
 import utils.PagerDutyHelper.PagerDutyKeys.FAILED_TO_CREATE_UPDATE_STATE_BENEFITS_DATA
+import org.mongodb.scala.SingleObservableFuture
 
 import java.time.Instant
 import java.util.UUID
@@ -65,7 +65,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends RepositoryIntegrationTest
 
       private val caught = intercept[MongoWriteException](await(underTest.collection.insertOne(encryptedUserData).toFuture()))
 
-      caught.getMessage must
+      caught.getMessage should
         include("E11000 duplicate key error collection: income-tax-state-benefits.stateBenefitsUserData index: UserDataLookupIndex dup key:")
     }
 
@@ -81,7 +81,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends RepositoryIntegrationTest
 
       private val caught = intercept[MongoWriteException](await(underTest.collection.insertOne(encryptedUserData).toFuture()))
 
-      caught.getMessage must
+      caught.getMessage should
         include("E11000 duplicate key error collection: income-tax-state-benefits.stateBenefitsUserData index: SessionIdIndex dup key:")
     }
   }
@@ -125,7 +125,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends RepositoryIntegrationTest
 
       private val errorOrUuid = await(underTest.createOrUpdate(aStateBenefitsUserData.copy(sessionDataId = Some(UUID.randomUUID()))))
 
-      errorOrUuid.swap.map(_.message).getOrElse("") must include("error 11000 (DuplicateKey)")
+      errorOrUuid.swap.map(_.message).getOrElse("") should include("error 11000 (DuplicateKey)")
       await(underTest.collection.countDocuments().toFuture()) shouldBe 1
     }
 
@@ -172,7 +172,7 @@ class StateBenefitsUserDataRepositoryImplISpec extends RepositoryIntegrationTest
         val result = Future.failed(exception)
           .recover(underTest.mongoRecover[Int]("CreateOrUpdate", FAILED_TO_CREATE_UPDATE_STATE_BENEFITS_DATA, "some-session-id"))
 
-        await(result) mustBe None
+        await(result) shouldBe None
       }
     }
 
@@ -190,12 +190,12 @@ class StateBenefitsUserDataRepositoryImplISpec extends RepositoryIntegrationTest
 
   "clear" should {
     "remove a record" in new EmptyDatabase {
-      await(underTest.collection.countDocuments().toFuture()) mustBe 0
-      await(underTest.createOrUpdate(aStateBenefitsUserData.copy(sessionId = "some-session-id"))) mustBe Right(aStateBenefitsUserData.sessionDataId.get)
-      await(underTest.collection.countDocuments().toFuture()) mustBe 1
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 0
+      await(underTest.createOrUpdate(aStateBenefitsUserData.copy(sessionId = "some-session-id"))) shouldBe Right(aStateBenefitsUserData.sessionDataId.get)
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 1
 
-      await(underTest.clear("some-session-id")) mustBe Right(())
-      await(underTest.collection.countDocuments().toFuture()) mustBe 0
+      await(underTest.clear("some-session-id")) shouldBe Right(())
+      await(underTest.collection.countDocuments().toFuture()) shouldBe 0
     }
   }
 }

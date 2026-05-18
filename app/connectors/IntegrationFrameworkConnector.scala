@@ -21,6 +21,7 @@ import connectors.errors.ApiError
 import connectors.responses._
 import models.api.{AddStateBenefit, AllStateBenefitsData, StateBenefitDetailOverride, UpdateStateBenefit}
 import play.api.libs.json.Json
+import play.api.libs.ws.writeableOf_JsValue
 import services.PagerDutyLoggerService
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -103,7 +104,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClientV2,
     }
     val eventualResponse = callCreateOrUpdateDetailOverride(url, stateBenefitDetailOverride)(ifHeaderCarrier(url, apiVersion))
 
-    eventualResponse.map { apiResponse: CreateOrUpdateStateBenefitResponse =>
+    eventualResponse.map { (apiResponse: CreateOrUpdateStateBenefitResponse) =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
       apiResponse.result
     }
@@ -120,7 +121,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClientV2,
 
     val eventualResponse = callDeleteStateBenefitDetailOverride(url)(ifHeaderCarrier(url, apiVersion))
 
-    eventualResponse.map { apiResponse: DeleteStateBenefitDetailOverrideResponse =>
+    eventualResponse.map { (apiResponse: DeleteStateBenefitDetailOverrideResponse) =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
       apiResponse.result
     }
@@ -131,7 +132,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClientV2,
     val url = new URL(s"$baseUrl/income-tax/income/state-benefits/$nino/${toTaxYearParam(taxYear)}/custom/$benefitId")
     val eventualResponse = callDeleteStateBenefit(url)(ifHeaderCarrier(url, deleteApiVersion))
 
-    eventualResponse.map { apiResponse: DeleteStateBenefitResponse =>
+    eventualResponse.map { (apiResponse: DeleteStateBenefitResponse) =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
       apiResponse.result
     }
@@ -149,7 +150,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClientV2,
     }
     val eventualResponse = callIgnoreStateBenefit(url)(ifHeaderCarrier(url, apiVersion))
 
-    eventualResponse.map { apiResponse: IgnoreStateBenefitResponse =>
+    eventualResponse.map { (apiResponse: IgnoreStateBenefitResponse) =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
       apiResponse.result
     }
@@ -167,7 +168,7 @@ class IntegrationFrameworkConnector @Inject()(httpClient: HttpClientV2,
     }
     val eventualResponse = callUnIgnoreStateBenefit(url)(ifHeaderCarrier(url, apiVersion))
 
-    eventualResponse.map { apiResponse: UnIgnoreStateBenefitResponse =>
+    eventualResponse.map { (apiResponse: UnIgnoreStateBenefitResponse) =>
       if (apiResponse.result.isLeft) pagerDutyLoggerService.pagerDutyLog(apiResponse.httpResponse, apiResponse.getClass.getSimpleName)
       apiResponse.result
     }

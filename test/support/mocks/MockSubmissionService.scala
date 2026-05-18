@@ -18,35 +18,29 @@ package support.mocks
 
 import models.IncomeTaxUserData
 import models.errors.ApiServiceError
-import org.scalamock.handlers._
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.TestSuite
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.when
+import org.scalatestplus.mockito.MockitoSugar
 import services.SubmissionService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-trait MockSubmissionService extends MockFactory { _: TestSuite =>
+trait MockSubmissionService extends MockitoSugar {
 
   protected val mockSubmissionService: SubmissionService = mock[SubmissionService]
 
   def mockGetIncomeTaxUserData(taxYear: Int,
                                nino: String,
                                mtdItId: String,
-                               result: Either[ApiServiceError, IncomeTaxUserData]
-                              ): CallHandler4[Int, String, String, HeaderCarrier, Future[Either[ApiServiceError, IncomeTaxUserData]]] = {
-    (mockSubmissionService.getIncomeTaxUserData(_: Int, _: String, _: String)(_: HeaderCarrier))
-      .expects(taxYear, nino, mtdItId, *)
-      .returning(Future.successful(result))
-  }
+                               result: Either[ApiServiceError, IncomeTaxUserData]): Unit =
+    when(mockSubmissionService.getIncomeTaxUserData(eqTo(taxYear), eqTo(nino), eqTo(mtdItId))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
   def mockRefreshStateBenefits(taxYear: Int,
                                nino: String,
                                mtdItId: String,
-                               result: Either[ApiServiceError, Unit]
-                              ): CallHandler4[Int, String, String, HeaderCarrier, Future[Either[ApiServiceError, Unit]]] = {
-    (mockSubmissionService.refreshStateBenefits(_: Int, _: String, _: String)(_: HeaderCarrier))
-      .expects(taxYear, nino, mtdItId, *)
-      .returning(Future.successful(result))
-  }
+                               result: Either[ApiServiceError, Unit]): Unit =
+    when(mockSubmissionService.refreshStateBenefits(eqTo(taxYear), eqTo(nino), eqTo(mtdItId))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 }

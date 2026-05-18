@@ -18,37 +18,31 @@ package support.mocks
 
 import models.errors.ServiceError
 import models.mongo.StateBenefitsUserData
-import org.scalamock.handlers.{CallHandler1, CallHandler2}
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.TestSuite
+import org.mockito.ArgumentMatchers.{eq as eqTo}
+import org.mockito.Mockito.when
+import org.scalatestplus.mockito.MockitoSugar
 import repositories.StateBenefitsUserDataRepository
 
 import java.util.UUID
 import scala.concurrent.Future
 
-trait MockStateBenefitsUserDataRepository extends MockFactory { _: TestSuite =>
+trait MockStateBenefitsUserDataRepository extends MockitoSugar {
 
   protected val mockStateBenefitsUserDataRepository: StateBenefitsUserDataRepository = mock[StateBenefitsUserDataRepository]
 
   def mockCreateOrUpdate(stateBenefitsUserData: StateBenefitsUserData,
-                         result: Either[ServiceError, UUID]): CallHandler1[StateBenefitsUserData, Future[Either[ServiceError, UUID]]] = {
-    (mockStateBenefitsUserDataRepository.createOrUpdate(_: StateBenefitsUserData))
-      .expects(stateBenefitsUserData)
-      .returning(Future.successful(result))
-  }
+                         result: Either[ServiceError, UUID]): Unit =
+    when(mockStateBenefitsUserDataRepository.createOrUpdate(eqTo(stateBenefitsUserData)))
+      .thenReturn(Future.successful(result))
 
   def mockFind(nino: String,
                sessionDataId: UUID,
-               result: Either[ServiceError, StateBenefitsUserData]): CallHandler2[String, UUID, Future[Either[ServiceError, StateBenefitsUserData]]] = {
-    (mockStateBenefitsUserDataRepository.find(_: String, _: UUID))
-      .expects(nino, sessionDataId)
-      .returning(Future.successful(result))
-  }
+               result: Either[ServiceError, StateBenefitsUserData]): Unit =
+    when(mockStateBenefitsUserDataRepository.find(eqTo(nino), eqTo(sessionDataId)))
+      .thenReturn(Future.successful(result))
 
   def mockClear(sessionId: String,
-                result: Either[ServiceError, Unit]): CallHandler1[String, Future[Either[ServiceError, Unit]]] = {
-    (mockStateBenefitsUserDataRepository.clear(_: String))
-      .expects(sessionId)
-      .returning(Future.successful(result))
-  }
+                result: Either[ServiceError, Unit]): Unit =
+    when(mockStateBenefitsUserDataRepository.clear(eqTo(sessionId)))
+      .thenReturn(Future.successful(result))
 }

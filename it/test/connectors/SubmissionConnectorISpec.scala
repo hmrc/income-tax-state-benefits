@@ -18,7 +18,10 @@ package connectors
 
 import connectors.errors.{ApiError, SingleErrorBody}
 import models.requests.RefreshIncomeSourceRequest
-import org.scalamock.scalatest.MockFactory
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.{reset, verify}
+import org.scalatest.BeforeAndAfterEach
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import services.PagerDutyLoggerService
@@ -29,15 +32,18 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class SubmissionConnectorISpec extends ConnectorIntegrationTest
-  with TaxYearProvider
-  with MockFactory {
+class SubmissionConnectorISpec extends ConnectorIntegrationTest with MockitoSugar with BeforeAndAfterEach with TaxYearProvider {
 
   private val nino = "some-nino"
   private val mtditid = "some-mtditid"
   private val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId("sessionIdValue")))
 
   private val pagerDutyLoggerService = mock[PagerDutyLoggerService]
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(pagerDutyLoggerService)
+  }
 
   private val underTest = new SubmissionConnector(httpClientV2, pagerDutyLoggerService, appConfigStub)
 
@@ -53,12 +59,11 @@ class SubmissionConnectorISpec extends ConnectorIntegrationTest
     "return IF error and perform a pagerDutyLog when Left is returned" in {
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "GetIncomeTaxUserDataResponse")
-
       stubGetHttpClientCall(s"/income-tax/nino/$nino/sources/session\\?taxYear=$taxYear", httpResponse)
 
       await(underTest.getIncomeTaxUserData(taxYear, nino, mtditid)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("GetIncomeTaxUserDataResponse"))
     }
   }
 
@@ -76,12 +81,11 @@ class SubmissionConnectorISpec extends ConnectorIntegrationTest
       val jsValue = Json.toJson(RefreshIncomeSourceRequest("state-benefits"))
       val httpResponse = HttpResponse(INTERNAL_SERVER_ERROR, Json.toJson(SingleErrorBody("some-code", "some-reason")).toString())
 
-      (pagerDutyLoggerService.pagerDutyLog _).expects(*, "RefreshIncomeSourceResponse")
-
       stubPutHttpClientCall(s"/income-tax/nino/$nino/sources/session\\?taxYear=$taxYearEOY", jsValue.toString(), httpResponse)
 
       await(underTest.refreshStateBenefits(taxYearEOY, nino, mtditid)(hc)) shouldBe
         Left(ApiError(INTERNAL_SERVER_ERROR, SingleErrorBody("some-code", "some-reason")))
+      verify(pagerDutyLoggerService).pagerDutyLog(any[HttpResponse](), eqTo("RefreshIncomeSourceResponse"))
     }
   }
 }

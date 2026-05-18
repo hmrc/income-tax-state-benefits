@@ -37,6 +37,6 @@ private[repositories] object StateBenefitsUserDataIndexes {
   def indexes(appConfig: AppConfig): Seq[IndexModel] = Seq(
     IndexModel(lookUpIndex, IndexOptions().unique(true).name("UserDataLookupIndex")),
     IndexModel(sessionIdIndex, IndexOptions().unique(true).name("SessionIdIndex")),
-    IndexModel(ascending("lastUpdated"), IndexOptions().expireAfter(appConfig.mongoTTL, TimeUnit.MINUTES).name("UserDataTTL"))
+    IndexModel(ascending("lastUpdated"), IndexOptions().expireAfter(appConfig.mongoTTL.toLong, TimeUnit.MINUTES).name("UserDataTTL"))
   )
 }

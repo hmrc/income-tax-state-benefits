@@ -17,8 +17,8 @@
 package controllers
 
 import models.taskList.{SectionTitle, TaskListSection}
-import org.scalamock.handlers.CallHandler5
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
 import play.api.http.Status.OK
 import play.api.test.Helpers.status
 import services.CommonTaskListService
@@ -26,7 +26,6 @@ import support.ControllerUnitTest
 import support.mocks.MockAuthorisedAction
 import support.providers.FakeRequestProvider
 import support.utils.TaxYearUtils
-import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,11 +37,9 @@ class CommonTaskListControllerSpec extends ControllerUnitTest with MockAuthorise
   val commonTaskListService: CommonTaskListService = mock[CommonTaskListService]
   val controller = new CommonTaskListController(commonTaskListService, mockAuthorisedAction, cc)
 
-  def mockStateBenefitsService(): CallHandler5[Int, String, String, ExecutionContext, HeaderCarrier, Future[Seq[TaskListSection]]] = {
-    (commonTaskListService.get(_: Int, _: String, _: String)(_: ExecutionContext, _: HeaderCarrier))
-      .expects(*, *, *, *, *)
-      .returning(Future.successful(Seq(TaskListSection(SectionTitle.EsaTitle, None))))
-  }
+  def mockStateBenefitsService(): Unit =
+    when(commonTaskListService.get(any[Int](), any[String](), any[String]())(any(), any()))
+      .thenReturn(Future.successful(Seq(TaskListSection(SectionTitle.EsaTitle, None))))
 
   ".getCommonTaskList" should {
     "return a task list section model" in {
@@ -52,7 +49,7 @@ class CommonTaskListControllerSpec extends ControllerUnitTest with MockAuthorise
         controller.getCommonTaskList(taxYear, nino)(fakeRequest)
       }
 
-      status(result) mustBe OK
+      status(result) shouldBe OK
     }
   }
 }

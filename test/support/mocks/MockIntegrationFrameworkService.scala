@@ -19,63 +19,40 @@ package support.mocks
 import models.api.AllStateBenefitsData
 import models.errors.ApiServiceError
 import models.mongo.StateBenefitsUserData
-import org.scalamock.handlers._
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.TestSuite
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.when
+import org.scalatestplus.mockito.MockitoSugar
 import services.IntegrationFrameworkService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.util.UUID
 import scala.concurrent.Future
 
-trait MockIntegrationFrameworkService extends MockFactory { _: TestSuite =>
+trait MockIntegrationFrameworkService extends MockitoSugar {
 
   protected val mockIntegrationFrameworkService: IntegrationFrameworkService = mock[IntegrationFrameworkService]
 
-  def mockGetAllStateBenefitsData(taxYear: Int, nino: String, result: Either[ApiServiceError, Option[AllStateBenefitsData]])
-      : CallHandler3[Int, String, HeaderCarrier, Future[Either[ApiServiceError, Option[AllStateBenefitsData]]]] =
-    (mockIntegrationFrameworkService
-      .getAllStateBenefitsData(_: Int, _: String)(_: HeaderCarrier))
-      .expects(taxYear, nino, *)
-      .returning(Future.successful(result))
+  def mockGetAllStateBenefitsData(taxYear: Int, nino: String, result: Either[ApiServiceError, Option[AllStateBenefitsData]]): Unit =
+    when(mockIntegrationFrameworkService.getAllStateBenefitsData(eqTo(taxYear), eqTo(nino))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
-  def mockSaveStateBenefitsUserData(
-      userData: StateBenefitsUserData,
-      result: Either[ApiServiceError, UUID]): CallHandler2[StateBenefitsUserData, HeaderCarrier, Future[Either[ApiServiceError, UUID]]] =
-    (mockIntegrationFrameworkService
-      .saveStateBenefitsUserData(_: StateBenefitsUserData)(_: HeaderCarrier))
-      .expects(userData, *)
-      .returning(Future.successful(result))
+  def mockSaveStateBenefitsUserData(userData: StateBenefitsUserData, result: Either[ApiServiceError, UUID]): Unit =
+    when(mockIntegrationFrameworkService.saveStateBenefitsUserData(eqTo(userData))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
-  def mockRemoveClaim(nino: String, taxYear: Int, benefitId: UUID)(
-      result: Either[ApiServiceError, Unit]): CallHandler4[String, Int, UUID, HeaderCarrier, Future[Either[ApiServiceError, Unit]]] =
-    (mockIntegrationFrameworkService
-      .removeClaim(_: String, _: Int, _: UUID)(_: HeaderCarrier))
-      .expects(nino, taxYear, benefitId, *)
-      .returning(Future.successful(result))
+  def mockRemoveClaim(nino: String, taxYear: Int, benefitId: UUID)(result: Either[ApiServiceError, Unit]): Unit =
+    when(mockIntegrationFrameworkService.removeClaim(eqTo(nino), eqTo(taxYear), eqTo(benefitId))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
-  def mockRemoveOrIgnoreClaim(
-      userData: StateBenefitsUserData,
-      result: Either[ApiServiceError, Unit]): CallHandler2[StateBenefitsUserData, HeaderCarrier, Future[Either[ApiServiceError, Unit]]] =
-    (mockIntegrationFrameworkService
-      .removeOrIgnoreClaim(_: StateBenefitsUserData)(_: HeaderCarrier))
-      .expects(userData, *)
-      .returning(Future.successful(result))
+  def mockRemoveOrIgnoreClaim(userData: StateBenefitsUserData, result: Either[ApiServiceError, Unit]): Unit =
+    when(mockIntegrationFrameworkService.removeOrIgnoreClaim(eqTo(userData))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
-  def mockUnIgnoreClaim(
-      userData: StateBenefitsUserData,
-      result: Either[ApiServiceError, Unit]): CallHandler2[StateBenefitsUserData, HeaderCarrier, Future[Either[ApiServiceError, Unit]]] =
-    (mockIntegrationFrameworkService
-      .unIgnoreClaim(_: StateBenefitsUserData)(_: HeaderCarrier))
-      .expects(userData, *)
-      .returning(Future.successful(result))
+  def mockUnIgnoreClaim(userData: StateBenefitsUserData, result: Either[ApiServiceError, Unit]): Unit =
+    when(mockIntegrationFrameworkService.unIgnoreClaim(eqTo(userData))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 
-  def mockRemoveCustomerOverride(userData: StateBenefitsUserData,
-                                 result: Either[ApiServiceError, Unit]
-                                ): CallHandler2[StateBenefitsUserData, HeaderCarrier, Future[Either[ApiServiceError, Unit]]] = {
-    (mockIntegrationFrameworkService.removeCustomerOverride(_: StateBenefitsUserData)(_: HeaderCarrier))
-      .expects(userData, *)
-      .returning(Future.successful(result))
-  }
-
+  def mockRemoveCustomerOverride(userData: StateBenefitsUserData, result: Either[ApiServiceError, Unit]): Unit =
+    when(mockIntegrationFrameworkService.removeCustomerOverride(eqTo(userData))(any[HeaderCarrier]()))
+      .thenReturn(Future.successful(result))
 }
